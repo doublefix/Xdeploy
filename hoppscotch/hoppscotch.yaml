@@ -1,0 +1,12 @@
+version: "3.0"
+
+services:
+  hoppscotch:
+    image: hoppscotch/hoppscotch:latest
+    ports:
+      - 13000:3000
+      - 13100:3100
+      - 13170:3170
+    restart: always
+    env_file:
+      - .env

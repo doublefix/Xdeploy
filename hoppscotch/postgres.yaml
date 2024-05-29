@@ -1,0 +1,17 @@
+version: "3.0"
+
+volumes:
+  postgres_data: {}
+
+services:
+  postgres:
+    image: postgres:latest
+    environment:
+      POSTGRES_USER: hoppscotch
+      POSTGRES_PASSWORD: h9432openpaper
+      POSTGRES_DB: hoppscotch
+    restart: always
+    ports:
+      - 15432:5432
+    volumes:
+      - postgres_data:/var/lib/postgresql/data

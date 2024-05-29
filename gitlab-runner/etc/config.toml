@@ -7,9 +7,9 @@ shutdown_timeout = 0
 
 [[runners]]
   name = "gr01"
-  url = "https://openpaper.co:9000"
+  url = "https://demo.com:9000"
   id = 3
-  token = "sFna9v67bW8YsysQCBkz"
+  token = "demo-token"
   token_obtained_at = 2024-04-23T05:48:23Z
   token_expires_at = 0001-01-01T00:00:00Z
   executor = "docker"

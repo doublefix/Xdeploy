@@ -5,6 +5,7 @@ services:
     restart: always
     container_name: gitlab-runner
     volumes:
+      - ./conf:/etc/gitlab-runner
       - /var/run/docker.sock:/var/run/docker.sock
 
 # 注册到gitlab
@@ -13,3 +14,8 @@ services:
 
 # 查看注册后的文件
 # cat /etc/gitlab-runner/config.toml
+
+# 在配置文件中添加
+# [[runners]]
+#   [runners.docker]
+#     volumes = ["/var/run/docker.sock:/var/run/docker.sock", "/cache"]

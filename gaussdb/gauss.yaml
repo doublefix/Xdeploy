@@ -1,0 +1,20 @@
+version: '3'
+services:
+  Gauss:
+    # dbeaver:  jdbc:postgresql://{host}:{port}/{database}
+    # url:  jdbc:gaussdb://192.168.142.201:15433/postgres
+    # user: test
+    # pwd:  openGauss@123
+    container_name: Gauss
+    image: enmotech/opengauss:5.0.0
+    privileged: true
+    user: root
+    ports:
+      - "25308:25308"
+    environment:
+      GS_USERNAME: test
+      GS_PASSWORD: openGauss@123
+      GS_NODENAME: opengauss
+      GS_PORT: 25308
+    volumes:
+      - "./opengauss:/var/lib/opengauss"

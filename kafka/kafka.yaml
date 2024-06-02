@@ -1,0 +1,39 @@
+version: '3.1'
+services:
+  zookeeper:
+    image: docker.io/bitnami/zookeeper:3.8
+    user: root
+    logging:
+      driver: none
+    ports:
+      - "2181:2181"
+    volumes:
+      - "./zookeeper/zk1/data:/bitnami"
+    environment:
+      - ALLOW_ANONYMOUS_LOGIN=yes
+    networks:
+      - kafka_zookeeper
+  kafka:
+    image: docker.io/bitnami/kafka:3.4
+    user: root
+    ports:
+      - "9092:9092"
+    volumes:
+      - "./kafka/kafka1/data:/bitnami"
+    environment:
+      - ALLOW_PLAINTEXT_LISTENER=yes
+      - KAFKA_ENABLE_KRAFT=no
+      - KAFKA_CFG_ZOOKEEPER_CONNECT=zookeeper:2181
+      - KAFKA_CFG_LISTENERS=PLAINTEXT://:9092 # 内网地址，绑定内部网卡
+      - KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://192.168.1.23:9092 # 外网地址，这个地址会发布到zookeeper中。
+    depends_on:
+      - zookeeper
+    networks:
+      - kafka_zookeeper
+volumes:
+  zookeeper_data:
+    driver: local
+  kafka_data:
+    driver: local
+networks:
+  kafka_zookeeper:

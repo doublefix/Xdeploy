@@ -1,0 +1,15 @@
+version: '3'
+services:
+    mysql:
+      container_name: mysql
+      image: mysql:latest
+      ports:
+        - "3306:3306"
+      command: --default-authentication-plugin=mysql_native_password
+      environment:
+        MYSQL_ROOT_PASSWORD: "root"
+        MYSQL_ROOT_HOST: "%"
+        TZ: Asia/Shanghai
+      volumes:
+        - "/apps/sync-server/mysql/data:/var/lib/mysql"
+        - "/apps/sync-server/mysql/config:/etc/mysql/conf.d"

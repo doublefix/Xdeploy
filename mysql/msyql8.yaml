@@ -11,5 +11,5 @@ services:
         MYSQL_ROOT_HOST: "%"
         TZ: Asia/Shanghai
       volumes:
-        - "/apps/sync-server/mysql/data:/var/lib/mysql"
-        - "/apps/sync-server/mysql/config:/etc/mysql/conf.d"
+        - "./data:/var/lib/mysql"
+        - "./config:/etc/mysql/conf.d"

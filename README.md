@@ -3,3 +3,5 @@ Effortless Installation of Infrastructure Software
 
 AMD
 ARM
+
+Ansible

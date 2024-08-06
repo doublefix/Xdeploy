@@ -9,3 +9,9 @@ source ansible-env/bin/activate
 # 退出ansible环境
 deactivate
 ~~~
+
+~~~bash
+ansible all --list-hosts
+ansible all -m ping
+ansible-playbook playbook.yml
+~~~

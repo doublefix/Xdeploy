@@ -26,7 +26,7 @@ sudo certbot renew --dry-run
 
 ```bash
 # Install alicdn and alidns script
-sudo bash ssl/aliyun/install-alicdn-alidns.sh
+sudo bash ssl/aliyun/install-aliyuncli-alidns.sh
 
 # 配置本地AK，需要从aliyun官网拿到AK
 sudo bash ssl/aliyun/conf-aliyun.sh [YourAccessKeyId] [YourAccessKeySecret]

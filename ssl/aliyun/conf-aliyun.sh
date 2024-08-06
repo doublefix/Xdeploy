@@ -22,5 +22,3 @@ sudo aliyun configure set \
 
 sudo ls /root/.aliyun
 echo "Configuration completed successfully."
-
-# ./configure_aliyun.sh YourAccessKeyId YourAccessKeySecret

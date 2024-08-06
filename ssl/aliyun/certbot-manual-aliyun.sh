@@ -30,5 +30,3 @@ else
   echo "Certbot command failed." >&2
   exit 1
 fi
-
-# sudo bash ssl/certbot-manual-aliyun.sh example.com --dry-run

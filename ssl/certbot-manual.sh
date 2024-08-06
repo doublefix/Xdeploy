@@ -23,6 +23,6 @@ sudo certbot certonly \
 
 sudo ls /etc/letsencrypt/live
 
-# 这个是手动脚本，不适合自动续订，每个dns厂商的续订方式不同，使用的脚本不同
+# 手动脚本，不适合自动续订
 
 

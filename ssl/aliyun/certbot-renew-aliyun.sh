@@ -30,5 +30,3 @@ else
   echo "Certbot renewal command failed." >&2
   exit 1
 fi
-
-# sudo bash ssl/certbot-renew-aliyun.sh --dry-run

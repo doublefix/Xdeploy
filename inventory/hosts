@@ -1,2 +1,20 @@
-[all]
+[myself]
 localhost ansible_connection=local
+
+[web_servers]
+web1.example.com
+web2.example.com
+
+[database_servers]
+db1.example.com
+db2.example.com
+
+[web_servers:vars]
+ansible_user=webuser
+ansible_port=2222
+
+[database_servers:vars]
+ansible_user=dbuser
+ansible_port=3306
+ansible_ssh_pass=your_password
+ansible_ssh_private_key_file=/path/to/database_servers/key

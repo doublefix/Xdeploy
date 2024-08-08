@@ -1,2 +1,2 @@
 ansible-env
-roles/containerd/release/assets
+roles/containerd/release/assets/*

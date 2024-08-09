@@ -1,0 +1,8 @@
+---
+- name: 检查 GRUB 配置文件是否包含 systemd.unified_cgroup_hierarchy=1
+  lineinfile:
+    path: "{{ grub_file }}"
+    regexp: '^GRUB_CMDLINE_LINUX_DEFAULT'
+    line: 'GRUB_CMDLINE_LINUX_DEFAULT="systemd.unified_cgroup_hierarchy=1"'
+    state: present
+  notify: Update GRUB

@@ -1,0 +1,17 @@
+---
+- name: 创建 systemd 配置目录
+  file:
+    path: "{{ systemd_conf_dir }}"
+    state: directory
+
+- name: 创建 cgroup 控制器委派配置文件
+  copy:
+    dest: "{{ delegate_conf_file }}"
+    content: |
+      [Service]
+      Delegate=cpu cpuset io memory pids
+  notify: Reload systemd
+
+- name: 提示用户重新登录或重启
+  debug:
+    msg: "请重新登录或重启主机以使更改生效。"

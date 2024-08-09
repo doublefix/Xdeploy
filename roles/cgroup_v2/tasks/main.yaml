@@ -1,0 +1,5 @@
+---
+- import_tasks: check_cgroup.yml
+- import_tasks: check_version.yml
+- import_tasks: update_grub.yml
+- import_tasks: configure_systemd.yml

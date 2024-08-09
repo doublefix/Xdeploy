@@ -1,0 +1,16 @@
+---
+- name: 检查是否启用了 cgroup v2
+  stat:
+    path: /sys/fs/cgroup/cgroup.controllers
+  register: cgroup_v2_check
+
+- name: 输出 cgroup v2 启用状态
+  debug:
+    msg: "cgroup v2 已启用。"
+  when: cgroup_v2_check.stat.exists
+
+- name: 输出 cgroup v2 未启用状态
+  debug:
+    msg: "cgroup v2 未启用。"
+  when: not cgroup_v2_check.stat.exists
+  failed_when: not cgroup_v2_check.stat.exists

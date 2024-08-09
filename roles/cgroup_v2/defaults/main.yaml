@@ -1,0 +1,6 @@
+---
+required_kernel_version: "4.15"
+required_systemd_version: "244"
+grub_file: "/etc/default/grub"
+systemd_conf_dir: "/etc/systemd/system/user@.service.d"
+delegate_conf_file: "{{ systemd_conf_dir }}/delegate.conf"

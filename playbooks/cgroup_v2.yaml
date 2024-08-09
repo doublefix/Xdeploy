@@ -1,0 +1,6 @@
+---
+- name: 配置 cgroup v2 和控制器委派
+  hosts: test
+  become: yes
+  roles:
+    - cgroup_v2

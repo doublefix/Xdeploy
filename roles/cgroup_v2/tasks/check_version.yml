@@ -3,15 +3,15 @@
   command: uname -r
   register: kernel_version
 
+- name: 获取 systemd 版本
+  command: systemctl --version | head -n 1 | awk '{print $2}'
+  register: systemd_version
+
 - name: 检查内核版本
   assert:
     that:
       - required_kernel_version <= kernel_version.stdout.split('.')[0:2] | join('.')
     fail_msg: "内核版本 {{ kernel_version.stdout }} 不支持 cgroup v2，需升级到 {{ required_kernel_version }} 或更高版本。"
-
-- name: 获取 systemd 版本
-  command: systemctl --version | head -n 1 | awk '{print $2}'
-  register: systemd_version
 
 - name: 检查 systemd 版本
   assert:

@@ -1,5 +1,14 @@
 ---
-- import_tasks: check_cgroup.yml
-- import_tasks: check_version.yml
-- import_tasks: update_grub.yml
-- import_tasks: configure_systemd.yml
+- name: 仅在 cgroup v2 未启用时执行版本检查
+  block:
+    - import_tasks: check_version.yml
+  when: not cgroup_v2_enabled
+
+- name: 仅在版本检查通过后执行其他任务
+  block:
+    - import_tasks: update_grub.yml
+    - import_tasks: configure_systemd.yml
+  when:
+    - not cgroup_v2_enabled
+    - (kernel_version.stdout.split('.')[0:2] | join('.') | version_compare(required_kernel_version, '>=')) and
+      (version_compare(systemd_version.stdout, required_systemd_version, '>='))

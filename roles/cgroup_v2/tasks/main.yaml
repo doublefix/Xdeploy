@@ -1,4 +1,7 @@
 ---
+- name: 执行 cgroup 检查
+  import_tasks: check_cgroup.yml
+
 - name: 仅在 cgroup v2 未启用时执行版本检查
   block:
     - import_tasks: check_version.yml

@@ -15,3 +15,6 @@
 - name: 提示用户重新登录或重启
   debug:
     msg: "请重新登录或重启主机以使更改生效。"
+
+- name: Reload systemd daemon
+  command: systemctl daemon-reload

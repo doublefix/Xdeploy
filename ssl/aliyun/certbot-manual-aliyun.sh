@@ -21,7 +21,8 @@ sudo certbot certonly \
     --manual --preferred-challenges dns \
     --manual-auth-hook "alidns" \
     --manual-cleanup-hook "alidns clean" \
-    -d "*.$DOMAIN" \
+    # -d "*.$DOMAIN" \
+    -d "$DOMAIN" \
     $DRY_RUN
 
 if [ $? -eq 0 ]; then

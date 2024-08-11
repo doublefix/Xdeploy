@@ -1,6 +1,0 @@
----
-- name: Configure cgroup delegation
-  hosts: myself
-  become: yes
-  roles:
-    - cgroup_delegation

@@ -31,8 +31,9 @@ sudo bash ssl/aliyun/install-aliyuncli-alidns.sh
 # 配置本地AK，需要从aliyun官网拿到AK
 sudo bash ssl/aliyun/conf-aliyun.sh [YourAccessKeyId] [YourAccessKeySecret]
 
-# 手动申请证书
-sudo bash ssl/aliyun/certbot-manual-aliyun.sh example.com --dry-run
+# 手动申请证书,root证书和泛域名证书不能混用
+sudo bash ssl/aliyun/certbot-manual-aliyun.sh example.com root --dry-run
+sudo bash ssl/aliyun/certbot-manual-aliyun.sh example.com wildcard --dry-run
 
 # 自动更新证书
 sudo bash ssl/aliyun/certbot-renew-aliyun.sh --dry-run

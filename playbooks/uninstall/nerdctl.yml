@@ -1,0 +1,32 @@
+---
+- name: Uninstall nerdctl
+  hosts: test
+  become: yes
+  vars:
+    nerdctl_install_dir: "/usr/local/nerdctl"
+    nerdctl_bin_path: "/usr/local/bin/nerdctl"
+    nerdctl_profile_path: "/etc/profile"
+    nerdctl_tarball_path: "/tmp/nerdctl-full-*"
+
+  tasks:
+    - name: Remove nerdctl installation directory
+      file:
+        path: "{{ nerdctl_install_dir }}"
+        state: directory
+        recurse: yes
+
+    - name: Remove symbolic link to nerdctl binary
+      file:
+        path: "{{ nerdctl_bin_path }}"
+        state: absent
+
+    - name: Remove PATH modification from /etc/profile
+      lineinfile:
+        path: "{{ nerdctl_profile_path }}"
+        line: "export PATH=$PATH:/usr/local/nerdctl/bin"
+        state: absent
+
+    - name: Clean up temporary files
+      file:
+        path: "{{ nerdctl_tarball_path }}"
+        state: absent

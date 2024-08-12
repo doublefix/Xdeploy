@@ -1,6 +1,5 @@
-# containerd/defaults/main.yml
 ---
-wget_url: https://github.com/containerd/nerdctl/releases/download/v1.7.6/nerdctl-full-1.7.6-linux-amd64.tar.gz
-download_dir: /tmp
-tar_file: nerdctl-full-1.7.6-linux-amd64.tar.gz
-extract_dir: /usr/local
+nerdctl_version: "1.7.6"
+nerdctl_base_dir: "../roles/containerd/release/assets"
+nerdctl_tarball: "nerdctl-full-{{ nerdctl_version }}-linux-amd64.tar.gz"
+nerdctl_dest_path: "/tmp/{{ nerdctl_tarball }}"

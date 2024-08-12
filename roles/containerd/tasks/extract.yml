@@ -1,5 +1,0 @@
-# containerd/tasks/extract.yml
----
-- name: Extract nerdctl tarball
-  command: >
-    tar Cxzvvf {{ extract_dir }} {{ download_dir }}/{{ tar_file }}

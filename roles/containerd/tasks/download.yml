@@ -1,6 +1,0 @@
-# containerd/tasks/download.yml
----
-- name: Download nerdctl tarball
-  get_url:
-    url: "{{ wget_url }}"
-    dest: "{{ download_dir }}/{{ tar_file }}"

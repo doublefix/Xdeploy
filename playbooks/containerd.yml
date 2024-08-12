@@ -2,14 +2,5 @@
 - name: Deploy nerdctl
   hosts: test
   become: yes
-  tasks:
-    - name: Copy nerdctl tarball from Ansible control node to target server
-      copy:
-        src: ../roles/containerd/release/assets/nerdctl-full-1.7.6-linux-amd64.tar.gz
-        dest: /tmp/nerdctl-full-1.7.6-linux-amd64.tar.gz
-
-    - name: Extract nerdctl tarball to /usr/local/nerdctl
-      command: >
-        sudo tar Cxzvvf /usr/local/nerdctl /tmp/nerdctl-full-1.7.6-linux-amd64.tar.gz
-      args:
-        chdir: /tmp
+  roles:
+    - containerd

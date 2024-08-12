@@ -4,30 +4,36 @@
     src: "{{ nerdctl_base_dir }}/{{ nerdctl_tarball }}"
     dest: "{{ nerdctl_dest_path }}"
 
-- name: Ensure /usr/local/nerdctl directory exists
-  file:
-    path: /usr/local/nerdctl
-    state: directory
-    mode: "0755"
-
-- name: Extract nerdctl tarball to /usr/local/nerdctl
+- name: Extract nerdctl tarball to /usr/local
   command: >
-    tar -xzvf {{ nerdctl_dest_path }} -C /usr/local/nerdctl
+    tar Cxzvvf /usr/local {{ nerdctl_dest_path }}
   args:
     chdir: /tmp
-
-- name: Add /usr/local/nerdctl/bin to PATH
-  lineinfile:
-    path: /etc/profile
-    line: "export PATH=$PATH:/usr/local/nerdctl/bin"
-    state: present
-
-- name: Source /etc/profile to update PATH
-  shell: source /etc/profile
-  args:
-    executable: /bin/bash
 
 - name: Clean up temporary files
   file:
     path: "{{ nerdctl_dest_path }}"
     state: absent
+
+- name: Copy nerdctl tarball from Ansible control node to target server
+  copy:
+    src: "../roles/containerd/release/config.toml"
+    dest: "/etc/containerd/"
+
+- name: Enable and start containerd service
+  systemd:
+    name: containerd
+    state: started
+    enabled: yes
+
+- name: Enable and start buildkit service
+  systemd:
+    name: buildkit
+    state: started
+    enabled: yes
+
+- name: Enable and start stargz-snapshotter service
+  systemd:
+    name: stargz-snapshotter
+    state: started
+    enabled: yes

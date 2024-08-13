@@ -34,3 +34,47 @@ sudo apt-get install -y kubelet=1.29.2-00 kubeadm=1.29.2-00 kubectl=1.29.2-00
 # 查看安装版本
 kubelet version
 ```
+
+
+
+```bash
+# 下载cni
+# wget https://github.com/containernetworking/plugins/releases/download/v1.5.1/cni-plugins-linux-amd64-v1.5.1.tgz
+CNI_PLUGINS_VERSION="v1.5.1"
+ARCH="amd64"
+DEST="/opt/cni/bin"
+sudo mkdir -p "$DEST"
+curl -L "https://github.com/containernetworking/plugins/releases/download/${CNI_PLUGINS_VERSION}/cni-plugins-linux-${ARCH}-${CNI_PLUGINS_VERSION}.tgz" | sudo tar -C "$DEST" -xz
+
+# 下载cri
+# wget https://github.com/kubernetes-sigs/cri-tools/releases/download/v1.30.0/crictl-v1.30.0-linux-amd64.tar.gz
+CRICTL_VERSION="v1.30.0"
+ARCH="amd64"
+curl -L "https://github.com/kubernetes-sigs/cri-tools/releases/download/${CRICTL_VERSION}/crictl-${CRICTL_VERSION}-linux-${ARCH}.tar.gz" | sudo tar -C $DOWNLOAD_DIR -xz
+
+
+# 下载kubeadm,kubelet
+# https://dl.k8s.io/release/v1.31.0/bin/linux/amd64/kubeadm
+# https://dl.k8s.io/release/v1.31.0/bin/linux/amd64/kubelet
+RELEASE="$(curl -sSL https://dl.k8s.io/release/stable.txt)"
+ARCH="amd64"
+cd $DOWNLOAD_DIR
+sudo curl -L --remote-name-all https://dl.k8s.io/release/${RELEASE}/bin/linux/${ARCH}/{kubeadm,kubelet}
+sudo chmod +x {kubeadm,kubelet}
+
+# wget https://raw.githubusercontent.com/kubernetes/release/v0.16.2/cmd/krel/templates/latest/kubelet/kubelet.service
+# wget https://raw.githubusercontent.com/kubernetes/release/v0.16.2/cmd/krel/templates/latest/kubeadm/10-kubeadm.conf
+RELEASE_VERSION="v0.16.2"
+curl -sSL "https://raw.githubusercontent.com/kubernetes/release/${RELEASE_VERSION}/cmd/krel/templates/latest/kubelet/kubelet.service" | sed "s:/usr/bin:${DOWNLOAD_DIR}:g" | sudo tee /usr/lib/systemd/system/kubelet.service
+sudo mkdir -p /usr/lib/systemd/system/kubelet.service.d
+curl -sSL "https://raw.githubusercontent.com/kubernetes/release/${RELEASE_VERSION}/cmd/krel/templates/latest/kubeadm/10-kubeadm.conf" | sed "s:/usr/bin:${DOWNLOAD_DIR}:g" | sudo tee /usr/lib/systemd/system/kubelet.service.d/10-kubeadm.conf
+
+sudo systemctl enable --now kubelet
+
+
+# 下载kubelet
+# wget https://dl.k8s.io/release/v1.31.0/bin/linux/amd64/kubectl
+curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+
+sudo install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
+```

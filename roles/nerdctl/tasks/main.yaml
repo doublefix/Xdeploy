@@ -1,0 +1,8 @@
+---
+- name: Include install tasks
+  include_tasks: deploy.yml
+  when: operation == 'install'
+
+- name: Include uninstall tasks
+  include_tasks: uninstall.yml
+  when: operation == 'uninstall'

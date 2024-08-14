@@ -38,6 +38,7 @@ kubelet version
 
 
 ```bash
+# https://github.com/containernetworking/plugins
 # 下载cni
 # wget https://github.com/containernetworking/plugins/releases/download/v1.5.1/cni-plugins-linux-amd64-v1.5.1.tgz
 CNI_PLUGINS_VERSION="v1.5.1"
@@ -77,4 +78,10 @@ sudo systemctl enable --now kubelet
 curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
 
 sudo install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
+```
+
+
+
+```bash
+bash roles/kubernetes/scripts/download_cni.sh
 ```

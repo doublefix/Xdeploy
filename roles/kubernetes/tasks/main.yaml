@@ -1,0 +1,10 @@
+---
+- name: Ensure /usr/local/bin directory exists
+  file:
+    path: /usr/local/bin
+    state: directory
+    mode: '0755'
+- name: Co
+  copy:
+    src: "../roles/kubernetes/release/x86_64/cni/"
+    dest: "/usr/local/bin"

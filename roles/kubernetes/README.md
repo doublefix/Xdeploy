@@ -1,3 +1,5 @@
+https://kubernetes.io/zh-cn/docs/setup/production-environment/tools/kubeadm/install-kubeadm/
+
 ```bash
 # 更新 apt包索引并安装使用 Kubernetes apt仓库所需要的包：
 sudo apt-get update
@@ -46,6 +48,10 @@ ARCH="amd64"
 DEST="/opt/cni/bin"
 sudo mkdir -p "$DEST"
 curl -L "https://github.com/containernetworking/plugins/releases/download/${CNI_PLUGINS_VERSION}/cni-plugins-linux-${ARCH}-${CNI_PLUGINS_VERSION}.tgz" | sudo tar -C "$DEST" -xz
+
+# 标准二进制文件夹
+DOWNLOAD_DIR="/usr/local/bin"
+sudo mkdir -p "$DOWNLOAD_DIR"
 
 # 下载cri
 # wget https://github.com/kubernetes-sigs/cri-tools/releases/download/v1.30.0/crictl-v1.30.0-linux-amd64.tar.gz

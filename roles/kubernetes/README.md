@@ -83,5 +83,6 @@ sudo install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
 
 
 ```bash
-bash roles/kubernetes/scripts/download_cni.sh
+bash roles/kubernetes/scripts/download_bin.sh
+bash roles/kubernetes/scripts/clean.sh
 ```

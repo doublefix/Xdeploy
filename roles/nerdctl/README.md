@@ -1,6 +1,6 @@
 ```bash
 # Download
-bash roles/nerdctl/download.sh 
+bash roles/nerdctl/scripts/download_nerdctl.sh
 
 # Install
 ansible-playbook playbooks/nerdctl.yml

@@ -1,0 +1,6 @@
+---
+- name: Deploy kubernetes
+  hosts: test
+  become: yes
+  roles:
+    - kubernetes

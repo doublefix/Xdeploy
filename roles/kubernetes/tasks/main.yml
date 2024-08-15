@@ -2,96 +2,96 @@
 # Add CRI
 - name: Copy CRI tarball to target server
   copy:
-    src: "../roles/kubernetes/release/x86_64/cri/crictl-v1.31.0-linux-amd64.tar.gz"
-    dest: "/tmp"
+    src: "../roles/kubernetes/release/x86_64/cri/{{ cri_tarball }}"
+    dest: "{{ tmp_path }}"
 
 - name: Ensure /usr/local/bin directory exists
   file:
-    path: /usr/local/bin
+    path: "{{ kube_bin_path }}"
     state: directory
     mode: "0755"
 
-- name: Extract crictl-v1.31.0-linux-amd64.tar.gz to /opt/local/bin
+- name: Extract CRI tarball to /usr/local/bin
   ansible.builtin.unarchive:
-    src: "/tmp/crictl-v1.31.0-linux-amd64.tar.gz"
-    dest: "/usr/local/bin"
+    src: "{{ tmp_path }}/{{ cri_tarball }}"
+    dest: "{{ kube_bin_path }}"
     remote_src: yes
 
-- name: Copy crictl.yaml to etc
+- name: Copy CRI configuration to /etc
   copy:
-    src: "../roles/kubernetes/release/x86_64/cri/crictl.yaml"
+    src: "../roles/kubernetes/release/x86_64/cri/{{ cri_yaml }}"
     dest: "/etc/crictl.yaml"
     mode: "0644"
 
 # Add CNI
 - name: Copy CNI tarball to target server
   copy:
-    src: "../roles/kubernetes/release/x86_64/cni/cni-plugins-linux-amd64-v1.5.1.tgz"
-    dest: "/tmp"
+    src: "../roles/kubernetes/release/x86_64/cni/{{ cni_tarball }}"
+    dest: "{{ tmp_path }}"
 
 - name: Ensure /opt/cni/bin directory exists
   file:
-    path: /opt/cni/bin
+    path: "/opt/cni/bin"
     state: directory
     mode: "0755"
 
-- name: Extract cni-plugins-linux-amd64-v1.5.1.tgz to /opt/cni/bin
+- name: Extract CNI tarball to /opt/cni/bin
   ansible.builtin.unarchive:
-    src: "/tmp/cni-plugins-linux-amd64-v1.5.1.tgz"
+    src: "{{ tmp_path }}/{{ cni_tarball }}"
     dest: "/opt/cni/bin"
     remote_src: yes
 
-# Remove CRI and CNI tar
+# Remove temporary files
 - name: Remove temporary files
   file:
-    path: "/tmp/{{ item }}"
+    path: "{{ tmp_path }}/{{ item }}"
     state: absent
   loop:
-    - crictl-v1.31.0-linux-amd64.tar.gz
-    - cni-plugins-linux-amd64-v1.5.1.tgz
+    - "{{ cri_tarball }}"
+    - "{{ cni_tarball }}"
 
-# Add main bin
-- name: Copy binary kubeadm to /usr/local/bin
+# Add main binaries
+- name: Copy kubeadm binary to /usr/local/bin
   copy:
-    src: "../roles/kubernetes/release/x86_64/main/kubeadm"
-    dest: "/usr/local/bin/kubeadm"
+    src: "../roles/kubernetes/release/x86_64/main/{{ kubeadm_bin }}"
+    dest: "{{ kube_bin_path }}/{{ kubeadm_bin }}"
     mode: "0755"
 
-- name: Copy binary kubectl to /usr/local/bin
+- name: Copy kubectl binary to /usr/local/bin
   copy:
-    src: "../roles/kubernetes/release/x86_64/main/kubectl"
-    dest: "/usr/local/bin/kubectl"
+    src: "../roles/kubernetes/release/x86_64/main/{{ kubectl_bin }}"
+    dest: "{{ kube_bin_path }}/{{ kubectl_bin }}"
     mode: "0755"
 
-- name: Copy binary kubelet to /usr/local/bin
-  copy:
-    src: "../roles/kubernetes/release/x86_64/main/kubelet"
-    dest: "/usr/local/bin/kubelet"
-    mode: "0755"
+# - name: Copy kubelet binary to /usr/local/bin
+#   copy:
+#     src: "../roles/kubernetes/release/x86_64/main/{{ kubelet_bin }}"
+#     dest: "{{ kube_bin_path }}/{{ kubelet_bin }}"
+#     mode: "0755"
 
 # Add kubelet config
 - name: Ensure /usr/lib/systemd/system directory exists
   file:
-    path: /usr/lib/systemd/system
+    path: "{{ kube_service_path }}"
     state: directory
     mode: "0755"
 
 - name: Copy kubelet.service to /usr/lib/systemd/system
   copy:
-    src: "../roles/kubernetes/release/x86_64/conf/kubelet.service"
-    dest: "/usr/lib/systemd/system/kubelet.service"
+    src: "../roles/kubernetes/release/x86_64/conf/{{ kubelet_service_file }}"
+    dest: "{{ kube_service_path }}/{{ kubelet_service_file }}"
     mode: "0644"
 
 - name: Ensure /usr/lib/systemd/system/kubelet.service.d directory exists
   file:
-    path: /usr/lib/systemd/system/kubelet.service.d
+    path: "{{ kube_service_d_path }}"
     state: directory
     mode: "0755"
 
 - name: Copy 10-kubeadm.conf to /usr/lib/systemd/system/kubelet.service.d
   copy:
-    src: "../roles/kubernetes/release/x86_64/conf/10-kubeadm.conf"
-    dest: "/usr/lib/systemd/system/kubelet.service.d/10-kubeadm.conf"
+    src: "../roles/kubernetes/release/x86_64/conf/{{ kubelet_conf_file }}"
+    dest: "{{ kube_service_d_path }}/{{ kubelet_conf_file }}"
     mode: "0644"
 
 # - name: Enable and start kubelet service

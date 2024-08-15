@@ -37,7 +37,7 @@
       loop:
         - kubeadm
         - kubectl
-        - kubelet
+        # - kubelet
 
     - name: Remove CNI plugins
       file:

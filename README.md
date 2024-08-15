@@ -1,8 +1,10 @@
 # Infrahub
+
 The project is designed to help developers install essential software.
 
 ## How to use ansible
-~~~bash
+
+```bash
 # 安装
 bash ansible/install_ansible.sh
 
@@ -22,4 +24,16 @@ ansible-playbook playbooks/vim.yml --ask-become-pass
 
 # 动态获取服务器安装
 ansible-playbook -i inventory/dynamic.py dev playbooks/site.yml
-~~~
+```
+
+```bash
+# 安装nerdctl
+ansible-playbook playbooks/nerdctl.yml
+
+# 安装k8s
+ansible-playbook playbooks/kubernetes.yml
+
+# 安装kubectl
+ansible-playbook playbooks/kubectl.yml
+
+```

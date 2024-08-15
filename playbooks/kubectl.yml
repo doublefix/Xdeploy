@@ -3,8 +3,8 @@
   hosts: test
   become: yes
   tasks:
-    - name: Copy kubelet binary to /usr/local/bin
+    - name: Copy kubectl binary to /usr/local/bin
       copy:
-        src: "../roles/kubernetes/release/x86_64/main/kubelet"
-        dest: "/usr/local/bin/kubelet"
+        src: "../roles/kubernetes/release/x86_64/main/kubectl"
+        dest: "/usr/local/bin/kubectl"
         mode: "0755"

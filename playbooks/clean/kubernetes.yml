@@ -1,90 +1,94 @@
 ---
-- name: Remove Kubernetes binaries and configuration
+- name: Uninstall kubernetes
   hosts: test
   become: yes
   tasks:
-    - name: Check if kubelet service exists
-      command: systemctl list-units --type=service --state=loaded
-      register: kubelet_status
-      ignore_errors: yes
+    - name: Remove Kubernetes binaries and configuration
+      hosts: test
+      become: yes
+      tasks:
+        - name: Check if kubelet service exists
+          command: systemctl list-units --type=service --state=loaded
+          register: kubelet_status
+          ignore_errors: yes
 
-    - name: Set fact if kubelet service exists
-      set_fact:
-        kubelet_exists: "{{ 'kubelet.service' in kubelet_status.stdout }}"
-      when: kubelet_status.rc == 0
+        - name: Set fact if kubelet service exists
+          set_fact:
+            kubelet_exists: "{{ 'kubelet.service' in kubelet_status.stdout }}"
+          when: kubelet_status.rc == 0
 
-    - name: Stop kubelet service if it exists
-      systemd:
-        name: kubelet
-        state: stopped
-      when: kubelet_exists
-      ignore_errors: yes
+        - name: Stop kubelet service if it exists
+          systemd:
+            name: kubelet
+            state: stopped
+          when: kubelet_exists
+          ignore_errors: yes
 
-    - name: Disable kubelet service if it exists
-      systemd:
-        name: kubelet
-        enabled: no
-      when: kubelet_exists
-      ignore_errors: yes
+        - name: Disable kubelet service if it exists
+          systemd:
+            name: kubelet
+            enabled: no
+          when: kubelet_exists
+          ignore_errors: yes
 
-    - name: Reload systemd daemon
-      command: systemctl daemon-reload
+        - name: Reload systemd daemon
+          command: systemctl daemon-reload
 
-    - name: Remove Kubernetes binaries
-      file:
-        path: "/usr/local/bin/{{ item }}"
-        state: absent
-      loop:
-        - kubeadm
-        - kubelet
-        # - kubectl
+        - name: Remove Kubernetes binaries
+          file:
+            path: "/usr/local/bin/{{ item }}"
+            state: absent
+          loop:
+            - kubeadm
+            - kubelet
+            # - kubectl
 
-    - name: Remove CNI plugins
-      file:
-        path: "/opt/cni/bin/{{ item }}"
-        state: absent
-      loop:
-        - bandwidth
-        - bridge
-        - dhcp
-        - dummy
-        - firewall
-        - host-device
-        - host-local
-        - ipvlan
-        - LICENSE
-        - loopback
-        - macvlan
-        - portmap
-        - ptp
-        - README.md
-        - sbr
-        - static
-        - tap
-        - tuning
-        - vlan
-        - vrf
+        - name: Remove CNI plugins
+          file:
+            path: "/opt/cni/bin/{{ item }}"
+            state: absent
+          loop:
+            - bandwidth
+            - bridge
+            - dhcp
+            - dummy
+            - firewall
+            - host-device
+            - host-local
+            - ipvlan
+            - LICENSE
+            - loopback
+            - macvlan
+            - portmap
+            - ptp
+            - README.md
+            - sbr
+            - static
+            - tap
+            - tuning
+            - vlan
+            - vrf
 
-    - name: Remove CRI tools
-      file:
-        path: "/usr/local/bin/{{ item }}"
-        state: absent
-      loop:
-        - crictl
-    
-    - name: Remove CRI conf yaml
-      file:
-        path: "/etc/{{ item }}"
-        state: absent
-      loop:
-        - crictl.yaml
+        - name: Remove CRI tools
+          file:
+            path: "/usr/local/bin/{{ item }}"
+            state: absent
+          loop:
+            - crictl
 
-    - name: Remove kubelet systemd service file
-      file:
-        path: "/usr/lib/systemd/system/kubelet.service"
-        state: absent
+        - name: Remove CRI conf yaml
+          file:
+            path: "/etc/{{ item }}"
+            state: absent
+          loop:
+            - crictl.yaml
 
-    - name: Remove kubelet systemd conf directory
-      file:
-        path: "/usr/lib/systemd/system/kubelet.service.d/10-kubeadm.conf"
-        state: absent
+        - name: Remove kubelet systemd service file
+          file:
+            path: "/usr/lib/systemd/system/kubelet.service"
+            state: absent
+
+        - name: Remove kubelet systemd conf directory
+          file:
+            path: "/usr/lib/systemd/system/kubelet.service.d/10-kubeadm.conf"
+            state: absent

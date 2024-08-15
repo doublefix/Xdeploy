@@ -9,3 +9,9 @@
         state: absent
       loop:
         - kubectl
+    - name: Remove Kubernetes conf
+      file:
+        path: "/etc/bash_completion.d/{{ item }}"
+        state: absent
+      loop:
+        - kubectl

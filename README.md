@@ -27,12 +27,12 @@ ansible-playbook -i inventory/dynamic.py dev playbooks/site.yml
 ```
 
 ```bash
+# 开启cgroup,更好的支持虚拟化
+ansible-playbook playbooks/cgroup_v2.yml
 # 安装nerdctl
 ansible-playbook playbooks/nerdctl.yml
-
 # 安装k8s
 ansible-playbook playbooks/kubernetes.yml
-
 # 安装kubectl
 ansible-playbook playbooks/kubectl.yml
 

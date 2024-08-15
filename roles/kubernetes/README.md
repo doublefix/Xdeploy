@@ -58,7 +58,11 @@ sudo mkdir -p "$DOWNLOAD_DIR"
 CRICTL_VERSION="v1.30.0"
 ARCH="amd64"
 curl -L "https://github.com/kubernetes-sigs/cri-tools/releases/download/${CRICTL_VERSION}/crictl-${CRICTL_VERSION}-linux-${ARCH}.tar.gz" | sudo tar -C $DOWNLOAD_DIR -xz
-
+# cri会去寻找containerd.sock
+# crictl --runtime-endpoint unix:///run/containerd/containerd.sock --image-endpoint unix:///run/containerd/containerd.sock <command>
+# /etc/crictl.yaml
+# runtime-endpoint: unix:///run/containerd/containerd.sock
+# image-endpoint: unix:///run/containerd/containerd.sock
 
 # 下载kubeadm,kubelet
 # https://dl.k8s.io/release/v1.31.0/bin/linux/amd64/kubeadm
@@ -69,6 +73,7 @@ cd $DOWNLOAD_DIR
 sudo curl -L --remote-name-all https://dl.k8s.io/release/${RELEASE}/bin/linux/${ARCH}/{kubeadm,kubelet}
 sudo chmod +x {kubeadm,kubelet}
 
+# 下载kubelet配置文件
 # wget https://raw.githubusercontent.com/kubernetes/release/v0.16.2/cmd/krel/templates/latest/kubelet/kubelet.service
 # wget https://raw.githubusercontent.com/kubernetes/release/v0.16.2/cmd/krel/templates/latest/kubeadm/10-kubeadm.conf
 RELEASE_VERSION="v0.16.2"
@@ -76,7 +81,9 @@ curl -sSL "https://raw.githubusercontent.com/kubernetes/release/${RELEASE_VERSIO
 sudo mkdir -p /usr/lib/systemd/system/kubelet.service.d
 curl -sSL "https://raw.githubusercontent.com/kubernetes/release/${RELEASE_VERSION}/cmd/krel/templates/latest/kubeadm/10-kubeadm.conf" | sed "s:/usr/bin:${DOWNLOAD_DIR}:g" | sudo tee /usr/lib/systemd/system/kubelet.service.d/10-kubeadm.conf
 
+# 使用kubeadm安装的时候开启，不然一直运行
 sudo systemctl enable --now kubelet
+sudo systemctl disable --now kubelet
 
 
 # 下载kubelet

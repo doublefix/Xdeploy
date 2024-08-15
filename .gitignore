@@ -1,6 +1,6 @@
 ansible-env
 roles/nerdctl/release/assets/*
 roles/kubernetes/release/x86_64/cni/*
-roles/kubernetes/release/x86_64/cri/*
+roles/kubernetes/release/x86_64/cri/*.tar.gz
 roles/kubernetes/release/x86_64/main/*
 inventory/test

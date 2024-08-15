@@ -1,0 +1,6 @@
+---
+- name: Linux kernel opt
+  hosts: test
+  become: yes
+  roles:
+    - linux-kernel-opt

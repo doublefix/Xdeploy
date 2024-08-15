@@ -1,0 +1,45 @@
+---
+- name: Ensure /etc/modules-load.d directory exists
+  file:
+    path: "/etc/modules-load.d"
+    state: directory
+    mode: "0755"
+
+- name: Copy kube-modules.conf to /etc/modules-load.d
+  copy:
+    src: "../roles/linux-kernel-opt/conf/kube-modules.conf"
+    dest: "/etc/modules-load.d/kube-modules.conf"
+    mode: "0644"
+
+- name: Load specified kernel modules without reboot
+  shell: |
+    modprobe overlay
+    modprobe br_netfilter
+  args:
+    creates: "/etc/modules-load.d/kube-modules.conf"
+
+- name: Ensure /etc/sysctl.d directory exists
+  file:
+    path: "/etc/sysctl.d"
+    state: directory
+    mode: "0755"
+
+- name: Copy kube-sysctl.conf to /etc/sysctl.d
+  copy:
+    src: "../roles/linux-kernel-opt/conf/kube-sysctl.conf"
+    dest: "/etc/sysctl.d/kube-sysctl.conf"
+    mode: "0644"
+
+- name: Apply sysctl parameters without reboot
+  command: sysctl --system
+
+- name: Disable swap temporarily
+  command: swapoff -a
+
+- name: Disable swap permanently by commenting out swap line in /etc/fstab
+  lineinfile:
+    path: /etc/fstab
+    regexp: '^(.*\sswap\s.*)$'
+    line: '#\1'
+    state: present
+    backrefs: yes

@@ -1,0 +1,10 @@
+---
+- name: Deploy kubectl
+  hosts: test
+  become: yes
+  tasks:
+    - name: Copy kubelet binary to /usr/local/bin
+      copy:
+        src: "../roles/kubernetes/release/x86_64/main/kubelet"
+        dest: "/usr/local/bin/kubelet"
+        mode: "0755"

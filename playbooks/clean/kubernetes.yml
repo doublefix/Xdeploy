@@ -36,8 +36,8 @@
         state: absent
       loop:
         - kubeadm
-        - kubectl
-        # - kubelet
+        - kubelet
+        # - kubectl
 
     - name: Remove CNI plugins
       file:

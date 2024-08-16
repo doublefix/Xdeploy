@@ -3,24 +3,4 @@
   hosts: test
   become: yes
   tasks:
-    - name: Copy kubectl binary to /usr/local/bin
-      copy:
-        src: "../roles/kubernetes/release/x86_64/main/kubectl"
-        dest: "/usr/local/bin/kubectl"
-        mode: "0755"
-
-    - name: Ensure bash_completion directory exists
-      file:
-        path: "/etc/bash_completion.d"
-        state: directory
-        mode: "0755"
-
-    - name: Enable kubectl bash completion
-      shell: "kubectl completion bash | tee /etc/bash_completion.d/kubectl > /dev/null"
-      args:
-        creates: "/etc/bash_completion.d/kubectl"
-
-    - name: Ensure kubectl completion script is readable
-      file:
-        path: "/etc/bash_completion.d/kubectl"
-        mode: "0644"
+    - kubelet

@@ -57,17 +57,17 @@
     dest: "{{ kube_bin_path }}/{{ kubeadm_bin }}"
     mode: "0755"
 
-- name: Copy kubectl binary to /usr/local/bin
-  copy:
-    src: "../roles/kubernetes/release/x86_64/main/{{ kubectl_bin }}"
-    dest: "{{ kube_bin_path }}/{{ kubectl_bin }}"
-    mode: "0755"
-
-# - name: Copy kubelet binary to /usr/local/bin
+# - name: Copy kubectl binary to /usr/local/bin
 #   copy:
-#     src: "../roles/kubernetes/release/x86_64/main/{{ kubelet_bin }}"
-#     dest: "{{ kube_bin_path }}/{{ kubelet_bin }}"
+#     src: "../roles/kubernetes/release/x86_64/main/{{ kubectl_bin }}"
+#     dest: "{{ kube_bin_path }}/{{ kubectl_bin }}"
 #     mode: "0755"
+
+- name: Copy kubelet binary to /usr/local/bin
+  copy:
+    src: "../roles/kubernetes/release/x86_64/main/{{ kubelet_bin }}"
+    dest: "{{ kube_bin_path }}/{{ kubelet_bin }}"
+    mode: "0755"
 
 # Add kubelet config
 - name: Ensure /usr/lib/systemd/system directory exists

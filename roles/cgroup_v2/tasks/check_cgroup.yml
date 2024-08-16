@@ -8,9 +8,15 @@
   set_fact:
     cgroup_v2_enabled: "{{ cgroup_v2_check.stat.exists }}"
 
-- name: 输出 cgroup v2 状态
+- name: 读取 cgroup v2 文件内容
+  slurp:
+    path: /sys/fs/cgroup/cgroup.controllers
+  register: cgroup_v2_file_content
+  when: cgroup_v2_check.stat.exists
+
+- name: 输出 cgroup v2 文件内容
   debug:
-    msg: "cgroup v2 已启用。"
+    msg: "cgroup v2 values {{ cgroup_v2_file_content.content | b64decode }}"
   when: cgroup_v2_check.stat.exists
 
 - name: 输出 cgroup v2 状态

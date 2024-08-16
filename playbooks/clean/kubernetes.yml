@@ -1,5 +1,5 @@
 ---
-- name: Uninstall kubernetes
+- name: Remove kubernetes
   hosts: test
   become: yes
   tasks:

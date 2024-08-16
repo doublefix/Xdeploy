@@ -1,3 +1,5 @@
+systemctl enable --now kubelet
+
 sudo kubeadm init \
     --apiserver-advertise-address=192.168.1.1 \
     --control-plane-endpoint=master \

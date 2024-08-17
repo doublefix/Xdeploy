@@ -12,7 +12,7 @@ ansible-playbook playbooks/nerdctl.yml -e "operation=uninstall"
 
 ## Manually uninstall nerdctl context
 
-手动移除 k8s 的容器镜像
+手动移除 containerd 的容器镜像
 
 ```bash
 # 停止所有容器
@@ -22,8 +22,11 @@ nerdctl rm $(nerdctl ps -q -a)
 nerdctl rmi -f $(nerdctl images -q)
 # 停服务
 sudo systemctl status containerd
+sudo systemctl status buildkit
+sudo systemctl status stargz-snapshotter
 sudo systemctl stop containerd
-ps aux | grep containerd
+sudo systemctl stop buildkit
+sudo systemctl stop stargz-snapshotter
 # 移除二进制
 sudo rm /etc/systemd/system/containerd.service
 sudo rm /etc/systemd/system/containerd.socket
@@ -39,4 +42,5 @@ sudo rm /etc/containerd/config.toml
 sudo rm -rf /opt/containerd
 # 重载
 sudo systemctl daemon-reload
+# 最后重启
 ```

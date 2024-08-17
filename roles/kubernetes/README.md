@@ -10,6 +10,14 @@ ansible-playbook playbooks/kubernetes.yml
 ansible-playbook playbooks/clean/kubernetes.yml
 ```
 
+## 注意事项
+
+Redhat 将 SELinux 设置为 permissive 模式（相当于将其禁用）
+
+```bash
+sudo setenforce 0sudo sed -i 's/^SELINUX=enforcing$/SELINUX=permissive/' /etc/selinux/config
+```
+
 ## Manually uninstall k8s
 
 手动卸载通过包管理器安装的 k8s
@@ -30,6 +38,11 @@ sudo ipvsadm --clear
 sudo systemctl status kubelet
 sudo systemctl stop kubelet
 sudo systemctl disable kubelet
+```
+
+### Redhat 系
+
+```bash
 # 卸载 Kubernetes 组件
 sudo yum remove -y kubelet kubeadm kubectl
 # 删除k8s仓库
@@ -53,4 +66,24 @@ sudo rm -f /usr/lib/firewalld/services/kube-*
 sudo rm -rf /usr/libexec/kubernetes
 sudo rm -rf /usr/share/man/man1/podman-kube*.1.gz
 sudo rm -rf /usr/share/cockpit/branding/kubernetes
+```
+
+### Debian 系
+
+```bash
+# 解锁
+sudo apt-mark unhold kubelet kubeadm kubectl
+# 卸载
+sudo apt-get purge -y kubelet kubeadm kubectl
+# 清理缓存
+sudo apt-get autoremove -y
+sudo apt-get autoclean
+# 删除仓库
+sudo rm /etc/apt/sources.list.d/kubernetes.list
+sudo rm /etc/apt/keyrings/kubernetes-apt-keyring.gpg
+# 清理数据
+sudo rm -rf /etc/kubernetes
+sudo rm -rf /var/lib/kubelet
+sudo rm -rf /var/lib/etcd
+sudo rm -rf ~/.kube
 ```

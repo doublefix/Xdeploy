@@ -368,3 +368,44 @@
   file:
     path: /usr/local/share/doc/nerdctl-full/SHA256SUMS
     state: absent
+
+# After run fail
+- name: Remove /var/lib/containerd
+  file:
+    path: /var/lib/containerd
+    state: absent
+
+- name: Remove /var/lib/buildkit
+  file:
+    path: /var/lib/buildkit
+    state: absent
+
+- name: Remove /var/lib/buildkit
+  file:
+    path: /var/lib/buildkit
+    state: absent
+
+- name: Remove /run/containerd
+  file:
+    path: /run/containerd
+    state: absent
+
+- name: Remove /var/lib/containerd-stargz-grpc
+  file:
+    path: /var/lib/containerd-stargz-grpc
+    state: absent
+
+- name: Remove /opt/nri
+  file:
+    path: /opt/nri
+    state: absent
+
+- name: Remove /etc/nri
+  file:
+    path: /etc/nri
+    state: absent
+
+- name: Remove /etc/containerd/
+  file:
+    path: /etc/containerd/
+    state: absent

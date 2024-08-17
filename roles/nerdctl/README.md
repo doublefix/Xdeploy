@@ -23,20 +23,20 @@ nerdctl rmi -f $(nerdctl images -q)
 # 停服务
 sudo systemctl status containerd
 sudo systemctl stop containerd
-# 删数据
-sudo rm -rf /var/lib/containerd
-sudo rm -rf /run/containerd
-sudo rm -rf .local/share/* # 普通用户
-# 删除配置文件
-sudo rm /etc/containerd/config.toml
+ps aux | grep containerd
 # 移除二进制
 sudo rm /etc/systemd/system/containerd.service
 sudo rm /etc/systemd/system/containerd.socket
-# 重载
-sudo systemctl daemon-reload
+# 删数据
+sudo rm -rf /var/lib/containerd
+sudo rm -rf /var/lib/buildkit
+sudo rm -rf /run/containerd
+sudo rm -rf /var/lib/containerd-stargz-grpc
+sudo rm -rf .local/share/* # 普通用户
+# 删除配置文件
+sudo rm /etc/containerd/config.toml
 # 删插件
 sudo rm -rf /opt/containerd
-sudo rm -rf /opt/nri/plugins
-sudo rm -rf /etc/nri
-sudo rm -rf /opt/cni
+# 重载
+sudo systemctl daemon-reload
 ```

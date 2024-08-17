@@ -27,6 +27,7 @@ sudo systemctl status stargz-snapshotter
 sudo systemctl stop containerd
 sudo systemctl stop buildkit
 sudo systemctl stop stargz-snapshotter
+ps -aux|grep containerd
 # 移除二进制
 sudo rm /etc/systemd/system/containerd.service
 sudo rm /etc/systemd/system/containerd.socket

@@ -45,6 +45,6 @@ ansible-playbook playbooks/clean/kubectl.yml
 # 清理k8s
 ansible-playbook playbooks/clean/kubernetes.yml
 # 清理nerdctl
-ansible-playbook playbooks/nerdctl.yml -e "operation=uninstall"
+ansible-playbook playbooks/clean/nerdctl.yml
 
 ```

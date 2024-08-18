@@ -373,43 +373,31 @@
         path: /usr/local/share/doc/nerdctl-full/SHA256SUMS
         state: absent
 
-    # After run fail
-    - name: Remove /var/lib/containerd
-      file:
-        path: /var/lib/containerd
-        state: absent
+    # After run file
+    - name: Forcefully remove /var/lib/containerd and its contents
+      command: rm -rf /var/lib/containerd
+      ignore_errors: yes
 
-    - name: Remove /var/lib/buildkit
-      file:
-        path: /var/lib/buildkit
-        state: absent
+    - name: Forcefully remove /var/lib/buildkit and its contents
+      command: rm -rf /var/lib/buildkit
+      ignore_errors: yes
 
-    - name: Remove /var/lib/buildkit
-      file:
-        path: /var/lib/buildkit
-        state: absent
+    - name: Forcefully remove /run/containerd and its contents
+      command: rm -rf /run/containerd
+      ignore_errors: yes
 
-    - name: Remove /run/containerd
-      file:
-        path: /run/containerd
-        state: absent
+    - name: Forcefully remove /var/lib/containerd-stargz-grpc and its contents
+      command: rm -rf /var/lib/containerd-stargz-grpc
+      ignore_errors: yes
 
-    - name: Remove /var/lib/containerd-stargz-grpc
-      file:
-        path: /var/lib/containerd-stargz-grpc
-        state: absent
+    - name: Forcefully remove /opt/nri and its contents
+      command: rm -rf /opt/nri
+      ignore_errors: yes
 
-    - name: Remove /opt/nri
-      file:
-        path: /opt/nri
-        state: absent
-
-    - name: Remove /etc/nri
-      file:
-        path: /etc/nri
-        state: absent
+    - name: Forcefully remove /etc/nri and its contents
+      command: rm -rf /etc/nri
+      ignore_errors: yes
 
     - name: Remove /etc/containerd/
-      file:
-        path: /etc/containerd/
-        state: absent
+      command: rm -rf /etc/containerd
+      ignore_errors: yes

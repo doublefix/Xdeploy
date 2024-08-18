@@ -3,7 +3,7 @@
   file:
     path: /etc/kubernetes/
     state: directory
-    mode: '0755'
+    mode: "0755"
 
 - name: Copy init conf to target server
   copy:

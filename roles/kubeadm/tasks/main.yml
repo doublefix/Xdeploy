@@ -14,3 +14,31 @@
   command: sudo systemctl enable --now kubelet
   become: yes
   changed_when: false
+
+# Plugin
+- name: Ensure the /etc/kubernetes/calico directory exists
+  file:
+    path: /etc/kubernetes/calico
+    state: directory
+    mode: "0755"
+
+- name: Copy calico to target server
+  copy:
+    src: "../roles/kubeadm/release/calico/v3.28.1/calico.yaml"
+    dest: "/etc/kubernetes/calico"
+
+- name: Ensure the /etc/kubernetes/metrics-server directory exists
+  file:
+    path: /etc/kubernetes/metrics-server
+    state: directory
+    mode: "0755"
+
+- name: Copy metrics-server components to target server
+  copy:
+    src: "../roles/kubeadm/release/metrics-server/v0.7.1/components.yaml"
+    dest: "/etc/kubernetes/metrics-server"
+
+- name: Copy metrics-server availability to target server
+  copy:
+    src: "../roles/kubeadm/release/metrics-server/v0.7.1/high-availability-1.21+.yaml"
+    dest: "/etc/kubernetes/metrics-server"

@@ -35,7 +35,7 @@ ansible-playbook playbooks/nerdctl.yml
 ansible-playbook playbooks/kubernetes.yml
 # 安装kubectl
 ansible-playbook playbooks/kubectl.yml
-# 初始化控制节点
+# 初始化控制节点,只需要主节点执行
 ansible-playbook playbooks/kubeadm_init.yml
 
 ```

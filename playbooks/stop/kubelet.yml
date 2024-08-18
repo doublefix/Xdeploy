@@ -1,0 +1,13 @@
+- name: Manage kubelet service
+  hosts: test
+  become: yes
+  tasks:
+    - name: Stop kubelet service
+      ansible.builtin.systemd:
+        name: kubelet
+        state: stopped
+
+    - name: Disable kubelet service
+      ansible.builtin.systemd:
+        name: kubelet
+        enabled: no

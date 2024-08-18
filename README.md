@@ -43,6 +43,8 @@ ansible-playbook playbooks/kubeadm_init.yml
 # Clean
 
 ```bash
+# 停止kubectl
+ansible-playbook playbooks/stop/kubectl.yml
 # 清理kubectl
 ansible-playbook playbooks/clean/kubectl.yml
 # 清理k8s

@@ -1,0 +1,122 @@
+---
+- name: Check if the system uses dpkg
+  command: dpkg --version
+  register: dpkg_check
+  ignore_errors: yes
+
+- name: Check if the system uses rpm
+  command: rpm --version
+  register: rpm_check
+  ignore_errors: yes
+  failed_when: false
+
+- name: Set system package manager fact
+  set_fact:
+    package_manager: "{{ 'dpkg' if dpkg_check.rc == 0 else 'rpm' if rpm_check.rc == 0 else 'unknown' }}"
+
+- name: Print system package manager
+  debug:
+    msg: "The system uses {{ package_manager }} as its package manager."
+
+# dpkg
+- name: Install socat if dpkg is available
+  when: dpkg_check.rc == 0
+  block:
+    - name: Copy socat to target server
+      copy:
+        src: "../roles/kubernetes/release/x86_64/socat/dpkg/socat_1.7.4.4-2_amd64.deb"
+        dest: "/tmp/socat_1.7.4.4-2_amd64.deb"
+
+    - name: Install socat package
+      command: dpkg -i /tmp/socat_1.7.4.4-2_amd64.deb
+
+    - name: Clean up installation file
+      file:
+        path: "/tmp/socat_1.7.4.4-2_amd64.deb"
+        state: absent
+
+- name: Install conntrack if dpkg is available
+  when: dpkg_check.rc == 0
+  block:
+    - name: Copy conntrack to target server
+      copy:
+        src: "../roles/kubernetes/release/x86_64/conntrack/dpkg/conntrack_1%3a1.4.7-1+b2_amd64.deb"
+        dest: "/tmp/conntrack_1%3a1.4.7-1+b2_amd64.deb"
+
+    - name: Install conntrack package
+      command: dpkg -i /tmp/conntrack_1%3a1.4.7-1+b2_amd64.deb
+
+    - name: Clean up installation file
+      file:
+        path: "/tmp/conntrack_1%3a1.4.7-1+b2_amd64.deb"
+        state: absent
+
+# rpm
+- name: Install socat if rpm is available
+  when: rpm_check.rc == 0
+  block:
+    - name: Copy socat to target server
+      copy:
+        src: "../roles/kubernetes/release/x86_64/socat/rpm/socat-1.7.4.1-5.el9_4.2.x86_64.rpm"
+        dest: "/tmp/socat-1.7.4.1-5.el9_4.2.x86_64.rpm"
+
+    - name: Install socat package
+      command: rpm -i /tmp/socat-1.7.4.1-5.el9_4.2.x86_64.rpm
+
+    - name: Clean up installation file
+      file:
+        path: "/tmp/socat-1.7.4.1-5.el9_4.2.x86_64.rpm"
+        state: absent
+
+- name: Install conntrack if rpm is available
+  when: rpm_check.rc == 0
+  block:
+    - name: Copy conntrack-tools RPM to target server
+      copy:
+        src: "../roles/kubernetes/release/x86_64/conntrack/rpm/conntrack-tools-1.4.7-2.el9.x86_64.rpm"
+        dest: "/tmp/conntrack-tools-1.4.7-2.el9.x86_64.rpm"
+      when: rpm_check.rc == 0
+
+    - name: Copy libnetfilter_cthelper RPM to target server
+      copy:
+        src: "../roles/kubernetes/release/x86_64/conntrack/rpm/libnetfilter_cthelper-1.0.0-22.el9.x86_64.rpm"
+        dest: "/tmp/libnetfilter_cthelper-1.0.0-22.el9.x86_64.rpm"
+      when: rpm_check.rc == 0
+
+    - name: Copy libnetfilter_cttimeout RPM to target server
+      copy:
+        src: "../roles/kubernetes/release/x86_64/conntrack/rpm/libnetfilter_cttimeout-1.0.0-19.el9.x86_64.rpm"
+        dest: "/tmp/libnetfilter_cttimeout-1.0.0-19.el9.x86_64.rpm"
+      when: rpm_check.rc == 0
+
+    - name: Copy libnetfilter_queue RPM to target server
+      copy:
+        src: "../roles/kubernetes/release/x86_64/conntrack/rpm/libnetfilter_queue-1.0.5-1.el9.x86_64.rpm"
+        dest: "/tmp/libnetfilter_queue-1.0.5-1.el9.x86_64.rpm"
+      when: rpm_check.rc == 0
+
+    - name: Install conntrack-tools RPM
+      command: rpm -i /tmp/conntrack-tools-1.4.7-2.el9.x86_64.rpm
+      when: rpm_check.rc == 0
+
+    - name: Install libnetfilter_cthelper RPM
+      command: rpm -i /tmp/libnetfilter_cthelper-1.0.0-22.el9.x86_64.rpm
+      when: rpm_check.rc == 0
+
+    - name: Install libnetfilter_cttimeout RPM
+      command: rpm -i /tmp/libnetfilter_cttimeout-1.0.0-19.el9.x86_64.rpm
+      when: rpm_check.rc == 0
+
+    - name: Install libnetfilter_queue RPM
+      command: rpm -i /tmp/libnetfilter_queue-1.0.5-1.el9.x86_64.rpm
+      when: rpm_check.rc == 0
+
+    - name: Clean up installation files
+      file:
+        path: "{{ item }}"
+        state: absent
+      loop:
+        - "/tmp/conntrack-tools-1.4.7-2.el9.x86_64.rpm"
+        - "/tmp/libnetfilter_cthelper-1.0.0-22.el9.x86_64.rpm"
+        - "/tmp/libnetfilter_cttimeout-1.0.0-19.el9.x86_64.rpm"
+        - "/tmp/libnetfilter_queue-1.0.5-1.el9.x86_64.rpm"

@@ -17,6 +17,16 @@ Redhat 将 SELinux 设置为 permissive 模式（相当于将其禁用）
 ```bash
 sudo setenforce 0sudo sed -i 's/^SELINUX=enforcing$/SELINUX=permissive/' /etc/selinux/config
 ```
+手动下载k8s手动依赖
+```bash
+# dpkg包管理器
+apt-get download socat conntrack
+# rpm包管理器
+sudo yumdownloader --resolve --destdir=./ conntrack
+# 验证是否安装
+socat -V
+conntrack -V
+```
 
 ## Manually uninstall k8s
 

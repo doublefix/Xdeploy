@@ -43,9 +43,17 @@ ansible-playbook playbooks/kubeadm_init.yml
 # Clean
 
 ```bash
+# 驱逐节点,停止服务
+kubectl cordon [node-name]
+kubectl drain [node-name] --ignore-daemonsets --delete-local-data
+kubectl delete node [node-name]
 # 停止kubectl
-ansible-playbook playbooks/stop/kubectl.yml
-# 清理kubectl
+ansible-playbook playbooks/stop/kubelet.yml
+# 在移除的节点中停止pod对应的容器和镜像
+nerdctl stop $(nerdctl ps -q --namespace k8s.io) # 停止所有容器
+nerdctl rm $(nerdctl ps -q -a --namespace k8s.io) # 删除所有容器
+nerdctl rmi -f $(nerdctl images -q --namespace k8s.io) # 删除所有镜像
+# 清理kubectl（选做）
 ansible-playbook playbooks/clean/kubectl.yml
 # 清理k8s
 ansible-playbook playbooks/clean/kubernetes.yml

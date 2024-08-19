@@ -37,12 +37,19 @@ ansible-playbook playbooks/nerdctl.yml
 ansible-playbook playbooks/kubernetes.yml
 # 安装kubectl
 ansible-playbook playbooks/kubectl.yml
-# 初始化控制节点,只需要主节点执行
-ansible-playbook playbooks/kubeadm_init.yml
 
 ```
 
-# Clean kube
+## Create kube cluster
+
+```bash
+# 初始化控制节点,只需要主节点执行
+ansible-playbook playbooks/kubeadm_init.yml
+# Node节点加入Cluster
+ansible-playbook playbooks/kube_add_node.yml -e "control_plane=node:6443 kubeadm_token=xxxx.xxxxxxxxxxxx discovery_token_ca_cert_hash=sha256:xxxx is_control_plane=--control-plane"
+```
+
+## Clean kube
 
 Execute in sequence
 

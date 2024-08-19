@@ -1,0 +1,21 @@
+---
+- name: Clean k8s node pod and image
+  hosts: test
+  become: yes
+  tasks:
+    - name: Check if nerdctl is installed
+      ansible.builtin.stat:
+        path: /usr/local/bin/nerdctl
+      register: nerdctl_exists
+
+    - name: Stop all containers in the k8s.io namespace
+      ansible.builtin.shell: nerdctl stop $(nerdctl ps -q --namespace k8s.io)
+      when: nerdctl_exists.stat.exists
+
+    - name: Remove all containers in the k8s.io namespace
+      ansible.builtin.shell: nerdctl rm $(nerdctl ps -q -a --namespace k8s.io)
+      when: nerdctl_exists.stat.exists
+
+    - name: Remove all images in the k8s.io namespace
+      ansible.builtin.shell: nerdctl rmi -f $(nerdctl images -q --namespace k8s.io)
+      when: nerdctl_exists.stat.exists

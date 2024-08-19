@@ -50,9 +50,7 @@ kubectl delete node [node-name]
 # 停止kubectl
 ansible-playbook playbooks/stop/kubelet.yml
 # 在移除的节点中停止pod对应的容器和镜像
-nerdctl stop $(nerdctl ps -q --namespace k8s.io) # 停止所有容器
-nerdctl rm $(nerdctl ps -q -a --namespace k8s.io) # 删除所有容器
-nerdctl rmi -f $(nerdctl images -q --namespace k8s.io) # 删除所有镜像
+ansible-playbook playbooks/clean/kube_node_pod_image.yml
 # 清理kubectl（选做）
 ansible-playbook playbooks/clean/kubectl.yml
 # 清理k8s

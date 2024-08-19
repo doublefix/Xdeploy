@@ -1,0 +1,6 @@
+---
+- name: Copy docker on target server
+  hosts: servers
+  become: yes
+  roles:
+    - docker

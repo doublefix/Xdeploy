@@ -1,0 +1,78 @@
+- name: Add docker group
+  group:
+    name: docker
+    state: present
+
+- name: Add docker user (if needed)
+  user:
+    name: docker
+    group: docker
+    state: present
+
+- name: Copy Docker binary to target server
+  copy:
+    src: "../roles/docker/release/docker-27.1.2.tgz"
+    dest: "/tmp/docker-27.1.2.tgz"
+
+- name: Copy Docker Rootless Extras to target server
+  copy:
+    src: "../roles/docker/release/docker-rootless-extras-27.1.2.tgz"
+    dest: "/tmp/docker-rootless-extras-27.1.2.tgz"
+
+- name: Create temporary directory
+  file:
+    path: /tmp/docker-extracted
+    state: directory
+
+- name: Extract Docker to temporary directory
+  unarchive:
+    src: "/tmp/docker-27.1.2.tgz"
+    dest: /tmp/docker-extracted
+    remote_src: yes
+
+- name: Extract Docker Rootless Extras to temporary directory
+  unarchive:
+    src: "/tmp/docker-rootless-extras-27.1.2.tgz"
+    dest: /tmp/docker-extracted
+    remote_src: yes
+
+- name: Move extracted Docker binaries to /usr/local/bin, avoiding overwriting existing files
+  shell: |
+    rsync -av --ignore-existing /tmp/docker-extracted/docker/ /usr/local/bin/
+
+- name: Move extracted Docker Rootless Extras to /usr/local/bin, avoiding overwriting existing files
+  shell: |
+    rsync -av --ignore-existing /tmp/docker-extracted/docker-rootless-extras/* /usr/local/bin/
+
+- name: Remove temporary directory
+  file:
+    path: /tmp/docker-extracted
+    state: absent
+
+- name: Remove Docker tarball
+  file:
+    path: /tmp/docker-27.1.2.tgz
+    state: absent
+
+- name: Remove Docker Rootless Extras tarball
+  file:
+    path: /tmp/docker-rootless-extras-27.1.2.tgz
+    state: absent
+
+- name: Copy docker.service to target server
+  copy:
+    src: "../roles/docker/conf/docker.service"
+    dest: "/etc/systemd/system/docker.service"
+
+- name: Set ownership of docker.service to docker:docker
+  file:
+    path: /etc/systemd/system/docker.service
+    owner: docker
+    group: docker
+    mode: "0644"
+
+- name: Enable and start docker service
+  systemd:
+    name: docker
+    enabled: yes
+    state: started

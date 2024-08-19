@@ -71,6 +71,10 @@
     group: docker
     mode: "0644"
 
+- name: Reload systemd manager configuration
+  systemd:
+    daemon_reload: yes
+
 - name: Enable and start docker service
   systemd:
     name: docker

@@ -1,0 +1,43 @@
+---
+- name: Remove docker
+  hosts: servers
+  become: yes
+  tasks:
+    - name: Check if Docker service exists
+      command: systemctl list-units --type=service --state=active
+      register: service_list
+      changed_when: false
+
+    - name: Set fact for Docker service status
+      set_fact:
+        docker_service_exists: "{{ 'docker.service' in service_list.stdout }}"
+
+    - name: Stop Docker service if it exists
+      systemd:
+        name: docker
+        state: stopped
+      when: docker_service_exists
+
+    - name: Remove docker binaries
+      file:
+        path: "/usr/local/bin/{{ item }}"
+        state: absent
+      loop:
+        - docker
+        - docker-init
+        - docker-proxy
+        - dockerd
+        - dockerd-rootless-setuptool.sh
+        - dockerd-rootless.sh
+        - rootlesskit-docker-proxy
+        - vpnkit
+    - name: Remove docker binaries
+      file:
+        path: "/etc/systemd/system/{{ item }}"
+        state: absent
+      loop:
+        - docker.service
+
+    - name: Reload systemd manager configuration
+      systemd:
+        daemon_reload: yes

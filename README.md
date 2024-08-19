@@ -39,7 +39,8 @@ ansible-playbook playbooks/kubernetes.yml
 ansible-playbook playbooks/kubectl.yml
 # 安装helm
 ansible-playbook playbooks/helm.yml
-
+# 安装docker
+ansible-playbook playbooks/docker.yml
 ```
 
 ## Create kube cluster
@@ -76,7 +77,9 @@ Clean client tools
 ```bash
 # 清理kubectl
 ansible-playbook playbooks/clean/kubectl.yml
-# 安装helm
-ansible-playbook playbooks/helm.yml
+# 清理helm
+ansible-playbook playbooks/clean/helm.yml
+# 清理docker
+ansible-playbook playbooks/clean/docker.yml
 
 ```

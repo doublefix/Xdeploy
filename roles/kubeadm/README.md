@@ -9,7 +9,13 @@ https://github.com/projectcalico/calico
 curl https://raw.githubusercontent.com/projectcalico/calico/v3.28.1/manifests/calico.yaml -O
 https://github.com/kubernetes-sigs/metrics-server/
 wget https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml
-
+# 修改metrics-server的yaml,添加tls
+spec:
+  template:
+    spec:
+      containers:
+      - args:
+        - --kubelet-insecure-tls
 ```
 
 ## 初始化与安装clico与metrics插件

@@ -22,7 +22,9 @@ ansible-playbook playbooks/vim.yml --ask-become-pass
 ansible-playbook -i inventory/dynamic.py dev playbooks/site.yml
 ```
 
-## Install
+## Install kube
+
+Execute in sequence
 
 ```bash
 # 优化Linux内核等
@@ -40,7 +42,9 @@ ansible-playbook playbooks/kubeadm_init.yml
 
 ```
 
-# Clean
+# Clean kube
+
+Execute in sequence
 
 ```bash
 # 驱逐节点,停止服务
@@ -49,13 +53,13 @@ kubectl drain [node-name] --ignore-daemonsets --delete-local-data
 kubectl delete node [node-name]
 # 停止kubectl
 ansible-playbook playbooks/stop/kubelet.yml
-# 在移除的节点中停止pod对应的容器和镜像
+# 在移除的节点，删除pod和镜像
 ansible-playbook playbooks/clean/kube_node_pod_image.yml
-# 清理kubectl（选做）
-ansible-playbook playbooks/clean/kubectl.yml
 # 清理k8s
 ansible-playbook playbooks/clean/kubernetes.yml
 # 清理nerdctl
 ansible-playbook playbooks/clean/nerdctl.yml
+# 清理kubectl（选做）
+ansible-playbook playbooks/clean/kubectl.yml
 
 ```

@@ -1,0 +1,26 @@
+- name: Copy Helm tarball to target server
+  copy:
+    src: "../roles/helm/release/helm-v3.15.4-linux-amd64.tar.gz"
+    dest: "/tmp/helm-v3.15.4-linux-amd64.tar.gz"
+
+- name: Extract Helm tarball
+  unarchive:
+    src: "/tmp/helm-v3.15.4-linux-amd64.tar.gz"
+    dest: "/tmp/"
+    remote_src: yes
+
+- name: Move Helm binary to /usr/local/bin/
+  command: mv /tmp/linux-amd64/helm /usr/local/bin/helm
+
+- name: Ensure Helm binary is executable
+  file:
+    path: /usr/local/bin/helm
+    mode: "0755"
+
+- name: Clean up temporary files
+  file:
+    path: "/tmp/{{ item }}"
+    state: absent
+  loop:
+    - "helm-v3.15.4-linux-amd64.tar.gz"
+    - "linux-amd64"

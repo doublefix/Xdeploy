@@ -37,6 +37,8 @@ ansible-playbook playbooks/nerdctl.yml
 ansible-playbook playbooks/kubernetes.yml
 # 安装kubectl
 ansible-playbook playbooks/kubectl.yml
+# 安装helm
+ansible-playbook playbooks/helm.yml
 
 ```
 
@@ -58,7 +60,7 @@ Execute in sequence
 kubectl cordon [node-name]
 kubectl drain [node-name] --ignore-daemonsets --delete-local-data
 kubectl delete node [node-name]
-# 停止kubectl
+# 停止kubelet
 ansible-playbook playbooks/stop/kubelet.yml
 # 在移除的节点，删除pod和镜像
 ansible-playbook playbooks/clean/kube_node_pod_image.yml
@@ -66,7 +68,15 @@ ansible-playbook playbooks/clean/kube_node_pod_image.yml
 ansible-playbook playbooks/clean/kubernetes.yml
 # 清理nerdctl
 ansible-playbook playbooks/clean/nerdctl.yml
-# 清理kubectl（选做）
+
+```
+
+Clean client tools
+
+```bash
+# 清理kubectl
 ansible-playbook playbooks/clean/kubectl.yml
+# 安装helm
+ansible-playbook playbooks/helm.yml
 
 ```

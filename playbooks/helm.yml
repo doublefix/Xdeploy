@@ -1,0 +1,6 @@
+---
+- name: Copy and install Helm on target server
+  hosts: servers
+  become: yes
+  roles:
+    - helm

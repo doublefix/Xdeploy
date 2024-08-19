@@ -1,5 +1,5 @@
 ---
-- name: 启用 kubelet 并加入 Kubernetes 集群
+- name: Enable kubelet and join Kubernetes cluster
   hosts: all
   become: yes
   vars:
@@ -8,13 +8,13 @@
     discovery_token_ca_cert_hash: "sha256:xxxx"
     is_control_plane: "--control-plane"
   tasks:
-    - name: 启用并启动 kubelet 服务
+    - name: Enable and start kubelet service
       systemd:
         name: kubelet
         state: started
         enabled: yes
 
-    - name: 加入 Kubernetes 集群
+    - name: Join Kubernetes cluster
       command: >
         kubeadm join {{ control_plane }} --token {{ kubeadm_token }}
         --discovery-token-ca-cert-hash {{ discovery_token_ca_cert_hash }} 
@@ -22,6 +22,6 @@
       register: join_output
       ignore_errors: yes
 
-    - name: 显示加入集群的输出
+    - name: Display join cluster output
       debug:
         var: join_output.stdout

@@ -1,6 +1,6 @@
 ---
 - name: Enable kubelet and join Kubernetes cluster
-  hosts: all
+  hosts: servers
   become: yes
   vars:
     control_plane: "node:6443"

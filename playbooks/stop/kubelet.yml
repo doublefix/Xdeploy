@@ -1,5 +1,5 @@
 - name: Manage kubelet service
-  hosts: all
+  hosts: servers
   become: yes
   tasks:
     - name: Stop kubelet service

@@ -1,6 +1,6 @@
 ---
 - name: Deploy kubernetes
-  hosts: all
+  hosts: servers
   become: yes
   roles:
     - kubernetes

@@ -1,6 +1,6 @@
 ---
 - name: Remove nerdctl
-  hosts: all
+  hosts: servers
   become: yes
   tasks:
     - name: Stop containerd service

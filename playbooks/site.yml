@@ -1,6 +1,6 @@
 ---
 - name: Install Vim on specific hosts
-  hosts: all
+  hosts: servers
   become: yes
   roles:
     - vim

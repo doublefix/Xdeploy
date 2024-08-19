@@ -1,6 +1,6 @@
 ---
 - name: Remove helm
-  hosts: test
+  hosts: servers
   become: yes
   tasks:
     - name: Remove helm binaries

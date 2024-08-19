@@ -1,6 +1,6 @@
 ---
 - name: Deploy kubectl
-  hosts: test
+  hosts: all
   become: yes
   roles:
     - kubelet

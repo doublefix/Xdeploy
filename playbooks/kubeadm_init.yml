@@ -1,6 +1,6 @@
 ---
 - name: Init ctrl
-  hosts: test
+  hosts: all
   become: yes
   roles:
     - kubeadm

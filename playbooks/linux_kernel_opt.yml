@@ -1,6 +1,6 @@
 ---
 - name: Linux kernel opt
-  hosts: test
+  hosts: all
   become: yes
   roles:
     - linux-kernel-opt

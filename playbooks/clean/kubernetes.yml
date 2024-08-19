@@ -1,6 +1,6 @@
 ---
 - name: Remove Kubernetes binaries and configuration
-  hosts: test
+  hosts: all
   become: yes
   tasks:
     - name: Check if kubelet service exists

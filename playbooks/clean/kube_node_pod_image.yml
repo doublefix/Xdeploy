@@ -1,6 +1,6 @@
 ---
 - name: Clean k8s node pod and image
-  hosts: test
+  hosts: all
   become: yes
   tasks:
     - name: Check if nerdctl is installed

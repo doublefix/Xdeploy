@@ -1,6 +1,6 @@
 ---
 - name: Deploy nerdctl
-  hosts: test
+  hosts: all
   become: yes
   vars:
     operation: install

@@ -1,6 +1,6 @@
 ---
 - name: Remove kubectl
-  hosts: test
+  hosts: all
   become: yes
   tasks:
     - name: Remove Kubernetes binaries

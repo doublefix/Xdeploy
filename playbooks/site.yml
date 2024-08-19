@@ -1,12 +1,12 @@
 ---
 - name: Install Vim on specific hosts
-  hosts: test
+  hosts: all
   become: yes
   roles:
     - vim
 
 - name: Install Curl on web servers
-  hosts: test
+  hosts: all
   become: yes
   roles:
     - curl

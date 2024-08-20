@@ -1,0 +1,6 @@
+---
+- name: Install docker-buildx
+  hosts: servers
+  become: yes
+  roles:
+    - docker-buildx

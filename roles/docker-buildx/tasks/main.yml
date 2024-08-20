@@ -1,0 +1,17 @@
+- name: Copy buildx to target server
+  copy:
+    src: "../roles/docker-buildx/release/buildx-v0.16.2.linux-amd64"
+    dest: "/tmp/buildx-v0.16.2.linux-amd64"
+
+- name: Set execute permission for buildx
+  file:
+    path: "/tmp/buildx-v0.16.2.linux-amd64"
+    mode: "0755"
+
+- name: Rename and move buildx to /usr/local/bin
+  command: mv /tmp/buildx-v0.16.2.linux-amd64 /usr/local/bin/docker-buildx
+
+- name: Clean up temporary file
+  file:
+    path: "/tmp/buildx-v0.16.2.linux-amd64"
+    state: absent

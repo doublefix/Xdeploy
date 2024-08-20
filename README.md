@@ -41,6 +41,8 @@ ansible-playbook playbooks/kubectl.yml
 ansible-playbook playbooks/helm.yml
 # 安装docker
 ansible-playbook playbooks/docker.yml
+# 安装docker-compose
+ansible-playbook playbooks/docker-compose.yml
 ```
 
 ## Create kube cluster
@@ -81,5 +83,7 @@ ansible-playbook playbooks/clean/kubectl.yml
 ansible-playbook playbooks/clean/helm.yml
 # 清理docker
 ansible-playbook playbooks/clean/docker.yml
+# 清理docker-compose
+ansible-playbook playbooks/clean/docker-compose.yml
 
 ```

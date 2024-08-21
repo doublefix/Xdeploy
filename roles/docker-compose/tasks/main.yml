@@ -1,17 +1,17 @@
 - name: Copy docker compose to target server
   copy:
-    src: "../roles/docker-compose/release/v2.29.2/docker-compose-linux-x86_64"
-    dest: "/tmp/docker-compose-linux-x86_64"
+    src: "../roles/docker-compose/release/{{ version }}/docker-compose-linux-{{ arch }}"
+    dest: "/tmp/docker-compose-linux-{{ arch }}"
 
 - name: Set execute permission for docker-compose
   file:
-    path: "/tmp/docker-compose-linux-x86_64"
+    path: "/tmp/docker-compose-linux-{{ arch }}"
     mode: "0755"
 
 - name: Rename and move docker-compose to /usr/local/bin
-  command: mv /tmp/docker-compose-linux-x86_64 /usr/local/bin/docker-compose
+  command: mv /tmp/docker-compose-linux-{{ arch }} /usr/local/bin/docker-compose
 
 - name: Clean up temporary file
   file:
-    path: "/tmp/docker-compose-linux-x86_64"
+    path: "/tmp/docker-compose-linux-{{ arch }}"
     state: absent

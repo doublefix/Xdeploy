@@ -1,4 +1,3 @@
-version: "3.9"
 services:
   gitlab-runner:
     image: gitlab/gitlab-runner:latest
@@ -10,7 +9,7 @@ services:
 
 # 注册到gitlab
 # docker exec -it gitlab-runner bash
-# gitlab-runner register
+# gitlab-runner register --url https://example.com:3000 --token xxx-xxx-xx
 
 # 查看注册后的文件
 # cat /etc/gitlab-runner/config.toml

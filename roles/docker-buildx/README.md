@@ -1,3 +1,3 @@
 ```bash
-bash roles/buildx/scripts/download.sh
+bash roles/docker-buildx/scripts/download.sh v0.16.2
 ```

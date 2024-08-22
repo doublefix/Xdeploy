@@ -1,7 +1,7 @@
 # Infrahub
 
 The project is designed to help developers install essential software.
-K8s 最新版本号查看官方仓库的 CHANGELOG
+K8s version CHANGELOG
 
 ## How to use ansible
 

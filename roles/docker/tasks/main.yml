@@ -11,13 +11,13 @@
 
 - name: Copy Docker binary to target server
   copy:
-    src: "../roles/docker/release/docker-27.1.2.tgz"
-    dest: "/tmp/docker-27.1.2.tgz"
+    src: "../roles/docker/release/docker-{{ version }}.tgz"
+    dest: "/tmp/docker-{{ version }}.tgz"
 
 - name: Copy Docker Rootless Extras to target server
   copy:
-    src: "../roles/docker/release/docker-rootless-extras-27.1.2.tgz"
-    dest: "/tmp/docker-rootless-extras-27.1.2.tgz"
+    src: "../roles/docker/release/docker-rootless-extras-{{ version }}.tgz"
+    dest: "/tmp/docker-rootless-extras-{{ version }}.tgz"
 
 - name: Create temporary directory
   file:
@@ -26,13 +26,13 @@
 
 - name: Extract Docker to temporary directory
   unarchive:
-    src: "/tmp/docker-27.1.2.tgz"
+    src: "/tmp/docker-{{ version }}.tgz"
     dest: /tmp/docker-extracted
     remote_src: yes
 
 - name: Extract Docker Rootless Extras to temporary directory
   unarchive:
-    src: "/tmp/docker-rootless-extras-27.1.2.tgz"
+    src: "/tmp/docker-rootless-extras-{{ version }}.tgz"
     dest: /tmp/docker-extracted
     remote_src: yes
 
@@ -51,12 +51,12 @@
 
 - name: Remove Docker tarball
   file:
-    path: /tmp/docker-27.1.2.tgz
+    path: /tmp/docker-{{ version }}.tgz
     state: absent
 
 - name: Remove Docker Rootless Extras tarball
   file:
-    path: /tmp/docker-rootless-extras-27.1.2.tgz
+    path: /tmp/docker-rootless-extras-{{ version }}.tgz
     state: absent
 
 - name: Copy docker.service to target server

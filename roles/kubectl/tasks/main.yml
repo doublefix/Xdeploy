@@ -1,7 +1,7 @@
 ---
 - name: Copy kubectl binary to /usr/local/bin
   copy:
-    src: "../roles/kubernetes/release/x86_64/main/kubectl"
+    src: "../roles/kubernetes/release/{{ arch }}/main/kubectl"
     dest: "/usr/local/bin/kubectl"
     mode: "0755"
 

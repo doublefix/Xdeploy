@@ -31,7 +31,7 @@
 
 - name: Copy kubectl short cmd to /etc/profile.d
   copy:
-    src: ../roles/kubelet/config/kube-short-cmd.sh
+    src: ../roles/kubectl/config/kube-short-cmd.sh
     dest: /etc/profile.d/kube-short-cmd.sh
     mode: "0755"
     owner: root

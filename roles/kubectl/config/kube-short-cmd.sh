@@ -158,25 +158,34 @@ function set-ns() {
         kubectl config set-context --current --namespace=$NAMESPACE
 }
 function change-ns() {
-        echo "Current namespace: $NAMESPACE"
-        echo "-------------------------------------"
-        echo "Available namespaces:"
-        kubectl get ns
-        echo "-------------------------------------"
-        read -p "Enter the namespace you want to set as default (or press Enter to set 'default'): " NAMESPACE
+    # Check if NAMESPACE is already set, if not, default to an empty string
+    NAMESPACE=${NAMESPACE:-}
 
-        if [ -z "$NAMESPACE" ]; then
-                NAMESPACE="default"
-        fi
+    echo "Current namespace: ${NAMESPACE:-default}"
+    echo "-------------------------------------"
+    echo "Available namespaces:"
+    kubectl get ns
+    echo "-------------------------------------"
 
-        export NAMESPACE=$NAMESPACE
-        kubectl config set-context --current --namespace=$NAMESPACE
-        CURRENT_NAMESPACE=$(kubectl config view --minify --output 'jsonpath={..namespace}')
-        if [ "$CURRENT_NAMESPACE" == "$NAMESPACE" ]; then
-          echo "Namespace successfully set to '$NAMESPACE'."
-        else
-          echo "Failed to set namespace to '$NAMESPACE'."
-        fi
+    # Prompt user for input and read into NAMESPACE variable
+    read -r "NAMESPACE?Enter the namespace you want to set as default (or press Enter to set 'default'): "
+
+    # Default to 'default' if no input is provided
+    if [ -z "$NAMESPACE" ]; then
+        NAMESPACE="default"
+    fi
+
+    # Export the NAMESPACE variable and update kubectl context
+    export NAMESPACE
+    kubectl config set-context --current --namespace="$NAMESPACE"
+
+    # Verify if the namespace was set correctly
+    CURRENT_NAMESPACE=$(kubectl config view --minify --output 'jsonpath={..namespace}')
+    if [ "$CURRENT_NAMESPACE" = "$NAMESPACE" ]; then
+        echo "Namespace successfully set to '$NAMESPACE'."
+    else
+        echo "Failed to set namespace to '$NAMESPACE'."
+    fi
 }
 function kcp() {
         $K8S -n $NAMESPACE cp $@

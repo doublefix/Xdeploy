@@ -91,3 +91,25 @@ ansible-playbook playbooks/clean/docker_compose.yml
 ansible-playbook playbooks/clean/docker_buildx.yml
 
 ```
+
+## Remove node
+```bash
+kubectl drain <node-name> --delete-emptydir-data --ignore-daemonsets --force 
+kubectl delete node <node-name>
+
+sudo kubeadm reset
+
+sudo iptables -F
+sudo iptables -t nat -F
+sudo iptables -t mangle -F
+sudo iptables -X
+
+# Remove container
+sudo crictl ps -a
+sudo crictl rm $(sudo crictl ps -a -q)
+
+# Remove image
+sudo crictl images
+sudo crictl rmi $(sudo crictl images -q)
+
+```

@@ -50,7 +50,7 @@ ansible-playbook playbooks/docker_buildx.yml
 ## Create kube cluster
 
 ```bash
-# 初始化控制节点,只需要主节点执行
+# 初始化控制节点,只需要主节点执行,详细查看roles/kubeadm/README.md,尽量手动执行
 ansible-playbook playbooks/kubeadm_init.yml
 # Node节点加入Cluster
 ansible-playbook playbooks/kube_add_node.yml -e "control_plane=node:6443 kubeadm_token=xxxx.xxxxxxxxxxxx discovery_token_ca_cert_hash=sha256:xxxx is_control_plane=--control-plane"
@@ -94,11 +94,12 @@ ansible-playbook playbooks/clean/docker_buildx.yml
 
 ## Remove node
 ```bash
+# 驱逐与删除节点
 kubectl drain <node-name> --delete-emptydir-data --ignore-daemonsets --force 
 kubectl delete node <node-name>
-
+# 初始化节点，删数据
 sudo kubeadm reset
-
+# 初始化网络
 sudo iptables -F
 sudo iptables -t nat -F
 sudo iptables -t mangle -F
@@ -107,7 +108,6 @@ sudo iptables -X
 # Remove container
 sudo crictl ps -a
 sudo crictl rm $(sudo crictl ps -a -q)
-
 # Remove image
 sudo crictl images
 sudo crictl rmi $(sudo crictl images -q)

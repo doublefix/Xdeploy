@@ -14,3 +14,5 @@ controlPlaneEndpoint: ubuntu:6443
 networking:
   serviceSubnet: 10.96.0.0/16
   podSubnet: 172.20.0.0/16
+
+# --image-repository=registry.aliyuncs.com/google_containers

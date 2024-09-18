@@ -23,7 +23,7 @@ spec:
 # 去主节点机器初始化集群
 kubeadm init --config=/etc/kubernetes/init-control-plane.yml
 kubectl apply -f /etc/kubernetes/calico/calico.yaml
-kubectl apply -f /etc/kubernetes/metrics-server/components.yaml
+kubectl apply -f /etc/kubernetes/metrics-server/high-availability-1.21+.yaml 
 
 # 去除主节点不支持调度污点
 kubectl taint nodes [node-name] node-role.kubernetes.io/control-plane-

@@ -14,11 +14,23 @@ docker run \
   tljh-systemd
 ```
 
-# Add admin
+## Add admin
 
 ```bash
 apt-get update
 python3 /srv/src/bootstrap/bootstrap.py --admin admin:admin
 
 # https://github.com/conda-forge/miniforge/releases/download/23.1.0-1/Mambaforge-23.1.0-1-Linux-x86_64.sh
+```
+
+## Script
+
+```bash
+python3 /srv/src/bootstrap/bootstrap.py：
+
+# Install
+python3 -m tljh.installer：
+
+# Reload, tljh/jupyterhub_config.py、tljh/configurer.py、/opt/tljh/config/
+tljh-config reload hub：
 ```

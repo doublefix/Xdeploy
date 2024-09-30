@@ -1,6 +1,6 @@
 ## Install
 
-Because depend systemd, so it note so easy.
+Because depend systemd, so it note so easy. Offical website: https://tljh.jupyter.org/en/latest/contributing/dev-setup.html
 
 ```bash
 git clone https://github.com/jupyterhub/the-littlest-jupyterhub.git
@@ -15,6 +15,7 @@ docker run \
 ```
 
 # Add admin
+
 ```bash
 apt-get update
 python3 /srv/src/bootstrap/bootstrap.py --admin admin:admin

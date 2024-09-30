@@ -1,0 +1,7 @@
+services:
+  ubuntu:
+    image: ubuntu:22.04
+    container_name: jupyter 
+    stdin_open: true
+    tty: true
+    command: tail -f /dev/null

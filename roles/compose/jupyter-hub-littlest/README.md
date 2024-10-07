@@ -19,7 +19,7 @@ docker run \
 
 ```bash
 apt-get update
-python3 /srv/src/bootstrap/bootstrap.py --admin admin:admin
+python3 /srv/src/bootstrap/bootstrap.py --admin admin:passwd
 
 # https://github.com/conda-forge/miniforge/releases/download/23.1.0-1/Mambaforge-23.1.0-1-Linux-x86_64.sh
 ```

@@ -43,3 +43,24 @@ crontab -e
 1 1 */1 * * root certbot renew --manual --preferred-challenges dns --manual-auth-hook "alidns" --manual-cleanup-hook "alidns clean" --deploy-hook "nginx -s reload"
 
 ```
+
+## App
+
+### ESXI
+
+```bash
+# 失败了,疑似不支持let’s encrypt的证书
+#备份
+cd /etc/vmware/ssl/
+cp rui.key rui.key.backup
+cp rui.crt rui.crt.backup
+
+# 替换
+scp privkey1.pem esxi7:/etc/vmware/ssl/rui.key
+scp fullchain1.pem esxi7:/etc/vmware/ssl/rui.crt
+
+# 重启
+/etc/init.d/hostd restart
+/etc/init.d/vpxa restart
+
+```

@@ -11,6 +11,7 @@ docker run \
   --name=tljh-dev \
   --publish 12000:80 \
   --mount type=bind,source="$(pwd)",target=/srv/src \
+  --restart=always \
   tljh-systemd
 ```
 

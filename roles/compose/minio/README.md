@@ -3,16 +3,20 @@
 
 # Docker
 mkdir -p ${HOME}/minio/data
+mkdir -p ${HOME}/minio/certs
+# private.key
+# public.crt
 
 docker run -d \
    -p 9000:9000 \
    -p 9001:9001 \
    --name minio \
    -v ~/minio/data:/data \
+   -v ~/minio/certs:/root/.minio/certs \
    -e "MINIO_ROOT_USER=ROOTNAME" \
    -e "MINIO_ROOT_PASSWORD=CHANGEME123" \
    --restart unless-stopped \
-   quay.io/minio/minio:RELEASE.2024-10-02T17-50-41Z  server /data --console-address ":9001"
+   quay.io/minio/minio:RELEASE.2024-10-02T17-50-41Z  server /data --console-address ":9001" --certs-dir /root/.minio/certs
 
 docker rm minio
 

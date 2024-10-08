@@ -8,14 +8,43 @@
         path: /usr/local/bin/nerdctl
       register: nerdctl_exists
 
-    - name: Stop all containers in the k8s.io namespace
-      ansible.builtin.shell: nerdctl stop $(nerdctl ps -q --namespace k8s.io)
+    - name: Get all container IDs in the k8s.io namespace
+      ansible.builtin.shell: nerdctl ps -q --namespace k8s.io
+      register: container_ids
       when: nerdctl_exists.stat.exists
+
+    - name: Get unique container IDs
+      set_fact:
+        unique_container_ids: "{{ container_ids.stdout_lines | unique }}"
+      when: container_ids.stdout | length > 0
+
+    - name: Stop all containers in the k8s.io namespace
+      ansible.builtin.shell: |
+        if [ "{{ unique_container_ids | length }}" -gt 0 ]; then
+          nerdctl stop {{ unique_container_ids | join(' ') }} --namespace k8s.io
+        fi
+      when: unique_container_ids is defined and unique_container_ids | length > 0
 
     - name: Remove all containers in the k8s.io namespace
-      ansible.builtin.shell: nerdctl rm $(nerdctl ps -q -a --namespace k8s.io)
+      ansible.builtin.shell: |
+        if [ "{{ unique_container_ids | length }}" -gt 0 ]; then
+          nerdctl rm {{ unique_container_ids | join(' ') }} --namespace k8s.io
+        fi
+      when: unique_container_ids is defined and unique_container_ids | length > 0
+
+    - name: Get all image IDs in the k8s.io namespace
+      ansible.builtin.shell: nerdctl images -q --namespace k8s.io
+      register: image_ids
       when: nerdctl_exists.stat.exists
 
+    - name: Get unique image IDs
+      set_fact:
+        unique_image_ids: "{{ image_ids.stdout_lines | unique }}"
+      when: image_ids.stdout | length > 0
+
     - name: Remove all images in the k8s.io namespace
-      ansible.builtin.shell: nerdctl rmi -f $(nerdctl images -q --namespace k8s.io)
-      when: nerdctl_exists.stat.exists
+      ansible.builtin.shell: |
+        if [ "{{ unique_image_ids | length }}" -gt 0 ]; then
+          nerdctl rmi -f {{ unique_image_ids | join(' ') }} --namespace k8s.io
+        fi
+      when: unique_image_ids is defined and unique_image_ids | length > 0

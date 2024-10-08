@@ -15,3 +15,9 @@
         state: absent
       loop:
         - kubectl
+    - name: Remove Kubernetes short cmd
+      file:
+        path: "/etc/profile.d/{{ item }}"
+        state: absent
+      loop:
+        - kube-short-cmd.sh

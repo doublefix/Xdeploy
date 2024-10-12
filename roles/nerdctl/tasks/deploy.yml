@@ -26,11 +26,11 @@
     state: started
     enabled: yes
 
-- name: Enable and start buildkit service
-  systemd:
-    name: buildkit
-    state: started
-    enabled: yes
+# - name: Enable and start buildkit service
+#   systemd:
+#     name: buildkit
+#     state: started
+#     enabled: yes
 
 - name: Enable and start stargz-snapshotter service
   systemd:

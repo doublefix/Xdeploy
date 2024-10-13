@@ -113,3 +113,10 @@ sudo crictl images
 sudo crictl rmi $(sudo crictl images -q)
 
 ```
+
+
+
+
+```bash
+pip install ansible-runner
+```

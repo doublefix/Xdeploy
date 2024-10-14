@@ -23,36 +23,52 @@
 - name: Install socat if dpkg is available
   when: dpkg_check.rc == 0
   block:
+    - name: Check if socat is already installed
+      ansible.builtin.command: dpkg -s socat
+      register: socat_check
+      ignore_errors: true
+
     - name: Copy socat to target server
       copy:
         src: "../roles/kubernetes/release/x86_64/socat/dpkg/socat_1.7.4.4-2_amd64.deb"
         dest: "/tmp/socat_1.7.4.4-2_amd64.deb"
+      when: socat_check.rc != 0
 
     - name: Install socat package
       ansible.builtin.apt:
         deb: /tmp/socat_1.7.4.4-2_amd64.deb
+      when: socat_check.rc != 0
 
     - name: Clean up installation file
       file:
         path: "/tmp/socat_1.7.4.4-2_amd64.deb"
         state: absent
+      when: socat_check.rc != 0
 
 - name: Install conntrack if dpkg is available
   when: dpkg_check.rc == 0
   block:
+    - name: Check if conntrack is already installed
+      ansible.builtin.command: dpkg -s conntrack
+      register: conntrack_check
+      ignore_errors: true
+
     - name: Copy conntrack to target server
       copy:
         src: "../roles/kubernetes/release/x86_64/conntrack/dpkg/conntrack_1%3a1.4.7-1+b2_amd64.deb"
         dest: "/tmp/conntrack_1%3a1.4.7-1+b2_amd64.deb"
+      when: conntrack_check.rc != 0
 
     - name: Install conntrack package
       ansible.builtin.apt:
         deb: /tmp/conntrack_1%3a1.4.7-1+b2_amd64.deb
+      when: conntrack_check.rc != 0
 
     - name: Clean up installation file
       file:
         path: "/tmp/conntrack_1%3a1.4.7-1+b2_amd64.deb"
         state: absent
+      when: conntrack_check.rc != 0
 
 # rpm
 - name: Install socat if rpm is available

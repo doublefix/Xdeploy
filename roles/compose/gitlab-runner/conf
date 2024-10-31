@@ -9,7 +9,7 @@ shutdown_timeout = 0
   name = "ubuntu-gitlab-runner"
   url = "https://gitlab.com"
   id = 7
-  token = "glrt-2znF4hCh831P-C3sZ4Ay"
+  token = "token"
   token_obtained_at = 2024-08-21T06:05:30Z
   token_expires_at = 0001-01-01T00:00:00Z
   executor = "docker"
@@ -20,7 +20,7 @@ shutdown_timeout = 0
     [runners.cache.gcs]
     [runners.cache.azure]
   [runners.docker]
-    volumes = ["/run/user/1001/docker.sock:/var/run/docker.sock", "/cache"]
+    volumes = ["/run/user/1001/docker.sock:/var/run/docker.sock", "/cache"] # 重要,否则无法使用docker
     tls_verify = false
     image = "ubuntu:24.04"
     privileged = false

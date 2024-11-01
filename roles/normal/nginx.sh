@@ -22,3 +22,12 @@ sudo apt install libpcre3 libpcre3-dev libssl-dev
 
 # 安装
 make && make install
+
+# 开启端口
+sudo setcap 'cap_net_bind_service=+ep' /home/username/nginx/sbin/nginx
+
+# 启动
+$HOME/nginx/sbin/nginx
+$HOME/nginx/sbin/nginx -s stop
+$HOME/nginx/sbin/nginx -s reload
+ps aux | grep nginx

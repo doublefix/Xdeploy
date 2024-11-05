@@ -60,8 +60,22 @@ Execute in sequence
 ```bash
 # 驱逐节点,停止服务
 kubectl cordon [node-name]
-kubectl drain [node-name] --ignore-daemonsets --delete-local-data
+kubectl drain [node-name] --delete-emptydir-data --ignore-daemonsets --force 
 kubectl delete node [node-name]
+# 初始化节点，删数据
+sudo kubeadm reset
+# 初始化网络
+sudo iptables -F
+sudo iptables -t nat -F
+sudo iptables -t mangle -F
+sudo iptables -X
+# Remove container
+sudo crictl ps -a
+sudo crictl rm $(sudo crictl ps -a -q)
+# Remove image
+sudo crictl images
+sudo crictl rmi $(sudo crictl images -q)
+
 # 停止kubelet
 ansible-playbook playbooks/stop/kubelet.yml
 # 在移除的节点，删除pod和镜像
@@ -71,11 +85,6 @@ ansible-playbook playbooks/clean/kubernetes.yml
 # 清理nerdctl
 ansible-playbook playbooks/clean/nerdctl.yml
 
-```
-
-Clean client tools
-
-```bash
 # 清理kubectl
 ansible-playbook playbooks/clean/kubectl.yml
 # 清理helm
@@ -89,29 +98,7 @@ ansible-playbook playbooks/clean/docker_buildx.yml
 
 ```
 
-## Remove node
-```bash
-# 驱逐与删除节点
-kubectl drain <node-name> --delete-emptydir-data --ignore-daemonsets --force 
-kubectl delete node <node-name>
-# 初始化节点，删数据
-sudo kubeadm reset
-# 初始化网络
-sudo iptables -F
-sudo iptables -t nat -F
-sudo iptables -t mangle -F
-sudo iptables -X
-
-# Remove container
-sudo crictl ps -a
-sudo crictl rm $(sudo crictl ps -a -q)
-# Remove image
-sudo crictl images
-sudo crictl rmi $(sudo crictl images -q)
-
-```
-
-
 ```bash
 pip install ansible-runner
+pip install flask
 ```

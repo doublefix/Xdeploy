@@ -102,3 +102,20 @@ ansible-playbook playbooks/clean/docker_buildx.yml
 pip install ansible-runner
 pip install flask
 ```
+
+
+
+```bash
+curl -X POST http://localhost:5000/run-playbook \
+-H "Content-Type: application/json" \
+-d '{
+    "playbook_path": "playbooks/vim.yml",
+    "inventory": {
+        "servers": {
+            "hosts": ["ubuntu-root"]
+        }
+    }
+}'
+
+curl -X GET http://localhost:5000/task-status/1
+```

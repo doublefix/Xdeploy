@@ -1,3 +1,4 @@
+import shutil
 from flask import Flask, request, jsonify
 import ansible_runner
 import os
@@ -9,10 +10,16 @@ import json
 app = Flask(__name__)
 
 TASKS_DIR = 'tasks'
+MAX_TASKS = 3
 
 os.makedirs(TASKS_DIR, exist_ok=True)
 
 def save_task_status(task_id, status):
+    task_dirs = sorted(os.listdir(TASKS_DIR), key=lambda x: os.path.getctime(os.path.join(TASKS_DIR, x)))
+    if len(task_dirs) > MAX_TASKS:
+        oldest_task_dir = task_dirs[0]
+        shutil.rmtree(os.path.join(TASKS_DIR, oldest_task_dir))
+
     task_dir = os.path.join(TASKS_DIR, task_id)
     os.makedirs(task_dir, exist_ok=True)
     with open(os.path.join(task_dir, 'status.json'), 'w') as f:

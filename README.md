@@ -16,10 +16,15 @@ deactivate
 ansible all --list-hosts
 ansible all -m ping
 ansible-playbook playbook.yml
-# 使用文件寻找服务器安装
+# 使用示例：使用root安装
 ansible-playbook playbooks/vim.yml --ask-become-pass
-# 动态获取服务器安装
+# 使用示例：动态获取服务器安装
 ansible-playbook -i inventory/dynamic.py dev playbooks/site.yml
+
+# 生成公钥
+ssh-keygen -t rsa -b 2048
+# 添加公钥到目标服务器，输入目标机器的密码
+ssh-copy-id username@hostname
 ```
 
 ## Install kube

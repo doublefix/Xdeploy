@@ -1,17 +1,34 @@
 from flask import Flask, request, jsonify
 import ansible_runner
 import os
-import shutil
 import tempfile
 import threading
+import uuid
+import json
 
 app = Flask(__name__)
 
-task_status = {}
+TASKS_DIR = 'tasks'
+
+os.makedirs(TASKS_DIR, exist_ok=True)
+
+def save_task_status(task_id, status):
+    task_dir = os.path.join(TASKS_DIR, task_id)
+    os.makedirs(task_dir, exist_ok=True)
+    with open(os.path.join(task_dir, 'status.json'), 'w') as f:
+        json.dump({'status': status}, f)
+
+def load_task_status(task_id):
+    task_dir = os.path.join(TASKS_DIR, task_id)
+    status_file = os.path.join(task_dir, 'status.json')
+    if os.path.isfile(status_file):
+        with open(status_file, 'r') as f:
+            return json.load(f).get('status')
+    return None
 
 def run_playbook_task(task_id, playbook_path, inventory_path, extra_vars):
     try:
-        tmp_dir = 'tmp_ansible_runner'
+        tmp_dir = os.path.join(TASKS_DIR, task_id, 'ansible_runner')
         os.makedirs(tmp_dir, exist_ok=True)
 
         runner = ansible_runner.run(
@@ -22,14 +39,13 @@ def run_playbook_task(task_id, playbook_path, inventory_path, extra_vars):
             roles_path=os.path.join(os.getcwd(), 'roles')
         )
 
-        task_status[task_id] = 'success' if runner.rc == 0 else 'failure'
+        status = 'success' if runner.rc == 0 else 'failure'
+        save_task_status(task_id, status)
 
     except Exception as e:
-        task_status[task_id] = f'failure: {str(e)}'
+        save_task_status(task_id, f'failure: {str(e)}')
     finally:
-        if os.path.exists(tmp_dir):
-            shutil.rmtree(tmp_dir)
-        if os.path.isfile(inventory_path):
+        if os.path.exists(inventory_path):
             os.remove(inventory_path)
 
 @app.route('/run-playbook', methods=['POST'])
@@ -51,8 +67,8 @@ def run_playbook():
             inventory_file.write(f"{host}\n")
         inventory_path = inventory_file.name
 
-    task_id = str(len(task_status) + 1)
-    task_status[task_id] = 'running'
+    task_id = str(uuid.uuid4())
+    save_task_status(task_id, 'running')
 
     thread = threading.Thread(target=run_playbook_task, args=(task_id, playbook_path, inventory_path, extra_vars))
     thread.start()
@@ -61,8 +77,9 @@ def run_playbook():
 
 @app.route('/task-status/<task_id>', methods=['GET'])
 def get_task_status(task_id):
-    if task_id in task_status:
-        return jsonify({'task_id': task_id, 'status': task_status[task_id]}), 200
+    status = load_task_status(task_id)
+    if status:
+        return jsonify({'task_id': task_id, 'status': status}), 200
     else:
         return jsonify({'error': 'Task ID not found'}), 404
 

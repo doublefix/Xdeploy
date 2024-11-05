@@ -8,3 +8,4 @@ roles/kubernetes/release/x86_64/cri/*.tar.gz
 roles/kubernetes/release/x86_64/main/*
 roles/helm/release/*
 inventory/test
+tasks

@@ -117,5 +117,20 @@ curl -X POST http://localhost:5000/run-playbook \
     }
 }'
 
+curl -X POST http://localhost:5000/run-playbook \
+-H "Content-Type: application/json" \
+-d '{
+    "playbook_path": "playbooks/vim.yml",
+    "inventory": {
+        "servers": {
+            "hosts": ["ubuntu-root"]
+        }
+    },
+    "extra_vars": {
+        "variable1": "value1",
+        "variable2": "value2"
+    }
+}'
+
 curl -X GET http://localhost:5000/task-status/1
 ```

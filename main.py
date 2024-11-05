@@ -51,7 +51,9 @@ def run_playbook_task(task_id, playbook_path, inventory_path, extra_vars):
             playbook=playbook_path,
             inventory=inventory_path,
             extravars=extra_vars,
-            roles_path=os.path.join(os.getcwd(), 'roles')
+            roles_path=os.path.join(os.getcwd(), 'roles'),
+            # quiet=True,
+            # json_mode=True
         )
 
         status = 'success' if runner.rc == 0 else 'failure'

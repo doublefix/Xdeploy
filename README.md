@@ -35,6 +35,11 @@ ansible-playbook playbooks/cgroup_v2.yml
 ansible-playbook playbooks/nerdctl.yml
 # 安装k8s
 ansible-playbook playbooks/kubernetes.yml
+# 初始化控制节点,只需要主节点执行,详细查看roles/kubeadm/README.md,尽量手动执行
+ansible-playbook playbooks/kubeadm.yml
+# Node节点加入Cluster
+ansible-playbook playbooks/kube_add_node.yml -e "control_plane=node:6443 kubeadm_token=xxxx.xxxxxxxxxxxx discovery_token_ca_cert_hash=sha256:xxxx is_control_plane=--control-plane"
+
 # 安装kubectl
 ansible-playbook playbooks/kubectl.yml
 # 安装helm
@@ -47,14 +52,6 @@ ansible-playbook playbooks/docker_compose.yml
 ansible-playbook playbooks/docker_buildx.yml
 ```
 
-## Create kube cluster
-
-```bash
-# 初始化控制节点,只需要主节点执行,详细查看roles/kubeadm/README.md,尽量手动执行
-ansible-playbook playbooks/kubeadm_init.yml
-# Node节点加入Cluster
-ansible-playbook playbooks/kube_add_node.yml -e "control_plane=node:6443 kubeadm_token=xxxx.xxxxxxxxxxxx discovery_token_ca_cert_hash=sha256:xxxx is_control_plane=--control-plane"
-```
 
 ## Clean kube
 
@@ -113,8 +110,6 @@ sudo crictl images
 sudo crictl rmi $(sudo crictl images -q)
 
 ```
-
-
 
 
 ```bash

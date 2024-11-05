@@ -3,6 +3,10 @@
   hosts: servers
   become: yes
   tasks:
+    - name: Reset kubeadm (remove all Kubernetes cluster configuration)
+      command: kubeadm reset -f
+      ignore_errors: yes
+
     - name: Check if kubelet service exists
       command: systemctl list-units --type=service --state=loaded
       register: kubelet_status
@@ -38,6 +42,20 @@
         - kubeadm
         - kubelet
         # - kubectl
+    
+    # Delete old config and cache
+    - name: Remove $HOME/.kube directory
+      command: rm -rf $HOME/.kube
+    - name: Remove /etc/kubernetes directory
+      command: rm -rf /etc/kubernetes
+    - name: Remove /var/lib/etcd directory
+      command: rm -rf /var/lib/etcd
+    - name: Remove /etc/kubernetes directory
+      command: rm -rf /etc/kubernetes
+    - name: Remove /var/lib/kubelet directory
+      command: rm -rf /var/lib/kubelet
+    - name: Remove /etc/sysconfig/kubelet directory
+      command: rm -rf /etc/sysconfig/kubelet
 
     - name: Remove CNI plugins
       file:

@@ -10,6 +10,8 @@ K8s version CHANGELOG
 bash ansible/install_ansible.sh
 # 激活ansible环境
 source ansible-env/bin/activate
+# 安装依赖
+pip install -r requirements.txt
 # 退出ansible环境
 deactivate
 # 常用命令
@@ -104,13 +106,7 @@ ansible-playbook playbooks/clean/docker_buildx.yml
 ```
 
 ```bash
-pip install ansible-runner
-pip install flask
-```
-
-
-
-```bash
+# 使用接口启动任务
 curl -X POST http://localhost:5000/run-playbook \
 -H "Content-Type: application/json" \
 -d '{
@@ -137,5 +133,6 @@ curl -X POST http://localhost:5000/run-playbook \
     }
 }'
 
+# 查询任务运行结果
 curl -X GET http://localhost:5000/task-status/1
 ```

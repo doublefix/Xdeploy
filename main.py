@@ -6,6 +6,7 @@ import tempfile
 import threading
 import uuid
 import json
+from datetime import datetime
 
 app = Flask(__name__)
 
@@ -14,7 +15,7 @@ MAX_TASKS = 3
 
 os.makedirs(TASKS_DIR, exist_ok=True)
 
-def save_task_status(task_id, status):
+def save_task_status(task_id, status, start_time=None, end_time=None):
     task_dirs = sorted(os.listdir(TASKS_DIR), key=lambda x: os.path.getctime(os.path.join(TASKS_DIR, x)))
     if len(task_dirs) > MAX_TASKS:
         oldest_task_dir = task_dirs[0]
@@ -22,18 +23,25 @@ def save_task_status(task_id, status):
 
     task_dir = os.path.join(TASKS_DIR, task_id)
     os.makedirs(task_dir, exist_ok=True)
+    
+    task_info = {
+        'status': status,
+        'start_time': start_time,
+        'end_time': end_time
+    }
     with open(os.path.join(task_dir, 'status.json'), 'w') as f:
-        json.dump({'status': status}, f)
+        json.dump(task_info, f)
 
 def load_task_status(task_id):
     task_dir = os.path.join(TASKS_DIR, task_id)
     status_file = os.path.join(task_dir, 'status.json')
     if os.path.isfile(status_file):
         with open(status_file, 'r') as f:
-            return json.load(f).get('status')
+            return json.load(f)
     return None
 
 def run_playbook_task(task_id, playbook_path, inventory_path, extra_vars):
+    start_time = datetime.now().isoformat()
     try:
         tmp_dir = os.path.join(TASKS_DIR, task_id, 'ansible_runner')
         os.makedirs(tmp_dir, exist_ok=True)
@@ -47,10 +55,12 @@ def run_playbook_task(task_id, playbook_path, inventory_path, extra_vars):
         )
 
         status = 'success' if runner.rc == 0 else 'failure'
-        save_task_status(task_id, status)
+        end_time = datetime.now().isoformat()
+        save_task_status(task_id, status, start_time, end_time)
 
     except Exception as e:
-        save_task_status(task_id, f'failure: {str(e)}')
+        end_time = datetime.now().isoformat()
+        save_task_status(task_id, f'failure: {str(e)}', start_time, end_time)
     finally:
         if os.path.exists(inventory_path):
             os.remove(inventory_path)
@@ -84,9 +94,9 @@ def run_playbook():
 
 @app.route('/task-status/<task_id>', methods=['GET'])
 def get_task_status(task_id):
-    status = load_task_status(task_id)
-    if status:
-        return jsonify({'task_id': task_id, 'status': status}), 200
+    task_info = load_task_status(task_id)
+    if task_info:
+        return jsonify({'task_id': task_id, **task_info}), 200
     else:
         return jsonify({'error': 'Task ID not found'}), 404
 

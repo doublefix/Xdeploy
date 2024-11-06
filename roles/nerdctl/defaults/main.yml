@@ -1,6 +1,6 @@
 ---
 nerdctl_version: "1.7.6"
-nerdctl_base_dir: "../roles/nerdctl/release/assets"
+nerdctl_base_dir: "../roles/nerdctl/release"
 nerdctl_tarball: "nerdctl-full-{{ nerdctl_version }}-linux-amd64.tar.gz"
 nerdctl_dest_path: "/tmp/{{ nerdctl_tarball }}"
 containerd_config_path: "/etc/containerd/config.toml"

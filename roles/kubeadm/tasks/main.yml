@@ -15,6 +15,13 @@
   become: yes
   changed_when: false
 
+# Add main binaries
+- name: Copy kubeadm binary to /usr/local/bin
+  copy:
+    src: "../roles/kubeadm/release/x86_64/kubeadm"
+    dest: "/usr/local/bin/kubeadm"
+    mode: "0755"
+
 # Plugin
 - name: Ensure the /etc/kubernetes/calico directory exists
   file:
@@ -24,7 +31,7 @@
 
 - name: Copy calico to target server
   copy:
-    src: "../roles/kubeadm/release/calico/v3.28.1/calico.yaml"
+    src: "../roles/kubeadm/conf/calico/v3.28.1/calico.yaml"
     dest: "/etc/kubernetes/calico"
 
 - name: Ensure the /etc/kubernetes/metrics-server directory exists
@@ -35,10 +42,10 @@
 
 - name: Copy metrics-server components to target server
   copy:
-    src: "../roles/kubeadm/release/metrics-server/v0.7.1/components.yaml"
+    src: "../roles/kubeadm/conf/metrics-server/v0.7.1/components.yaml"
     dest: "/etc/kubernetes/metrics-server"
 
 - name: Copy metrics-server availability to target server
   copy:
-    src: "../roles/kubeadm/release/metrics-server/v0.7.1/high-availability-1.21+.yaml"
+    src: "../roles/kubeadm/conf/metrics-server/v0.7.1/high-availability-1.21+.yaml"
     dest: "/etc/kubernetes/metrics-server"

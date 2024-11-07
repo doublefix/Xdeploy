@@ -13,7 +13,6 @@ cri_yaml: "crictl.yaml"
 cni_tarball: "cni-plugins-linux-amd64-v1.5.1.tgz"
 
 # Binaries
-kubeadm_bin: "kubeadm"
 kubectl_bin: "kubectl"
 kubelet_bin: "kubelet"
 

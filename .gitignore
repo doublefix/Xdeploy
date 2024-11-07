@@ -6,6 +6,7 @@ roles/nerdctl/release/*
 roles/kubernetes/release/x86_64/cni/*
 roles/kubernetes/release/x86_64/cri/*.tar.gz
 roles/kubernetes/release/x86_64/main/*
+roles/kubeadm/release/*
 roles/kubectl/release/*
 roles/helm/release/*
 inventory/test

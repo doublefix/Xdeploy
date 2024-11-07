@@ -50,13 +50,6 @@
     - "{{ cri_tarball }}"
     - "{{ cni_tarball }}"
 
-# Add main binaries
-- name: Copy kubeadm binary to /usr/local/bin
-  copy:
-    src: "../roles/kubernetes/release/x86_64/main/{{ kubeadm_bin }}"
-    dest: "{{ kube_bin_path }}/{{ kubeadm_bin }}"
-    mode: "0755"
-
 # - name: Copy kubectl binary to /usr/local/bin
 #   copy:
 #     src: "../roles/kubernetes/release/x86_64/main/{{ kubectl_bin }}"

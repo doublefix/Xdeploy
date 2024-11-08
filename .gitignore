@@ -7,7 +7,7 @@ roles/kubelet/release/x86_64/cni/*
 roles/kubelet/release/x86_64/conntrack/*
 roles/kubelet/release/x86_64/cri/*.tar.gz
 roles/kubelet/release/x86_64/socat/*
-roles/kubelet/release/x86_64/kubelet
+roles/kubelet/release/x86_64/v*
 roles/kubeadm/release/*
 roles/kubectl/release/*
 roles/helm/release/*

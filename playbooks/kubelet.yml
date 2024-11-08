@@ -3,4 +3,4 @@
   hosts: servers
   become: yes
   roles:
-    - kubernetes
+    - kubelet

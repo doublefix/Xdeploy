@@ -3,11 +3,13 @@ roles/docker/release/*
 roles/docker-buildx/release/*
 roles/docker-compose/release/v2.29.2/*
 roles/nerdctl/release/*
-roles/kubernetes/release/x86_64/cni/*
-roles/kubernetes/release/x86_64/cri/*.tar.gz
-roles/kubernetes/release/x86_64/main/*
+roles/kubelet/release/x86_64/cni/*
+roles/kubelet/release/x86_64/conntrack/*
+roles/kubelet/release/x86_64/cri/*.tar.gz
+roles/kubelet/release/x86_64/socat/*
+roles/kubelet/release/x86_64/kubelet
 roles/kubeadm/release/*
 roles/kubectl/release/*
 roles/helm/release/*
 inventory/test
-tasks
+/tasks

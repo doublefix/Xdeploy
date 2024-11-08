@@ -41,7 +41,7 @@ ansible-playbook playbooks/cgroup_v2.yml
 # 安装nerdctl
 ansible-playbook playbooks/nerdctl.yml
 # 安装k8s
-ansible-playbook playbooks/kubernetes.yml
+ansible-playbook playbooks/kubelet.yml
 # 初始化控制节点,只需要主节点执行,详细查看roles/kubeadm/README.md,尽量手动执行
 ansible-playbook playbooks/kubeadm.yml
 # Node节点加入Cluster
@@ -88,7 +88,7 @@ ansible-playbook playbooks/stop/kubelet.yml
 # 在移除的节点，删除pod和镜像
 ansible-playbook playbooks/clean/kube_node_pod_image.yml
 # 清理k8s
-ansible-playbook playbooks/clean/kubernetes.yml
+ansible-playbook playbooks/clean/kubelet.yml
 # 清理nerdctl
 ansible-playbook playbooks/clean/nerdctl.yml
 

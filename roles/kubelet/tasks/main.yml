@@ -2,7 +2,7 @@
 # Add CRI
 - name: Copy CRI tarball to target server
   copy:
-    src: "../roles/kubernetes/release/x86_64/cri/{{ cri_tarball }}"
+    src: "../roles/kubelet/release/x86_64/cri/{{ cri_tarball }}"
     dest: "{{ tmp_path }}"
 
 - name: Ensure /usr/local/bin directory exists
@@ -19,14 +19,14 @@
 
 - name: Copy CRI configuration to /etc
   copy:
-    src: "../roles/kubernetes/release/x86_64/cri/{{ cri_yaml }}"
+    src: "../roles/kubelet/release/x86_64/cri/{{ cri_yaml }}"
     dest: "/etc/crictl.yaml"
     mode: "0644"
 
 # Add CNI
 - name: Copy CNI tarball to target server
   copy:
-    src: "../roles/kubernetes/release/x86_64/cni/{{ cni_tarball }}"
+    src: "../roles/kubelet/release/x86_64/cni/{{ cni_tarball }}"
     dest: "{{ tmp_path }}"
 
 - name: Ensure /opt/cni/bin directory exists
@@ -52,13 +52,13 @@
 
 # - name: Copy kubectl binary to /usr/local/bin
 #   copy:
-#     src: "../roles/kubernetes/release/x86_64/main/{{ kubectl_bin }}"
+#     src: "../roles/kubelet/release/x86_64/main/{{ kubectl_bin }}"
 #     dest: "{{ kube_bin_path }}/{{ kubectl_bin }}"
 #     mode: "0755"
 
 - name: Copy kubelet binary to /usr/local/bin
   copy:
-    src: "../roles/kubernetes/release/x86_64/main/{{ kubelet_bin }}"
+    src: "../roles/kubelet/release/x86_64/main/{{ kubelet_bin }}"
     dest: "{{ kube_bin_path }}/{{ kubelet_bin }}"
     mode: "0755"
 
@@ -71,7 +71,7 @@
 
 - name: Copy kubelet.service to /usr/lib/systemd/system
   copy:
-    src: "../roles/kubernetes/release/x86_64/conf/{{ kubelet_service_file }}"
+    src: "../roles/kubelet/release/x86_64/conf/{{ kubelet_service_file }}"
     dest: "{{ kube_service_path }}/{{ kubelet_service_file }}"
     mode: "0644"
 
@@ -83,7 +83,7 @@
 
 - name: Copy 10-kubeadm.conf to /usr/lib/systemd/system/kubelet.service.d
   copy:
-    src: "../roles/kubernetes/release/x86_64/conf/{{ kubelet_conf_file }}"
+    src: "../roles/kubelet/release/x86_64/conf/{{ kubelet_conf_file }}"
     dest: "{{ kube_service_d_path }}/{{ kubelet_conf_file }}"
     mode: "0644"
 

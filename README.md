@@ -59,7 +59,6 @@ ansible-playbook playbooks/docker_compose.yml
 ansible-playbook playbooks/docker_buildx.yml
 ```
 
-
 ## Clean kube
 
 Execute in sequence
@@ -67,7 +66,7 @@ Execute in sequence
 ```bash
 # 驱逐节点,停止服务
 kubectl cordon [node-name]
-kubectl drain [node-name] --delete-emptydir-data --ignore-daemonsets --force 
+kubectl drain [node-name] --delete-emptydir-data --ignore-daemonsets --force
 kubectl delete node [node-name]
 # 初始化节点，删数据
 sudo kubeadm reset
@@ -135,4 +134,15 @@ curl -X POST http://localhost:5000/run-playbook \
 
 # 查询任务运行结果
 curl -X GET http://localhost:5000/task-status/1
+
+# 装载二进制文件
+curl -X POST http://localhost:5000/manage-tools \
+    -H "Content-Type: application/json" \
+    -d '{
+        "tools": ["kubelet", "kubectl"],
+        "archs": ["x86_64", "arrach64"],
+        "mode": "download",
+        "overwrite": false
+    }'
+
 ```

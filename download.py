@@ -2,7 +2,7 @@ import os
 import urllib.request
 import yaml
 
-TOOLS_TO_DOWNLOAD = ["kubeadm"]  # 可设置为 ["kubectl"], ["kubeadm"], 或空列表 []
+TOOLS_TO_DOWNLOAD = ["kubelet"]  # 可设置为 ["kubectl"], ["kubeadm"], 或空列表 []
 ARCHS_TO_DOWNLOAD = ["x86_64", "arrach64"]
 MODE = "download"  # 可设置为 "download" 或 "remove" 
 

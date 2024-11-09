@@ -1,6 +1,6 @@
 - name: Copy Helm tarball to target server
   copy:
-    src: "../roles/helm/release/helm-{{ version }}-{{ os }}-{{ arch }}.tar.gz"
+    src: "../roles/helm/release/{{ arch }}/{{ version }}/helm-{{ version }}-{{ os }}-{{ arch }}.tar.gz"
     dest: "/tmp/helm-{{ version }}-{{ os }}-{{ arch }}.tar.gz"
 
 - name: Extract Helm tarball

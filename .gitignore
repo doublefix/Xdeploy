@@ -1,7 +1,9 @@
 ansible-env
 roles/docker/release/*
 roles/docker-buildx/release/*
-roles/docker-compose/release/v2.29.2/*
+roles/docker-compose/release/v*
+roles/docker-compose/release/a*
+roles/docker-compose/release/x*
 roles/nerdctl/release/*
 roles/kubelet/release/x86_64/cni/*
 roles/kubelet/release/x86_64/conntrack/*

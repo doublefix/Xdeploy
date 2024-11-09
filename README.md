@@ -145,4 +145,13 @@ curl -X POST http://localhost:5000/manage-tools \
         "overwrite": false
     }'
 
+curl -X POST http://localhost:5000/manage-tools \
+    -H "Content-Type: application/json" \
+    -d '{
+        "tools": ["helm"],
+        "archs": ["x86_64", "arrach64"],
+        "mode": "download",
+        "overwrite": true
+    }'
+
 ```

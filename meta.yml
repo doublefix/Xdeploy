@@ -29,3 +29,12 @@ kubernetes:
         - name: "kubelet"
           source: "https://dl.k8s.io/release/v1.31.0/bin/linux/arm64/kubelet"
 
+  helm:
+    x86_64:
+      v3.15.4:
+        - name: "helm-v3.15.4-linux-amd64.tar.gz"
+          source: "https://get.helm.sh/helm-v3.15.4-linux-amd64.tar.gz"
+    arrach64:
+      v3.15.4:
+        - name: "helm-v3.15.4-linux-arm64.tar.gz"
+          source: "https://get.helm.sh/helm-v3.15.4-linux-arm64.tar.gz"

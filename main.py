@@ -100,48 +100,45 @@ def manage_tools(task_id, themes, software_list, mode, overwrite=False, sources=
 
     try:
         for theme in themes:
-            if theme not in yaml_data:
+            theme_data = yaml_data.get(theme)
+            if not theme_data:
                 continue
 
-            theme_data = yaml_data[theme]
             for software in software_list:
                 tool = software["name"]
                 archs = software.get("archs", [])
                 versions = software.get("versions", [])
-
-                if tool not in theme_data:
+                tool_data = theme_data.get(tool)
+                if not tool_data:
                     continue
 
                 for arch in archs:
-                    if arch not in theme_data[tool]:
+                    arch_data = tool_data.get(arch)
+                    if not arch_data:
                         continue
 
                     applicable_versions = (
-                        versions if versions else list(theme_data[tool][arch].keys())
+                        versions if versions else list(arch_data.keys())
                     )
 
                     for version in applicable_versions:
-                        if version not in theme_data[tool][arch]:
+                        version_data = arch_data.get(version)
+                        if not version_data:
                             continue
 
-                        for file_info in theme_data[tool][arch][version]:
+                        for file_info in version_data:
                             name = file_info["name"]
                             url = file_info["source"]
 
-                            # 检查是否为指定的自定义源
                             if (
                                 tool in sources
                                 and arch in sources[tool]
                                 and version in sources[tool][arch]
                             ):
                                 url = sources[tool][arch][version]
-                                overwrite_flag = (
-                                    True  # 强制设置为 True 以覆盖下载该版本
-                                )
+                                overwrite_flag = True
                             else:
-                                overwrite_flag = (
-                                    overwrite  # 其它情况使用传入的 overwrite 字段
-                                )
+                                overwrite_flag = overwrite
 
                             dest_dir = f"roles/{tool}/release/{arch}/{version}"
                             os.makedirs(dest_dir, exist_ok=True)
@@ -166,11 +163,11 @@ def manage_tools(task_id, themes, software_list, mode, overwrite=False, sources=
 @app.route("/manage-tools", methods=["POST"])
 def manage_tools_endpoint():
     data = request.json
-    themes = data.get("themes")
-    software_list = data.get("software")
+    themes = data.get("themes", [])
+    software_list = data.get("software", [])
     mode = data.get("mode")
     overwrite = data.get("overwrite", False)
-    sources = data.get("sources", {})  # 手动指定的下载源
+    sources = data.get("sources", {})
 
     if not software_list or not mode:
         return make_response({"error": "缺少必要的字段"}, 400)
@@ -187,29 +184,27 @@ def manage_tools_endpoint():
         tool_supported = False
 
         for theme in themes:
-            if theme not in yaml_data:
+            theme_data = yaml_data.get(theme)
+            if not theme_data:
                 continue
 
-            theme_data = yaml_data[theme]
-            if tool not in theme_data:
+            tool_data = theme_data.get(tool)
+            if not tool_data:
                 continue
 
             for arch in archs:
-                if arch not in theme_data[tool]:
+                arch_data = tool_data.get(arch)
+                if not arch_data:
                     continue
 
-                applicable_versions = (
-                    versions if versions else list(theme_data[tool][arch].keys())
-                )
+                applicable_versions = versions if versions else list(arch_data.keys())
 
                 for version in applicable_versions:
-                    if version in theme_data[tool][arch]:
+                    if version in arch_data:
                         tool_supported = True
                         break
-
                 if tool_supported:
                     break
-
             if tool_supported:
                 break
 

@@ -93,7 +93,7 @@ def delete_file(dest_path):
         print(f"文件 {dest_path} 不存在，跳过删除。")
 
 
-def manage_tools(task_id, tools, archs, mode, overwrite=False):
+def manage_tools(task_id, tools, archs, versions, mode, overwrite=False):
     start_time = datetime.now().isoformat()
     save_task_status(task_id, "running", start_time=start_time)
 
@@ -109,7 +109,11 @@ def manage_tools(task_id, tools, archs, mode, overwrite=False):
                     print(f"架构 {arch} 不支持工具 {tool_name}，跳过...")
                     continue
 
+                # 根据传入的版本进行筛选，如果 versions 为空则使用所有版本
                 for version, files in arch_data[arch].items():
+                    if versions and version not in versions:
+                        continue
+
                     for file_info in files:
                         name = file_info["name"]
                         url = file_info["source"]
@@ -139,6 +143,7 @@ def manage_tools_endpoint():
     data = request.json
     tools = data.get("tools", ["kubelet"])
     archs = data.get("archs", ["x86_64", "arm64"])
+    versions = data.get("versions", [])  # 默认空列表，表示使用所有版本
     mode = data.get("mode", "download")
     overwrite = data.get("overwrite", False)
 
@@ -146,8 +151,9 @@ def manage_tools_endpoint():
     start_time = datetime.now().isoformat()
     save_task_status(task_id, "running", start_time=start_time)
 
+    # 将 versions 参数传递到 manage_tools 函数中
     thread = threading.Thread(
-        target=manage_tools, args=(task_id, tools, archs, mode, overwrite)
+        target=manage_tools, args=(task_id, tools, archs, versions, mode, overwrite)
     )
     thread.start()
 

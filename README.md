@@ -150,8 +150,9 @@ curl -X POST http://localhost:5000/manage-tools \
     -d '{
         "tools": ["helm"],
         "archs": ["x86_64", "arrach64"],
+        "version": ["v3.15.4"],
         "mode": "download",
-        "overwrite": true
+        "overwrite": false
     }'
 
 ```

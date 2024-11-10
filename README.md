@@ -174,4 +174,29 @@ curl -X POST http://localhost:5000/manage-tools \
         "mode": "download"
     }'
 
+curl -X POST http://localhost:5000/manage-tools \
+    -H "Content-Type: application/json" \
+    -d '{
+        "software": [
+            {
+                "name": "helm",
+                "archs": ["x86_64"],
+                "versions": ["v3.15.4"]
+            },
+            {
+                "name": "kubectl",
+                "archs": ["x86_64"],
+                "versions": ["v1.31.0"]
+            }
+        ],
+        "mode": "download",
+        "sources": {
+            "helm": {
+                "x86_64": {
+                    "v3.15.4": "https://get.helm.sh/helm-v3.15.4-linux-amd64.tar.gz"
+                }
+            }
+        }
+    }'
+
 ```

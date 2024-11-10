@@ -93,7 +93,7 @@ def delete_file(dest_path):
         print(f"文件 {dest_path} 不存在，跳过删除。")
 
 
-def manage_tools(task_id, themes, software_list, mode, overwrite=False):
+def manage_tools(task_id, themes, software_list, mode, overwrite=False, sources={}):
     start_time = datetime.now().isoformat()
     save_task_status(task_id, "running", start_time=start_time)
     yaml_data = load_yaml("meta.yml")
@@ -127,12 +127,28 @@ def manage_tools(task_id, themes, software_list, mode, overwrite=False):
                         for file_info in theme_data[tool][arch][version]:
                             name = file_info["name"]
                             url = file_info["source"]
+
+                            # 检查是否为指定的自定义源
+                            if (
+                                tool in sources
+                                and arch in sources[tool]
+                                and version in sources[tool][arch]
+                            ):
+                                url = sources[tool][arch][version]
+                                overwrite_flag = (
+                                    True  # 强制设置为 True 以覆盖下载该版本
+                                )
+                            else:
+                                overwrite_flag = (
+                                    overwrite  # 其它情况使用传入的 overwrite 字段
+                                )
+
                             dest_dir = f"roles/{tool}/release/{arch}/{version}"
                             os.makedirs(dest_dir, exist_ok=True)
                             dest_path = os.path.join(dest_dir, name)
 
                             if mode == "download":
-                                download_file(url, dest_path, overwrite=overwrite)
+                                download_file(url, dest_path, overwrite=overwrite_flag)
                             elif mode == "remove":
                                 delete_file(dest_path)
 
@@ -154,6 +170,7 @@ def manage_tools_endpoint():
     software_list = data.get("software")
     mode = data.get("mode")
     overwrite = data.get("overwrite", False)
+    sources = data.get("sources", {})  # 手动指定的下载源
 
     if not software_list or not mode:
         return make_response({"error": "缺少必要的字段"}, 400)
@@ -216,7 +233,7 @@ def manage_tools_endpoint():
 
     thread = threading.Thread(
         target=manage_tools,
-        args=(task_id, themes, software_list, mode, overwrite),
+        args=(task_id, themes, software_list, mode, overwrite, sources),
     )
     thread.start()
 

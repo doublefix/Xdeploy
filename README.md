@@ -140,7 +140,7 @@ curl -X POST http://localhost:5000/manage-tools \
     -H "Content-Type: application/json" \
     -d '{
         "theme": "kubernetes",
-        "tools": ["helm"],
+        "software": "helm",
         "archs": ["x86_64", "arrach64"],
         "versions": ["v3.15.6"],
         "mode": "download"
@@ -150,7 +150,7 @@ curl -X POST http://localhost:5000/manage-tools \
     -H "Content-Type: application/json" \
     -d '{
         "theme": "kubernetes",
-        "tools": ["helm"],
+        "software": "helm",
         "archs": ["x86_64", "arrach64"],
         "versions": ["v3.15.6"],
         "mode": "download",

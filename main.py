@@ -143,13 +143,13 @@ def manage_tools_endpoint():
     data = request.json
 
     theme = data.get("theme")
-    tools = data.get("tools")
+    software = data.get("software")
     archs = data.get("archs")
     versions = data.get("versions")
     mode = data.get("mode")
     overwrite = data.get("overwrite", False)
 
-    if not theme or not tools or not archs or not versions or not mode:
+    if not theme or not software or not archs or not versions or not mode:
         return make_response({"error": "Missing required fields"}, 400)
 
     yaml_data = load_yaml("meta.yml")
@@ -160,27 +160,24 @@ def manage_tools_endpoint():
     theme_data = yaml_data[theme]
     unsupported = []
 
-    for tool in tools:
-        if tool not in theme_data:
-            unsupported.append(f"Tool '{tool}' is not supported.")
+    tool = software
+    if tool not in theme_data:
+        unsupported.append(f"Tool '{tool}' is not supported.")
+
+    for arch in archs:
+        if arch not in theme_data[tool]:
+            unsupported.append(f"Tool '{tool}' does not support architecture '{arch}'.")
             continue
 
-        for arch in archs:
-            if arch not in theme_data[tool]:
+        applicable_versions = (
+            versions if versions else list(theme_data[tool][arch].keys())
+        )
+
+        for version in applicable_versions:
+            if version not in theme_data[tool][arch]:
                 unsupported.append(
-                    f"Tool '{tool}' does not support architecture '{arch}'."
+                    f"Tool '{tool}' with architecture '{arch}' does not support version '{version}'."
                 )
-                continue
-
-            applicable_versions = (
-                versions if versions else list(theme_data[tool][arch].keys())
-            )
-
-            for version in applicable_versions:
-                if version not in theme_data[tool][arch]:
-                    unsupported.append(
-                        f"Tool '{tool}' with architecture '{arch}' does not support version '{version}'."
-                    )
 
     if unsupported:
         return make_response(
@@ -196,7 +193,8 @@ def manage_tools_endpoint():
     save_task_status(task_id, "running", start_time=start_time)
 
     thread = threading.Thread(
-        target=manage_tools, args=(task_id, tools, archs, versions, mode, overwrite)
+        target=manage_tools,
+        args=(task_id, [software], archs, versions, mode, overwrite),
     )
     thread.start()
 

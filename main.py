@@ -141,29 +141,22 @@ def manage_tools(task_id, tools, archs, versions, mode, overwrite=False):
 @app.route("/manage-tools", methods=["POST"])
 def manage_tools_endpoint():
     data = request.json
+
     theme = data.get("theme")
     tools = data.get("tools")
     archs = data.get("archs")
     versions = data.get("versions")
     mode = data.get("mode")
-    overwrite = data.get("overwrite")
+    overwrite = data.get("overwrite", False)
 
-    if (
-        not theme
-        or not tools
-        or not archs
-        or not versions
-        or mode is None
-        or overwrite is None
-    ):
-        return make_response({"error": "Missing required fields."}, 400)
+    if not theme or not tools or not archs or not versions or not mode:
+        return make_response({"error": "Missing required fields"}, 400)
 
     yaml_data = load_yaml("meta.yml")
 
     if theme not in yaml_data:
         return make_response({"error": f"'{theme}' configuration not found"}, 400)
 
-    # 根据 theme 获取对应的工具配置
     theme_data = yaml_data[theme]
     unsupported = []
 

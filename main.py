@@ -93,39 +93,48 @@ def delete_file(dest_path):
         print(f"文件 {dest_path} 不存在，跳过删除。")
 
 
-def manage_tools(task_id, tools, archs, versions, mode, overwrite=False):
+def manage_tools(task_id, themes, software_list, mode, overwrite=False):
     start_time = datetime.now().isoformat()
     save_task_status(task_id, "running", start_time=start_time)
-
     yaml_data = load_yaml("meta.yml")
 
     try:
-        for tool_name, arch_data in yaml_data["kubernetes"].items():
-            if tool_name not in tools:
+        for theme in themes:
+            if theme not in yaml_data:
                 continue
 
-            for arch in archs:
-                if arch not in arch_data:
-                    print(f"架构 {arch} 不支持工具 {tool_name}，跳过...")
+            theme_data = yaml_data[theme]
+            for software in software_list:
+                tool = software["name"]
+                archs = software.get("archs", [])
+                versions = software.get("versions", [])
+
+                if tool not in theme_data:
                     continue
 
-                # 根据传入的版本进行筛选，如果 versions 为空则使用所有版本
-                for version, files in arch_data[arch].items():
-                    if versions and version not in versions:
+                for arch in archs:
+                    if arch not in theme_data[tool]:
                         continue
 
-                    for file_info in files:
-                        name = file_info["name"]
-                        url = file_info["source"]
+                    applicable_versions = (
+                        versions if versions else list(theme_data[tool][arch].keys())
+                    )
 
-                        dest_dir = f"roles/{tool_name}/release/{arch}/{version}"
-                        os.makedirs(dest_dir, exist_ok=True)
-                        dest_path = os.path.join(dest_dir, name)
+                    for version in applicable_versions:
+                        if version not in theme_data[tool][arch]:
+                            continue
 
-                        if mode == "download":
-                            download_file(url, dest_path, overwrite=overwrite)
-                        elif mode == "remove":
-                            delete_file(dest_path)
+                        for file_info in theme_data[tool][arch][version]:
+                            name = file_info["name"]
+                            url = file_info["source"]
+                            dest_dir = f"roles/{tool}/release/{arch}/{version}"
+                            os.makedirs(dest_dir, exist_ok=True)
+                            dest_path = os.path.join(dest_dir, name)
+
+                            if mode == "download":
+                                download_file(url, dest_path, overwrite=overwrite)
+                            elif mode == "remove":
+                                delete_file(dest_path)
 
         end_time = datetime.now().isoformat()
         save_task_status(task_id, "completed", start_time=start_time, end_time=end_time)
@@ -141,48 +150,61 @@ def manage_tools(task_id, tools, archs, versions, mode, overwrite=False):
 @app.route("/manage-tools", methods=["POST"])
 def manage_tools_endpoint():
     data = request.json
-
-    theme = data.get("theme")
-    software = data.get("software")
-    archs = data.get("archs")
-    versions = data.get("versions")
+    themes = data.get("themes")
+    software_list = data.get("software")
     mode = data.get("mode")
     overwrite = data.get("overwrite", False)
 
-    if not theme or not software or not archs or not versions or not mode:
-        return make_response({"error": "Missing required fields"}, 400)
+    if not software_list or not mode:
+        return make_response({"error": "缺少必要的字段"}, 400)
 
     yaml_data = load_yaml("meta.yml")
+    if not themes:
+        themes = list(yaml_data.keys())
 
-    if theme not in yaml_data:
-        return make_response({"error": f"'{theme}' configuration not found"}, 400)
-
-    theme_data = yaml_data[theme]
     unsupported = []
+    for software in software_list:
+        tool = software["name"]
+        archs = software.get("archs", [])
+        versions = software.get("versions", [])
+        tool_supported = False
 
-    tool = software
-    if tool not in theme_data:
-        unsupported.append(f"Tool '{tool}' is not supported.")
+        for theme in themes:
+            if theme not in yaml_data:
+                continue
 
-    for arch in archs:
-        if arch not in theme_data[tool]:
-            unsupported.append(f"Tool '{tool}' does not support architecture '{arch}'.")
-            continue
+            theme_data = yaml_data[theme]
+            if tool not in theme_data:
+                continue
 
-        applicable_versions = (
-            versions if versions else list(theme_data[tool][arch].keys())
-        )
+            for arch in archs:
+                if arch not in theme_data[tool]:
+                    continue
 
-        for version in applicable_versions:
-            if version not in theme_data[tool][arch]:
-                unsupported.append(
-                    f"Tool '{tool}' with architecture '{arch}' does not support version '{version}'."
+                applicable_versions = (
+                    versions if versions else list(theme_data[tool][arch].keys())
                 )
+
+                for version in applicable_versions:
+                    if version in theme_data[tool][arch]:
+                        tool_supported = True
+                        break
+
+                if tool_supported:
+                    break
+
+            if tool_supported:
+                break
+
+        if not tool_supported:
+            unsupported.append(
+                f"未找到支持的主题配置：工具 '{tool}', 架构 '{archs}', 版本 '{versions}'"
+            )
 
     if unsupported:
         return make_response(
             {
-                "error": "Task creation failed due to unsupported configuration",
+                "error": "任务创建失败，配置不受支持",
                 "details": unsupported,
             },
             400,
@@ -194,7 +216,7 @@ def manage_tools_endpoint():
 
     thread = threading.Thread(
         target=manage_tools,
-        args=(task_id, [software], archs, versions, mode, overwrite),
+        args=(task_id, themes, software_list, mode, overwrite),
     )
     thread.start()
 

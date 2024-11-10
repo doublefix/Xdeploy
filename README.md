@@ -139,22 +139,39 @@ curl -X GET http://localhost:5000/task-status/1
 curl -X POST http://localhost:5000/manage-tools \
     -H "Content-Type: application/json" \
     -d '{
-        "theme": "kubernetes",
-        "software": "helm",
-        "archs": ["x86_64", "arrach64"],
-        "versions": ["v3.15.6"],
-        "mode": "download"
+        "themes": ["kubernetes", "docker"],
+        "software": [
+            {
+                "name": "helm",
+                "archs": ["x86_64"],
+                "versions": ["v3.15.4"]
+            },
+            {
+                "name": "kubectl",
+                "archs": ["x86_64"],
+                "versions": ["v1.31.0"]
+            }
+        ],
+        "mode": "download",
+        "overwrite": true
     }'
 
 curl -X POST http://localhost:5000/manage-tools \
     -H "Content-Type: application/json" \
     -d '{
-        "theme": "kubernetes",
-        "software": "helm",
-        "archs": ["x86_64", "arrach64"],
-        "versions": ["v3.15.6"],
-        "mode": "download",
-        "overwrite": true
+        "software": [
+            {
+                "name": "helm",
+                "archs": ["x86_64"],
+                "versions": ["v3.15.4"]
+            },
+            {
+                "name": "kubectl",
+                "archs": ["x86_64"],
+                "versions": ["v1.31.0"]
+            }
+        ],
+        "mode": "download"
     }'
 
 ```

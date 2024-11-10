@@ -139,18 +139,10 @@ curl -X GET http://localhost:5000/task-status/1
 curl -X POST http://localhost:5000/manage-tools \
     -H "Content-Type: application/json" \
     -d '{
-        "tools": ["kubelet", "kubectl"],
-        "archs": ["x86_64", "arrach64"],
-        "mode": "download",
-        "overwrite": false
-    }'
-
-curl -X POST http://localhost:5000/manage-tools \
-    -H "Content-Type: application/json" \
-    -d '{
+        "theme": "kubernetes",
         "tools": ["helm"],
         "archs": ["x86_64", "arrach64"],
-        "version": ["v3.15.4"],
+        "versions": ["v3.15.6"],
         "mode": "download",
         "overwrite": false
     }'

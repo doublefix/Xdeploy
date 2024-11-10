@@ -1,5 +1,5 @@
 import shutil
-from flask import Flask, request, jsonify
+from flask import Flask, make_response, request, jsonify
 import ansible_runner
 import os
 import tempfile
@@ -141,17 +141,67 @@ def manage_tools(task_id, tools, archs, versions, mode, overwrite=False):
 @app.route("/manage-tools", methods=["POST"])
 def manage_tools_endpoint():
     data = request.json
-    tools = data.get("tools", ["kubelet"])
-    archs = data.get("archs", ["x86_64", "arm64"])
-    versions = data.get("versions", [])  # 默认空列表，表示使用所有版本
-    mode = data.get("mode", "download")
-    overwrite = data.get("overwrite", False)
+    theme = data.get("theme")
+    tools = data.get("tools")
+    archs = data.get("archs")
+    versions = data.get("versions")
+    mode = data.get("mode")
+    overwrite = data.get("overwrite")
+
+    if (
+        not theme
+        or not tools
+        or not archs
+        or not versions
+        or mode is None
+        or overwrite is None
+    ):
+        return make_response({"error": "Missing required fields."}, 400)
+
+    yaml_data = load_yaml("meta.yml")
+
+    if theme not in yaml_data:
+        return make_response({"error": f"'{theme}' configuration not found"}, 400)
+
+    # 根据 theme 获取对应的工具配置
+    theme_data = yaml_data[theme]
+    unsupported = []
+
+    for tool in tools:
+        if tool not in theme_data:
+            unsupported.append(f"Tool '{tool}' is not supported.")
+            continue
+
+        for arch in archs:
+            if arch not in theme_data[tool]:
+                unsupported.append(
+                    f"Tool '{tool}' does not support architecture '{arch}'."
+                )
+                continue
+
+            applicable_versions = (
+                versions if versions else list(theme_data[tool][arch].keys())
+            )
+
+            for version in applicable_versions:
+                if version not in theme_data[tool][arch]:
+                    unsupported.append(
+                        f"Tool '{tool}' with architecture '{arch}' does not support version '{version}'."
+                    )
+
+    if unsupported:
+        return make_response(
+            {
+                "error": "Task creation failed due to unsupported configuration",
+                "details": unsupported,
+            },
+            400,
+        )
 
     task_id = str(uuid.uuid4())
     start_time = datetime.now().isoformat()
     save_task_status(task_id, "running", start_time=start_time)
 
-    # 将 versions 参数传递到 manage_tools 函数中
     thread = threading.Thread(
         target=manage_tools, args=(task_id, tools, archs, versions, mode, overwrite)
     )

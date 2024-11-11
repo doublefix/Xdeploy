@@ -248,12 +248,32 @@ def run_playbook():
     if not os.path.isfile(playbook_path):
         return jsonify({"error": f"Playbook not found: {playbook_path}"}), 400
 
+    servers = inventory_data.get("servers", [])
+    if not isinstance(servers, list):
+        return (
+            jsonify({"error": "Invalid inventory format, 'servers' should be a list"}),
+            400,
+        )
+
     with tempfile.NamedTemporaryFile(
         delete=False, mode="w", suffix=".ini"
     ) as inventory_file:
         inventory_file.write("[servers]\n")
-        for host in inventory_data.get("servers", {}).get("hosts", []):
-            inventory_file.write(f"{host}\n")
+        for server in servers:
+            if (
+                not isinstance(server, dict)
+                or "host" not in server
+                or "user" not in server
+            ):
+                return (
+                    jsonify(
+                        {"error": "Each server must have 'host' and 'user' fields"}
+                    ),
+                    400,
+                )
+            host = server.get("host")
+            user = server.get("user")
+            inventory_file.write(f"{host} ansible_user={user}\n")
         inventory_path = inventory_file.name
 
     task_id = str(uuid.uuid4())

@@ -1,16 +1,9 @@
-```bash
-# Download
-bash roles/nerdctl/scripts/download_nerdctl.sh
-
-# Install
-ansible-playbook playbooks/nerdctl.yml
-ansible-playbook playbooks/nerdctl.yml -e "operation=install"
-
-# Uninstall
-ansible-playbook playbooks/nerdctl.yml -e "operation=uninstall"
-```
-
 ## Manually uninstall nerdctl context
+
+```bash
+# 下载二进制文件
+wget -P roles/nerdctl/release/assets/ https://github.com/containerd/nerdctl/releases/download/v1.7.6/nerdctl-full-1.7.6-linux-amd64.tar.gz
+```
 
 手动移除 containerd 的容器镜像
 
@@ -44,9 +37,4 @@ sudo rm -rf /opt/containerd
 # 重载
 sudo systemctl daemon-reload
 # 最后重启
-```
-
-
-```bash
-wget -P roles/nerdctl/release/assets/ https://github.com/containerd/nerdctl/releases/download/v1.7.6/nerdctl-full-1.7.6-linux-amd64.tar.gz
 ```

@@ -86,9 +86,11 @@ sudo crictl rmi $(sudo crictl images -q)
 ansible-playbook playbooks/stop/kubelet.yml
 # 在移除的节点，删除pod和镜像
 ansible-playbook playbooks/clean/kube_node_pod_image.yml
-# 清理k8s
+# 移除kubeadm
+ansible-playbook playbooks/clean/kubeadm.yml
+# 移除kubelet
 ansible-playbook playbooks/clean/kubelet.yml
-# 清理nerdctl
+# 移除nerdctl
 ansible-playbook playbooks/clean/nerdctl.yml
 
 # 清理kubectl

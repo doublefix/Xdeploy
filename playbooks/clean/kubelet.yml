@@ -3,10 +3,6 @@
   hosts: servers
   become: yes
   tasks:
-    - name: Reset kubeadm (remove all Kubernetes cluster configuration)
-      command: kubeadm reset -f
-      ignore_errors: yes
-
     - name: Check if kubelet service exists
       command: systemctl list-units --type=service --state=loaded
       register: kubelet_status
@@ -39,9 +35,7 @@
         path: "/usr/local/bin/{{ item }}"
         state: absent
       loop:
-        - kubeadm
         - kubelet
-        # - kubectl
     
     # Delete old config and cache
     - name: Remove $HOME/.kube directory

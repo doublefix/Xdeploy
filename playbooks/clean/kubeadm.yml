@@ -1,0 +1,18 @@
+---
+- name: Remove Kubernetes binaries and configuration
+  hosts: servers
+  become: yes
+  tasks:
+    - name: Reset kubeadm (remove all Kubernetes cluster configuration)
+      command: kubeadm reset -f
+      ignore_errors: yes
+
+    - name: Reload systemd daemon
+      command: systemctl daemon-reload
+
+    - name: Remove kubeadm binaries
+      file:
+        path: "/usr/local/bin/{{ item }}"
+        state: absent
+      loop:
+        - kubeadm

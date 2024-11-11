@@ -45,3 +45,8 @@ sudo rm -rf /opt/containerd
 sudo systemctl daemon-reload
 # 最后重启
 ```
+
+
+```bash
+wget -P roles/nerdctl/release/assets/ https://github.com/containerd/nerdctl/releases/download/v1.7.6/nerdctl-full-1.7.6-linux-amd64.tar.gz
+```

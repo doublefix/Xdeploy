@@ -238,7 +238,7 @@ def manage_tools_endpoint():
 @app.route("/run-playbook", methods=["POST"])
 def run_playbook():
     data = request.json
-    playbook_path = data.get("playbook_path", "playbooks/playbook.yml")
+    playbook_path = data.get("playbook", "playbooks/playbook.yml")
     inventory_data = data.get("inventory", {})
     extra_vars = data.get("extra_vars", {})
 

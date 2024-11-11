@@ -122,7 +122,7 @@ curl -X POST http://localhost:5000/run-playbook \
 curl -X POST http://localhost:5000/run-playbook \
 -H "Content-Type: application/json" \
 -d '{
-    "playbook_path": "playbooks/nerdctl.yml",
+    "playbook": "playbooks/nerdctl.yml",
     "inventory": {
         "servers": [
             {

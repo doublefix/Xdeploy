@@ -1,3 +1,8 @@
+disabled_plugins = []
+imports = []
+oom_score = 0
+plugin_dir = ""
+required_plugins = []
 root = "/var/lib/containerd"
 state = "/run/containerd"
 temp = ""
@@ -51,13 +56,15 @@ version = 2
     enable_tls_streaming = false
     enable_unprivileged_icmp = false
     enable_unprivileged_ports = false
+    ignore_deprecation_warnings = []
     ignore_image_defined_volumes = false
     image_pull_progress_timeout = "5m0s"
+    image_pull_with_sync_fs = false
     max_concurrent_downloads = 3
     max_container_log_line_size = 16384
     netns_mounts_under_state_dir = false
     restrict_oom_score_adj = false
-    sandbox_image = "registry.k8s.io/pause:3.9"
+    sandbox_image = "registry.k8s.io/pause:3.10"
     selinux_category_range = 1024
     stats_collect_period = 10
     stream_idle_timeout = "4h0m0s"
@@ -161,10 +168,6 @@ version = 2
       [plugins."io.containerd.grpc.v1.cri".registry.headers]
 
       [plugins."io.containerd.grpc.v1.cri".registry.mirrors]
-        [plugins."io.containerd.grpc.v1.cri".registry.mirrors."docker.io"]
-          endpoint = ["https://bqr1dr1n.mirror.aliyuncs.com"]
-        [plugins."io.containerd.grpc.v1.cri".registry.mirrors."k8s.gcr.io"]
-          endpoint = ["https://registry.aliyuncs.com/k8sxio"]
 
     [plugins."io.containerd.grpc.v1.cri".x509_key_pair_streaming]
       tls_cert_file = ""
@@ -177,8 +180,6 @@ version = 2
     interval = "10s"
 
   [plugins."io.containerd.internal.v1.tracing"]
-    sampling_ratio = 1.0
-    service_name = "containerd"
 
   [plugins."io.containerd.metadata.v1.bolt"]
     content_sharing_policy = "shared"
@@ -247,9 +248,6 @@ version = 2
     root_path = ""
 
   [plugins."io.containerd.tracing.processor.v1.otlp"]
-    endpoint = ""
-    insecure = false
-    protocol = ""
 
   [plugins."io.containerd.transfer.v1.local"]
     config_path = ""

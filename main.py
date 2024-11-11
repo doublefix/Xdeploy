@@ -235,6 +235,42 @@ def manage_tools_endpoint():
     return jsonify({"task_id": task_id, "status": "started"}), 202
 
 
+@app.route("/manage-all-themes", methods=["POST"])
+def manage_all_themes():
+    data = request.json
+    overwrite = data.get("overwrite", False)
+    mode = data.get("mode", "download")
+
+    yaml_data = load_yaml("meta.yml")
+    themes = list(yaml_data.keys())
+    software_list = []
+
+    for theme in themes:
+        theme_data = yaml_data.get(theme)
+        if theme_data:
+            for tool_name, tool_data in theme_data.items():
+                software = {
+                    "name": tool_name,
+                    "archs": list(tool_data.keys()),
+                    "versions": [],
+                }
+                for arch, arch_data in tool_data.items():
+                    software["versions"].extend(list(arch_data.keys()))
+                software_list.append(software)
+
+    task_id = str(uuid.uuid4())
+    start_time = datetime.now().isoformat()
+    save_task_status(task_id, "running", start_time=start_time)
+
+    thread = threading.Thread(
+        target=manage_tools,
+        args=(task_id, themes, software_list, mode, overwrite),
+    )
+    thread.start()
+
+    return jsonify({"task_id": task_id, "status": "started"}), 202
+
+
 @app.route("/run-playbook", methods=["POST"])
 def run_playbook():
     data = request.json

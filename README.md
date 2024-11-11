@@ -204,4 +204,11 @@ curl -X POST http://localhost:5000/manage-tools \
         }
     }'
 
+curl -X POST http://localhost:5000/manage-all-themes \
+-H "Content-Type: application/json" \
+-d '{
+    "mode": "download",
+    "overwrite": false
+}'
+
 ```

@@ -1,6 +1,5 @@
 ---
-nerdctl_version: "1.7.6"
-nerdctl_base_dir: "../roles/nerdctl/release/x86_64/v1.7.6"
-nerdctl_tarball: "nerdctl-full-{{ nerdctl_version }}-linux-amd64.tar.gz"
-nerdctl_dest_path: "/tmp/{{ nerdctl_tarball }}"
-containerd_config_path: "/etc/containerd/config.toml"
+pkg_map:
+  x86_64: "amd64"
+  aarch64: "arm64"
+pkg: "nerdctl-full-{{ version }}-linux-{{ pkg_map[arch] }}.tar.gz"

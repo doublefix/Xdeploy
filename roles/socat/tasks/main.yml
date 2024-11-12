@@ -30,18 +30,18 @@
 
     - name: Copy socat to target server
       copy:
-        src: "../roles/socat/release/x86_64/1.7.4/socat_1.7.4.4-2_amd64.deb"
-        dest: "/tmp/socat_1.7.4.4-2_amd64.deb"
+        src: "../roles/socat/release/{{ arch }}/{{ version }}/{{ socat_deb }}"
+        dest: "/tmp/{{ socat_deb }}"
       when: socat_check.rc != 0
 
     - name: Install socat package
       ansible.builtin.apt:
-        deb: /tmp/socat_1.7.4.4-2_amd64.deb
+        deb: /tmp/{{ socat_deb }}
       when: socat_check.rc != 0
 
     - name: Clean up installation file
       file:
-        path: "/tmp/socat_1.7.4.4-2_amd64.deb"
+        path: "/tmp/{{ socat_deb }}"
         state: absent
       when: socat_check.rc != 0
 
@@ -51,15 +51,15 @@
   block:
     - name: Copy socat to target server
       copy:
-        src: "../roles/socat/release/x86_64/1.7.4/socat-1.7.4.1-5.el9_4.2.x86_64.rpm"
-        dest: "/tmp/socat-1.7.4.1-5.el9_4.2.x86_64.rpm"
+        src: "../roles/socat/release/{{ arch }}/{{ version }}/{{ socat_rpm }}"
+        dest: "/tmp/{{ socat_rpm }}"
 
     - name: Install socat RPM package
       yum:
-        name: /tmp/socat-1.7.4.1-5.el9_4.2.x86_64.rpm
+        name: /tmp/{{ socat_rpm }}
         state: present
 
     - name: Clean up installation file
       file:
-        path: "/tmp/socat-1.7.4.1-5.el9_4.2.x86_64.rpm"
+        path: "/tmp/{{ socat_rpm }}"
         state: absent

@@ -1,2 +1,13 @@
 ---
-# Default
+package_names:
+  x86_64:
+    "1.7.4":
+      socat_deb: "socat_1.7.4.4-2_amd64.deb"
+      socat_rpm: "socat-1.7.4.1-5.el9_4.2.x86_64.rpm"
+  aarch64:
+    "1.7.4":
+      socat_deb: "socat_1.7.4.4-2_arm64.deb"
+      socat_rpm: "socat-1.7.4.1-5.el9.aarch64.rpm"
+
+socat_deb: "{{ package_names[arch][version].socat_deb | default('default_value') }}"
+socat_rpm: "{{ package_names[arch][version].socat_rpm | default('default_value') }}"

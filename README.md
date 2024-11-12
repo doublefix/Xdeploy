@@ -42,7 +42,7 @@ ansible-playbook playbooks/cgroup_v2.yml
 ansible-playbook playbooks/nerdctl.yml -e "arch=x86_64 version=1.7.6"
 # 安装k8s
 ansible-playbook playbooks/conntrack.yml -e "arch=x86_64 version=1.4.7"
-ansible-playbook playbooks/socat.yml
+ansible-playbook playbooks/socat.yml -e "arch=x86_64 version=1.7.4"
 ansible-playbook playbooks/kubelet.yml
 # 初始化控制节点,只需要主节点执行,详细查看roles/kubeadm/README.md,尽量手动执行
 ansible-playbook playbooks/kubeadm.yml
@@ -176,6 +176,24 @@ curl -X POST http://localhost:5000/manage-tools \
                 "name": "kubectl",
                 "archs": ["x86_64"],
                 "versions": ["v1.31.0"]
+            }
+        ],
+        "mode": "download"
+    }'
+
+curl -X POST http://localhost:5000/manage-tools \
+    -H "Content-Type: application/json" \
+    -d '{
+        "software": [
+            {
+                "name": "conntrack",
+                "archs": ["x86_64","arrach64"],
+                "versions": ["1.4.7"]
+            },
+            {
+                "name": "socat",
+                "archs": ["x86_64","arrach64"],
+                "versions": ["1.7.4"]
             }
         ],
         "mode": "download"

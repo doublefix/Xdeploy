@@ -10,6 +10,8 @@ roles/kubelet/release/x86_64/conntrack/*
 roles/kubelet/release/x86_64/cri/*.tar.gz
 roles/kubelet/release/x86_64/socat/*
 roles/kubelet/release/x86_64/v*
+roles/conntrack/release/*
+roles/socat/release/*
 roles/kubelet/release/arrach64/v*
 roles/kubeadm/release/*
 roles/kubectl/release/*

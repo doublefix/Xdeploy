@@ -1,0 +1,65 @@
+---
+- name: Check if the system uses dpkg
+  command: dpkg --version
+  register: dpkg_check
+  ignore_errors: yes
+  failed_when: false
+
+- name: Check if the system uses rpm
+  command: rpm --version
+  register: rpm_check
+  ignore_errors: yes
+  failed_when: false
+
+- name: Set system package manager fact
+  set_fact:
+    package_manager: "{{ 'dpkg' if dpkg_check.rc == 0 else 'rpm' if rpm_check.rc == 0 else 'unknown' }}"
+
+- name: Print system package manager
+  debug:
+    msg: "The system uses {{ package_manager }} as its package manager."
+
+# dpkg
+- name: Install socat if dpkg is available
+  when: dpkg_check.rc == 0
+  block:
+    - name: Check if socat is already installed
+      ansible.builtin.command: dpkg -s socat
+      register: socat_check
+      ignore_errors: true
+
+    - name: Copy socat to target server
+      copy:
+        src: "../roles/kubelet/release/x86_64/socat/dpkg/socat_1.7.4.4-2_amd64.deb"
+        dest: "/tmp/socat_1.7.4.4-2_amd64.deb"
+      when: socat_check.rc != 0
+
+    - name: Install socat package
+      ansible.builtin.apt:
+        deb: /tmp/socat_1.7.4.4-2_amd64.deb
+      when: socat_check.rc != 0
+
+    - name: Clean up installation file
+      file:
+        path: "/tmp/socat_1.7.4.4-2_amd64.deb"
+        state: absent
+      when: socat_check.rc != 0
+
+# rpm
+- name: Install socat if rpm is available
+  when: rpm_check.rc == 0
+  block:
+    - name: Copy socat to target server
+      copy:
+        src: "../roles/kubelet/release/x86_64/socat/rpm/socat-1.7.4.1-5.el9_4.2.x86_64.rpm"
+        dest: "/tmp/socat-1.7.4.1-5.el9_4.2.x86_64.rpm"
+
+    - name: Install libnetfilter_cthelper RPM
+      yum:
+        name: /tmp/socat-1.7.4.1-5.el9_4.2.x86_64.rpm
+        state: present
+
+    - name: Clean up installation file
+      file:
+        path: "/tmp/socat-1.7.4.1-5.el9_4.2.x86_64.rpm"
+        state: absent

@@ -1,18 +1,7 @@
 ---
-# Default paths
-kube_bin_path: "/usr/local/bin"
-kube_service_path: "/usr/lib/systemd/system"
-kube_service_d_path: "/usr/lib/systemd/system/kubelet.service.d"
-
 # CRI
 cri_tarball: "crictl-v1.31.0-linux-amd64.tar.gz"
-cri_yaml: "crictl.yaml"
 
 # CNI
 cni_tarball: "cni-plugins-linux-amd64-v1.5.1.tgz"
 
-# Binaries
-kubelet_bin: "kubelet"
-
-# Configurations
-kubelet_service_file: "kubelet.service"

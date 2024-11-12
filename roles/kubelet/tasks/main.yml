@@ -7,19 +7,19 @@
 
 - name: Ensure /usr/local/bin directory exists
   file:
-    path: "{{ kube_bin_path }}"
+    path: "/usr/local/bin"
     state: directory
     mode: "0755"
 
 - name: Extract CRI tarball to /usr/local/bin
   ansible.builtin.unarchive:
     src: "/tmp/{{ cri_tarball }}"
-    dest: "{{ kube_bin_path }}"
+    dest: "/usr/local/bin"
     remote_src: yes
 
 - name: Copy CRI configuration to /etc
   copy:
-    src: "../roles/kubelet/release/x86_64/cri/{{ cri_yaml }}"
+    src: "../roles/kubelet/release/x86_64/cri/crictl.yaml"
     dest: "/etc/crictl.yaml"
     mode: "0644"
 
@@ -52,26 +52,26 @@
 
 - name: Copy kubelet binary to /usr/local/bin
   copy:
-    src: "../roles/kubelet/release/x86_64/main/{{ kubelet_bin }}"
-    dest: "{{ kube_bin_path }}/{{ kubelet_bin }}"
+    src: "../roles/kubelet/release/x86_64/main/kubelet"
+    dest: "/usr/local/bin/kubelet"
     mode: "0755"
 
 # Add kubelet config
 - name: Ensure /usr/lib/systemd/system directory exists
   file:
-    path: "{{ kube_service_path }}"
+    path: "/usr/lib/systemd/system"
     state: directory
     mode: "0755"
 
 - name: Copy kubelet.service to /usr/lib/systemd/system
   copy:
-    src: "../roles/kubelet/conf/{{ kubelet_service_file }}"
-    dest: "{{ kube_service_path }}/{{ kubelet_service_file }}"
+    src: "../roles/kubelet/conf/kubelet.service"
+    dest: "/usr/lib/systemd/system/kubelet.service"
     mode: "0644"
 
 - name: Ensure /usr/lib/systemd/system/kubelet.service.d directory exists
   file:
-    path: "{{ kube_service_d_path }}"
+    path: "/usr/lib/systemd/system/kubelet.service.d"
     state: directory
     mode: "0755"
 

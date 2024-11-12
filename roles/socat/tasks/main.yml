@@ -30,7 +30,7 @@
 
     - name: Copy socat to target server
       copy:
-        src: "../roles/kubelet/release/x86_64/socat/dpkg/socat_1.7.4.4-2_amd64.deb"
+        src: "../roles/socat/release/x86_64/1.7.4/socat_1.7.4.4-2_amd64.deb"
         dest: "/tmp/socat_1.7.4.4-2_amd64.deb"
       when: socat_check.rc != 0
 
@@ -51,7 +51,7 @@
   block:
     - name: Copy socat to target server
       copy:
-        src: "../roles/kubelet/release/x86_64/socat/rpm/socat-1.7.4.1-5.el9_4.2.x86_64.rpm"
+        src: "../roles/socat/release/x86_64/1.7.4/socat-1.7.4.1-5.el9_4.2.x86_64.rpm"
         dest: "/tmp/socat-1.7.4.1-5.el9_4.2.x86_64.rpm"
 
     - name: Install libnetfilter_cthelper RPM

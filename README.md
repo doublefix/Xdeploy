@@ -43,6 +43,8 @@ ansible-playbook playbooks/nerdctl.yml -e "arch=x86_64 version=1.7.6"
 # 安装kubelet
 ansible-playbook playbooks/conntrack.yml -e "arch=x86_64 version=1.4.7"
 ansible-playbook playbooks/socat.yml -e "arch=x86_64 version=1.7.4"
+ansible-playbook playbooks/cri.yml -e "arch=x86_64 version=v1.31.0"
+ansible-playbook playbooks/cni.yml -e "arch=x86_64 version=v1.5.1"
 ansible-playbook playbooks/kubelet.yml
 # 初始化控制节点,只需要主节点执行,详细查看roles/kubeadm/README.md,尽量手动执行
 ansible-playbook playbooks/kubeadm.yml

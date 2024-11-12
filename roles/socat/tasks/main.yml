@@ -21,7 +21,7 @@
 
 # dpkg
 - name: Install socat if dpkg is available
-  when: dpkg_check.rc == 0
+  when: dpkg_check.rc == 0 and package_manager == "dpkg"
   block:
     - name: Check if socat is already installed
       ansible.builtin.command: dpkg -s socat
@@ -47,14 +47,14 @@
 
 # rpm
 - name: Install socat if rpm is available
-  when: rpm_check.rc == 0
+  when: rpm_check.rc == 0 and package_manager == "rpm"
   block:
     - name: Copy socat to target server
       copy:
         src: "../roles/socat/release/x86_64/1.7.4/socat-1.7.4.1-5.el9_4.2.x86_64.rpm"
         dest: "/tmp/socat-1.7.4.1-5.el9_4.2.x86_64.rpm"
 
-    - name: Install libnetfilter_cthelper RPM
+    - name: Install socat RPM package
       yum:
         name: /tmp/socat-1.7.4.1-5.el9_4.2.x86_64.rpm
         state: present

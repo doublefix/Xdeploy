@@ -21,7 +21,7 @@
 
 # dpkg
 - name: Install conntrack if dpkg is available
-  when: dpkg_check.rc == 0
+  when: dpkg_check.rc == 0 and package_manager == "dpkg"
   block:
     - name: Check if conntrack is already installed
       ansible.builtin.command: dpkg -s conntrack
@@ -47,7 +47,7 @@
 
 # rpm
 - name: Install conntrack if rpm is available
-  when: rpm_check.rc == 0
+  when: rpm_check.rc == 0 and package_manager == "rpm"
   block:
     - name: Copy conntrack-tools RPM to target server
       copy:

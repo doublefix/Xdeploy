@@ -3,7 +3,6 @@
 kube_bin_path: "/usr/local/bin"
 kube_service_path: "/usr/lib/systemd/system"
 kube_service_d_path: "/usr/lib/systemd/system/kubelet.service.d"
-tmp_path: "/tmp"
 
 # CRI
 cri_tarball: "crictl-v1.31.0-linux-amd64.tar.gz"
@@ -13,7 +12,6 @@ cri_yaml: "crictl.yaml"
 cni_tarball: "cni-plugins-linux-amd64-v1.5.1.tgz"
 
 # Binaries
-kubectl_bin: "kubectl"
 kubelet_bin: "kubelet"
 
 # Configurations

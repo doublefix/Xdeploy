@@ -3,7 +3,7 @@
 - name: Copy CRI tarball to target server
   copy:
     src: "../roles/kubelet/release/x86_64/cri/{{ cri_tarball }}"
-    dest: "{{ tmp_path }}"
+    dest: "/tmp"
 
 - name: Ensure /usr/local/bin directory exists
   file:
@@ -13,7 +13,7 @@
 
 - name: Extract CRI tarball to /usr/local/bin
   ansible.builtin.unarchive:
-    src: "{{ tmp_path }}/{{ cri_tarball }}"
+    src: "/tmp/{{ cri_tarball }}"
     dest: "{{ kube_bin_path }}"
     remote_src: yes
 
@@ -27,7 +27,7 @@
 - name: Copy CNI tarball to target server
   copy:
     src: "../roles/kubelet/release/x86_64/cni/{{ cni_tarball }}"
-    dest: "{{ tmp_path }}"
+    dest: "/tmp"
 
 - name: Ensure /opt/cni/bin directory exists
   file:
@@ -37,24 +37,18 @@
 
 - name: Extract CNI tarball to /opt/cni/bin
   ansible.builtin.unarchive:
-    src: "{{ tmp_path }}/{{ cni_tarball }}"
+    src: "/tmp/{{ cni_tarball }}"
     dest: "/opt/cni/bin"
     remote_src: yes
 
 # Remove temporary files
 - name: Remove temporary files
   file:
-    path: "{{ tmp_path }}/{{ item }}"
+    path: "/tmp/{{ item }}"
     state: absent
   loop:
     - "{{ cri_tarball }}"
     - "{{ cni_tarball }}"
-
-# - name: Copy kubectl binary to /usr/local/bin
-#   copy:
-#     src: "../roles/kubelet/release/x86_64/main/{{ kubectl_bin }}"
-#     dest: "{{ kube_bin_path }}/{{ kubectl_bin }}"
-#     mode: "0755"
 
 - name: Copy kubelet binary to /usr/local/bin
   copy:

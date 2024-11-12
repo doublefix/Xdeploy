@@ -1,2 +1,22 @@
 ---
-# Default
+package_names:
+  x86_64:
+    "1.4.7":
+      conntrack_deb: "conntrack_1%3a1.4.7-1+b2_amd64.deb"
+      conntrack_rpm: "conntrack-tools-1.4.7-2.el9.x86_64.rpm"
+      libnetfilter_cthelper_rpm: "libnetfilter_cthelper-1.0.0-22.el9.x86_64.rpm"
+      libnetfilter_cttimeout_rpm: "libnetfilter_cttimeout-1.0.0-19.el9.x86_64.rpm"
+      libnetfilter_queue_rpm: "libnetfilter_queue-1.0.5-1.el9.x86_64.rpm"
+  aarch64:
+    "1.4.7":
+      conntrack_deb: "conntrack_1%3a1.4.7-1+b2_aarch64.deb"
+      conntrack_rpm: "conntrack-tools-1.4.7-2.el9.aarch64.rpm"
+      libnetfilter_cthelper_rpm: "libnetfilter_cthelper-1.0.0-22.el9.aarch64.rpm"
+      libnetfilter_cttimeout_rpm: "libnetfilter_cttimeout-1.0.0-19.el9.aarch64.rpm"
+      libnetfilter_queue_rpm: "libnetfilter_queue-1.0.5-1.el9.aarch64.rpm"
+
+conntrack_deb: "{{ package_names[arch][version].conntrack_deb | default('default_value') }}"
+conntrack_rpm: "{{ package_names[arch][version].conntrack_rpm | default('default_value') }}"
+libnetfilter_cthelper_rpm: "{{ package_names[arch][version].libnetfilter_cthelper_rpm | default('default_value') }}"
+libnetfilter_cttimeout_rpm: "{{ package_names[arch][version].libnetfilter_cttimeout_rpm | default('default_value') }}"
+libnetfilter_queue_rpm: "{{ package_names[arch][version].libnetfilter_queue_rpm | default('default_value') }}"

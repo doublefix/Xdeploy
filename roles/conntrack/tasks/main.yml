@@ -1,4 +1,13 @@
 ---
+- name: Debug multiple variables
+  debug:
+    msg:
+      - "conntrack_deb: {{ conntrack_deb }}"
+      - "conntrack_rpm: {{ conntrack_rpm }}"
+      - "libnetfilter_cthelper_rpm: {{ libnetfilter_cthelper_rpm }}"
+      - "libnetfilter_cttimeout_rpm: {{ libnetfilter_cttimeout_rpm }}"
+      - "libnetfilter_queue_rpm: {{ libnetfilter_queue_rpm }}"
+
 - name: Check if the system uses dpkg
   command: dpkg --version
   register: dpkg_check
@@ -30,18 +39,18 @@
 
     - name: Copy conntrack to target server
       copy:
-        src: "../roles/conntrack/release/x86_64/1.4.7/conntrack_1%3a1.4.7-1+b2_amd64.deb"
-        dest: "/tmp/conntrack_1%3a1.4.7-1+b2_amd64.deb"
+        src: "../roles/conntrack/release/{{ arch }}/{{ version }}/{{ conntrack_deb }}"
+        dest: "/tmp/{{ conntrack_deb }}"
       when: conntrack_check.rc != 0
 
     - name: Install conntrack package
       ansible.builtin.apt:
-        deb: /tmp/conntrack_1%3a1.4.7-1+b2_amd64.deb
+        deb: /tmp/{{ conntrack_deb }}
       when: conntrack_check.rc != 0
 
     - name: Clean up installation file
       file:
-        path: "/tmp/conntrack_1%3a1.4.7-1+b2_amd64.deb"
+        path: "/tmp/{{ conntrack_deb }}"
         state: absent
       when: conntrack_check.rc != 0
 
@@ -51,46 +60,46 @@
   block:
     - name: Copy conntrack-tools RPM to target server
       copy:
-        src: "../roles/conntrack/release/x86_64/1.4.7/conntrack-tools-1.4.7-2.el9.x86_64.rpm"
-        dest: "/tmp/conntrack-tools-1.4.7-2.el9.x86_64.rpm"
+        src: "../roles/conntrack/release/{{ arch }}/{{ version }}/{{ conntrack_rpm }}"
+        dest: "/tmp/{{ conntrack_rpm }}"
       when: rpm_check.rc == 0
 
     - name: Copy libnetfilter_cthelper RPM to target server
       copy:
-        src: "../roles/conntrack/release/x86_64/1.4.7/libnetfilter_cthelper-1.0.0-22.el9.x86_64.rpm"
-        dest: "/tmp/libnetfilter_cthelper-1.0.0-22.el9.x86_64.rpm"
+        src: "../roles/conntrack/release/{{ arch }}/{{ version }}/{{ libnetfilter_cthelper_rpm }}"
+        dest: "/tmp/{{ libnetfilter_cthelper_rpm }}"
       when: rpm_check.rc == 0
 
     - name: Copy libnetfilter_cttimeout RPM to target server
       copy:
-        src: "../roles/conntrack/release/x86_64/1.4.7/libnetfilter_cttimeout-1.0.0-19.el9.x86_64.rpm"
-        dest: "/tmp/libnetfilter_cttimeout-1.0.0-19.el9.x86_64.rpm"
+        src: "../roles/conntrack/release/{{ arch }}/{{ version }}/{{ libnetfilter_cttimeout_rpm }}"
+        dest: "/tmp/{{ libnetfilter_cttimeout_rpm }}"
       when: rpm_check.rc == 0
 
     - name: Copy libnetfilter_queue RPM to target server
       copy:
-        src: "../roles/conntrack/release/x86_64/1.4.7/libnetfilter_queue-1.0.5-1.el9.x86_64.rpm"
-        dest: "/tmp/libnetfilter_queue-1.0.5-1.el9.x86_64.rpm"
+        src: "../roles/conntrack/release/{{ arch }}/{{ version }}/{{ libnetfilter_queue_rpm }}"
+        dest: "/tmp/{{ libnetfilter_queue_rpm }}"
       when: rpm_check.rc == 0
 
     - name: Install libnetfilter_cthelper RPM
       yum:
-        name: /tmp/libnetfilter_cthelper-1.0.0-22.el9.x86_64.rpm
+        name: /tmp/{{ libnetfilter_cthelper_rpm }}
         state: present
 
     - name: Install libnetfilter_cttimeout RPM
       yum:
-        name: /tmp/libnetfilter_cttimeout-1.0.0-19.el9.x86_64.rpm
+        name: /tmp/{{ libnetfilter_cttimeout_rpm }}
         state: present
 
     - name: Install libnetfilter_queue RPM
       yum:
-        name: /tmp/libnetfilter_queue-1.0.5-1.el9.x86_64.rpm
+        name: /tmp/{{ libnetfilter_queue_rpm }}
         state: present
 
     - name: Install conntrack-tools RPM
       yum:
-        name: /tmp/conntrack-tools-1.4.7-2.el9.x86_64.rpm
+        name: /tmp/{{ conntrack_rpm }}
         state: present
 
     - name: Clean up installation files
@@ -98,7 +107,7 @@
         path: "{{ item }}"
         state: absent
       loop:
-        - "/tmp/conntrack-tools-1.4.7-2.el9.x86_64.rpm"
-        - "/tmp/libnetfilter_cthelper-1.0.0-22.el9.x86_64.rpm"
-        - "/tmp/libnetfilter_cttimeout-1.0.0-19.el9.x86_64.rpm"
-        - "/tmp/libnetfilter_queue-1.0.5-1.el9.x86_64.rpm"
+        - "/tmp/{{ conntrack_rpm }}"
+        - "/tmp/{{ libnetfilter_cthelper_rpm }}"
+        - "/tmp/{{ libnetfilter_cttimeout_rpm }}"
+        - "/tmp/{{ libnetfilter_queue_rpm }}"

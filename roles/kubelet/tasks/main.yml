@@ -65,7 +65,7 @@
 
 - name: Copy kubelet.service to /usr/lib/systemd/system
   copy:
-    src: "../roles/kubelet/release/x86_64/conf/{{ kubelet_service_file }}"
+    src: "../roles/kubelet/conf/{{ kubelet_service_file }}"
     dest: "{{ kube_service_path }}/{{ kubelet_service_file }}"
     mode: "0644"
 

@@ -40,7 +40,7 @@ ansible-playbook playbooks/linux_kernel_opt.yml
 ansible-playbook playbooks/cgroup_v2.yml
 # 安装nerdctl
 ansible-playbook playbooks/nerdctl.yml -e "arch=x86_64 version=1.7.6"
-# 安装k8s
+# 安装kubelet
 ansible-playbook playbooks/conntrack.yml -e "arch=x86_64 version=1.4.7"
 ansible-playbook playbooks/socat.yml -e "arch=x86_64 version=1.7.4"
 ansible-playbook playbooks/kubelet.yml
@@ -175,6 +175,24 @@ curl -X POST http://localhost:5000/manage-tools \
             {
                 "name": "kubectl",
                 "archs": ["x86_64"],
+                "versions": ["v1.31.0"]
+            }
+        ],
+        "mode": "download"
+    }'
+
+curl -X POST http://localhost:5000/manage-tools \
+    -H "Content-Type: application/json" \
+    -d '{
+        "software": [
+            {
+                "name": "CNI",
+                "archs": ["x86_64","arrach64"],
+                "versions": ["v1.5.1"]
+            },
+            {
+                "name": "CRI",
+                "archs": ["x86_64","arrach64"],
                 "versions": ["v1.31.0"]
             }
         ],

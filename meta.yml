@@ -48,6 +48,25 @@ kubernetes:
       1.7.6:
         - name: "nerdctl-full-1.7.6-linux-arm64.tar.gz"
           source: "https://github.com/containerd/nerdctl/releases/download/v1.7.6/nerdctl-full-1.7.6-linux-arm64.tar.gz"
+  CNI:
+    x86_64:
+      v1.5.1:
+        - name: "cni-plugins-linux-amd64-v1.5.1.tgz"
+          source: "https://github.com/containernetworking/plugins/releases/download/v1.5.1/cni-plugins-linux-amd64-v1.5.1.tgz"
+    arrach64:
+      v1.5.1:
+        - name: "cni-plugins-linux-arm64-v1.5.1.tgz"
+          source: "https://github.com/containernetworking/plugins/releases/download/v1.5.1/cni-plugins-linux-arm64-v1.5.1.tgz"
+
+  CRI:
+    x86_64:
+      v1.31.0:
+        - name: "crictl-v1.31.0-linux-amd64.tar.gz"
+          source: "https://github.com/kubernetes-sigs/cri-tools/releases/download/v1.31.0/crictl-v1.31.0-linux-amd64.tar.gz"
+    arrach64:
+      v1.31.0:
+        - name: "crictl-v1.31.0-linux-arm64.tar.gz"
+          source: "https://github.com/kubernetes-sigs/cri-tools/releases/download/v1.31.0/crictl-v1.31.0-linux-arm64.tar.gz"
 
 docker:
   docker:

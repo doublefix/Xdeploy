@@ -78,5 +78,3 @@
 # - name: Enable and start kubelet service
 #   command: systemctl enable --now kubelet
 
-- name: Add linux tool
-  import_tasks: net_tool.yml

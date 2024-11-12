@@ -16,4 +16,3 @@ kubelet_bin: "kubelet"
 
 # Configurations
 kubelet_service_file: "kubelet.service"
-kubelet_conf_file: "10-kubeadm.conf"

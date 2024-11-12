@@ -75,12 +75,6 @@
     state: directory
     mode: "0755"
 
-- name: Copy 10-kubeadm.conf to /usr/lib/systemd/system/kubelet.service.d
-  copy:
-    src: "../roles/kubelet/release/x86_64/conf/{{ kubelet_conf_file }}"
-    dest: "{{ kube_service_d_path }}/{{ kubelet_conf_file }}"
-    mode: "0644"
-
 # - name: Enable and start kubelet service
 #   command: systemctl enable --now kubelet
 

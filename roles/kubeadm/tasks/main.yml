@@ -15,6 +15,12 @@
   become: yes
   changed_when: false
 
+- name: Copy 10-kubeadm.conf to /usr/lib/systemd/system/kubelet.service.d
+  copy:
+    src: "../roles/kubeadm/conf/10-kubeadm.conf"
+    dest: "/usr/lib/systemd/system/kubelet.service.d/10-kubeadm.conf"
+    mode: "0644"
+
 # Add main binaries
 - name: Copy kubeadm binary to /usr/local/bin
   copy:

@@ -1,0 +1,6 @@
+---
+- name: Deploy conntrack
+  hosts: servers
+  become: yes
+  roles:
+    - conntrack

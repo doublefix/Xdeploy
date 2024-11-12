@@ -41,6 +41,8 @@ ansible-playbook playbooks/cgroup_v2.yml
 # 安装nerdctl
 ansible-playbook playbooks/nerdctl.yml -e "arch=x86_64 version=1.7.6"
 # 安装k8s
+ansible-playbook playbooks/conntrack.yml
+ansible-playbook playbooks/socat.yml
 ansible-playbook playbooks/kubelet.yml
 # 初始化控制节点,只需要主节点执行,详细查看roles/kubeadm/README.md,尽量手动执行
 ansible-playbook playbooks/kubeadm.yml

@@ -1,0 +1,6 @@
+---
+- name: Deploy socat
+  hosts: servers
+  become: yes
+  roles:
+    - socat

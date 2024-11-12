@@ -1,0 +1,6 @@
+---
+- name: Deploy CRI
+  hosts: servers
+  become: yes
+  roles:
+    - CRI

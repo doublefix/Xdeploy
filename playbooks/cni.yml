@@ -1,0 +1,6 @@
+---
+- name: Deploy CNI
+  hosts: servers
+  become: yes
+  roles:
+    - CNI

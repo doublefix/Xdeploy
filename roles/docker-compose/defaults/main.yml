@@ -1,4 +1,4 @@
 ---
-version: "v2.29.2"
-arch: "x86_64"
-os: "linux"
+pkg_map:
+  x86_64: "x86_64"
+  aarch64: "aarch64"

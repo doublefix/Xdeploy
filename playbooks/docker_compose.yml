@@ -2,5 +2,8 @@
 - name: Install docker compose
   hosts: servers
   become: yes
+  vars:
+    arch: "{{ arch | default('x86_64') }}"
+    version: "{{ version | default('v2.29.2') }}"
   roles:
     - docker-compose

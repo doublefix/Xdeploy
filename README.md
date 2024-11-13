@@ -57,7 +57,7 @@ ansible-playbook playbooks/metrics_server.yml
 # 安装kubectl
 ansible-playbook playbooks/kubectl.yml -e "arch=x86_64 version=v1.31.0"
 # 安装helm
-ansible-playbook playbooks/helm.yml
+ansible-playbook playbooks/helm.yml  -e "arch=x86_64 version=v3.15.4"
 # 安装docker
 ansible-playbook playbooks/docker.yml
 # 安装docker-compose

@@ -1,16 +1,16 @@
 - name: Copy Helm tarball to target server
   copy:
-    src: "../roles/helm/release/{{ arch }}/{{ version }}/helm-{{ version }}-{{ os }}-{{ arch }}.tar.gz"
-    dest: "/tmp/helm-{{ version }}-{{ os }}-{{ arch }}.tar.gz"
+    src: "../roles/helm/release/{{ arch }}/{{ version }}/{{ pkg }}"
+    dest: "/tmp/{{ pkg }}"
 
 - name: Extract Helm tarball
   unarchive:
-    src: "/tmp/helm-{{ version }}-{{ os }}-{{ arch }}.tar.gz"
+    src: "/tmp/{{ pkg }}"
     dest: "/tmp/"
     remote_src: yes
 
 - name: Move Helm binary to /usr/local/bin/
-  command: mv /tmp/{{ os }}-{{ arch }}/helm /usr/local/bin/helm
+  command: mv /tmp/linux-{{ pkg_map[arch] }}/helm /usr/local/bin/helm
 
 - name: Ensure Helm binary is executable
   file:
@@ -22,5 +22,5 @@
     path: "/tmp/{{ item }}"
     state: absent
   loop:
-    - "helm-{{ version }}-{{ os }}-{{ arch }}.tar.gz"
-    - "{{ os }}-{{ arch }}"
+    - "{{ pkg }}"
+    - "linux-{{ pkg_map[arch] }}"

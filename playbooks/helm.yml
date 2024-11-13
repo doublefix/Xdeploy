@@ -2,5 +2,8 @@
 - name: Copy and install Helm on target server
   hosts: servers
   become: yes
+  vars:
+    arch: "{{ arch | default('x86_64') }}"
+    version: "{{ version | default('v3.15.4') }}"
   roles:
     - helm

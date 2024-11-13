@@ -1,4 +1,4 @@
 ```bash
 # Download helm
-bash roles/helm/scripts/download.sh v3.15.4
+wget https://get.helm.sh/helm-v3.15.4-linux-amd64.tar.gz
 ```

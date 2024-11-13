@@ -15,13 +15,11 @@ ssh-copy-id username@hostname
 Execute in sequence
 
 ```bash
-# 优化Linux内核等
 ansible-playbook playbooks/linux_kernel_opt.yml
-# 开启cgroup,更好的支持虚拟化
 ansible-playbook playbooks/cgroup_v2.yml
-# 安装nerdctl
+
 ansible-playbook playbooks/nerdctl.yml -e "arch=x86_64 version=1.7.6"
-# 安装kubelet
+
 ansible-playbook playbooks/conntrack.yml -e "arch=x86_64 version=1.4.7"
 ansible-playbook playbooks/socat.yml -e "arch=x86_64 version=1.7.4"
 ansible-playbook playbooks/cri.yml -e "arch=x86_64 version=v1.31.0"
@@ -32,19 +30,13 @@ ansible-playbook playbooks/kubeadm.yml -e "arch=x86_64 version=v1.31.0"
 # Node节点加入Cluster
 ansible-playbook playbooks/kube_add_node.yml -e "control_plane=node:6443 kubeadm_token=xxxx.xxxxxxxxxxxx discovery_token_ca_cert_hash=sha256:xxxx is_control_plane=--control-plane"
 
-# 安装网络、监控相关
 ansible-playbook playbooks/calico.yml
 ansible-playbook playbooks/metrics_server.yml
 
-# 安装kubectl
 ansible-playbook playbooks/kubectl.yml -e "arch=x86_64 version=v1.31.0"
-# 安装helm
 ansible-playbook playbooks/helm.yml -e "arch=x86_64 version=v3.15.4"
-# 安装docker
 ansible-playbook playbooks/docker.yml -e "arch=x86_64 version=27.1.2"
-# 安装docker-compose
 ansible-playbook playbooks/docker_compose.yml -e "arch=x86_64 version=v2.29.2"
-# 安装docker-buildx
 ansible-playbook playbooks/docker_buildx.yml -e "arch=x86_64 version=v0.16.2"
 ```
 
@@ -71,26 +63,16 @@ sudo crictl rm $(sudo crictl ps -a -q)
 sudo crictl images
 sudo crictl rmi $(sudo crictl images -q)
 
-# 停止kubelet
 ansible-playbook playbooks/stop/kubelet.yml
-# 在移除的节点，删除pod和镜像
 ansible-playbook playbooks/clean/kube_node_pod_image.yml
-# 移除kubeadm
 ansible-playbook playbooks/clean/kubeadm.yml
-# 移除kubelet
 ansible-playbook playbooks/clean/kubelet.yml
-# 移除nerdctl
 ansible-playbook playbooks/clean/nerdctl.yml
 
-# 清理kubectl
 ansible-playbook playbooks/clean/kubectl.yml
-# 清理helm
 ansible-playbook playbooks/clean/helm.yml
-# 清理docker
 ansible-playbook playbooks/clean/docker.yml
-# 清理docker-compose
 ansible-playbook playbooks/clean/docker_compose.yml
-# 清理docker-buildx
 ansible-playbook playbooks/clean/docker_buildx.yml
 
 ```

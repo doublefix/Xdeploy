@@ -2,7 +2,7 @@
 # Add CRI
 - name: Copy CRI tarball to target server
   copy:
-    src: "../roles/kubelet/release/x86_64/cri/crictl-v1.31.0-linux-amd64.tar.gz"
+    src: "../roles/CRI/release/{{ arch }}/{{ version }}/crictl-v1.31.0-linux-amd64.tar.gz"
     dest: "/tmp"
 
 - name: Ensure /usr/local/bin directory exists

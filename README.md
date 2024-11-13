@@ -6,22 +6,7 @@ K8s version CHANGELOG
 ## How to use ansible
 
 ```bash
-# 安装
-bash ansible/install_ansible.sh
-# 激活ansible环境
-source ansible-env/bin/activate
-# 安装依赖
-pip install -r requirements.txt
-# 退出ansible环境
-deactivate
-# 常用命令
-ansible all --list-hosts
-ansible all -m ping
-
-
-# 生成公钥
 ssh-keygen -t rsa -b 2048
-# 添加公钥到目标服务器，输入目标机器的密码
 ssh-copy-id username@hostname
 ```
 

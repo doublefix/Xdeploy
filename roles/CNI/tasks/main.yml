@@ -16,3 +16,11 @@
     src: "/tmp/{{ pkg }}"
     dest: "/opt/cni/bin"
     remote_src: yes
+
+# Remove temporary files
+- name: Remove temporary files
+  file:
+    path: "/tmp/{{ item }}"
+    state: absent
+  loop:
+    - "{{ pkg }}"

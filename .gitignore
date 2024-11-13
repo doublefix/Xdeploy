@@ -7,14 +7,9 @@ roles/docker-compose/release/x*
 roles/nerdctl/release/*
 roles/CNI/release/*
 roles/CRI/release/*
-roles/kubelet/release/x86_64/cni/*
-roles/kubelet/release/x86_64/conntrack/*
-roles/kubelet/release/x86_64/cri/*.tar.gz
-roles/kubelet/release/x86_64/socat/*
-roles/kubelet/release/x86_64/v*
+roles/kubelet/release/*
 roles/conntrack/release/*
 roles/socat/release/*
-roles/kubelet/release/arrach64/v*
 roles/kubeadm/release/*
 roles/kubectl/release/*
 roles/helm/release/*

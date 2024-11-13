@@ -1,13 +1,4 @@
 ---
-# Remove temporary files
-- name: Remove temporary files
-  file:
-    path: "/tmp/{{ item }}"
-    state: absent
-  loop:
-    - "{{ cri_tarball }}"
-    - "{{ cni_tarball }}"
-
 - name: Copy kubelet binary to /usr/local/bin
   copy:
     src: "../roles/kubelet/release/x86_64/main/kubelet"

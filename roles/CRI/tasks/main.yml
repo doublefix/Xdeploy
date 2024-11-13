@@ -22,3 +22,11 @@
     src: "../roles/CRI/conf/crictl.yaml"
     dest: "/etc/crictl.yaml"
     mode: "0644"
+
+# Remove temporary files
+- name: Remove temporary files
+  file:
+    path: "/tmp/{{ item }}"
+    state: absent
+  loop:
+    - "{{ pkg }}"

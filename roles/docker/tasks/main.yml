@@ -11,12 +11,12 @@
 
 - name: Copy Docker binary to target server
   copy:
-    src: "../roles/docker/release/docker-{{ version }}.tgz"
+    src: "../roles/docker/release/{{ arch }}/{{ version }}/docker-{{ version }}.tgz"
     dest: "/tmp/docker-{{ version }}.tgz"
 
 - name: Copy Docker Rootless Extras to target server
   copy:
-    src: "../roles/docker/release/docker-rootless-extras-{{ version }}.tgz"
+    src: "../roles/docker/release/{{ arch }}/{{ version }}/docker-rootless-extras-{{ version }}.tgz"
     dest: "/tmp/docker-rootless-extras-{{ version }}.tgz"
 
 - name: Create temporary directory

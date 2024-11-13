@@ -1,9 +1,13 @@
 FROM python:3.13.0-alpine3.20
 
-WORKDIR ~
+WORKDIR /app
 
 COPY . .
-RUN pip install --no-cache-dir -r requirements.txt
+
+RUN apk update \
+    && apk add --no-cache gcc libffi-dev musl-dev \
+    && pip install --no-cache-dir -r requirements.txt \
+    && apk del gcc libffi-dev musl-dev
 
 EXPOSE 5000
 

@@ -1,1 +1,5 @@
 ---
+pkg_map:
+  x86_64: "amd64"
+  aarch64: "arm64"
+pkg: "cni-plugins-linux-{{ pkg_map[arch] }}-{{ version }}.tgz"

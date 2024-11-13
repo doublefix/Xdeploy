@@ -2,7 +2,7 @@
 # Add CRI
 - name: Copy CRI tarball to target server
   copy:
-    src: "../roles/CRI/release/{{ arch }}/{{ version }}/crictl-v1.31.0-linux-amd64.tar.gz"
+    src: "../roles/CRI/release/{{ arch }}/{{ version }}/{{ pkg }}"
     dest: "/tmp"
 
 - name: Ensure /usr/local/bin directory exists
@@ -13,7 +13,7 @@
 
 - name: Extract CRI tarball to /usr/local/bin
   ansible.builtin.unarchive:
-    src: "/tmp/crictl-v1.31.0-linux-amd64.tar.gz"
+    src: "/tmp/{{ pkg }}"
     dest: "/usr/local/bin"
     remote_src: yes
 

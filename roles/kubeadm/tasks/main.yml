@@ -10,10 +10,10 @@
     src: "../roles/kubeadm/conf/init-control-plane.yml"
     dest: "/etc/kubernetes/"
 
-- name: Enable and start kubelet service
-  command: sudo systemctl enable --now kubelet
-  become: yes
-  changed_when: false
+# - name: Enable and start kubelet service
+#   command: sudo systemctl enable --now kubelet
+#   become: yes
+#   changed_when: false
 
 - name: Copy 10-kubeadm.conf to /usr/lib/systemd/system/kubelet.service.d
   copy:
@@ -24,6 +24,6 @@
 # Add main binaries
 - name: Copy kubeadm binary to /usr/local/bin
   copy:
-    src: "../roles/kubeadm/release/x86_64/v1.31.0/kubeadm"
+    src: "../roles/kubeadm/release/{{ arch }}/{{ version }}/kubeadm"
     dest: "/usr/local/bin/kubeadm"
     mode: "0755"

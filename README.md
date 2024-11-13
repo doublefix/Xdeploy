@@ -47,7 +47,7 @@ ansible-playbook playbooks/cri.yml -e "arch=x86_64 version=v1.31.0"
 ansible-playbook playbooks/cni.yml -e "arch=x86_64 version=v1.5.1"
 ansible-playbook playbooks/kubelet.yml -e "arch=x86_64 version=v1.31.0"
 # 初始化控制节点,只需要主节点执行,详细查看roles/kubeadm/README.md,尽量手动执行
-ansible-playbook playbooks/kubeadm.yml
+ansible-playbook playbooks/kubeadm.yml -e "arch=x86_64 version=v1.31.0"
 # Node节点加入Cluster
 ansible-playbook playbooks/kube_add_node.yml -e "control_plane=node:6443 kubeadm_token=xxxx.xxxxxxxxxxxx discovery_token_ca_cert_hash=sha256:xxxx is_control_plane=--control-plane"
 

@@ -2,5 +2,8 @@
 - name: Init ctrl
   hosts: servers
   become: yes
+  vars:
+    arch: "{{ arch | default('x86_64') }}"
+    version: "{{ version | default('v1.31.0') }}"
   roles:
     - kubeadm

@@ -1,17 +1,20 @@
 - name: Copy buildx to target server
   copy:
-    src: "../roles/docker-buildx/release/buildx-{{ version }}.{{ os }}-{{ arch }}"
-    dest: "/tmp/buildx-{{ version }}.{{ os }}-{{ arch }}"
+    src: "../roles/docker-buildx/release/{{ arch }}/{{ version }}/buildx-{{ version }}.linux-{{ pkg_map[arch] }}"
+    dest: "/tmp/buildx-{{ version }}.linux-{{ pkg_map[arch] }}"
 
 - name: Set execute permission for buildx
   file:
-    path: "/tmp/buildx-{{ version }}.{{ os }}-{{ arch }}"
+    path: "/tmp/buildx-{{ version }}.linux-{{ pkg_map[arch] }}"
     mode: "0755"
 
-- name: Rename and move buildx to /usr/local/bin
-  command: mv /tmp/buildx-{{ version }}.{{ os }}-{{ arch }} /usr/local/bin/docker-buildx
-
-- name: Clean up temporary file
+- name: Ensure .docker/cli-plugins directory exists in the root directory
   file:
-    path: "/tmp/buildx-{{ version }}.{{ os }}-{{ arch }}"
-    state: absent
+    path: "/root/.docker/cli-plugins"
+    state: directory
+    mode: '0755'
+
+- name: Rename and move buildx to .docker/cli-plugins/docker-buildx
+  command: mv /tmp/buildx-{{ version }}.linux-{{ pkg_map[arch] }} /root/.docker/cli-plugins/docker-buildx
+  args:
+    removes: "/tmp/buildx-{{ version }}.linux-{{ pkg_map[arch] }}"

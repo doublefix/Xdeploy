@@ -2,5 +2,8 @@
 - name: Install docker-buildx
   hosts: servers
   become: yes
+  vars:
+    arch: "{{ arch | default('x86_64') }}"
+    version: "{{ version | default('v0.16.2') }}"
   roles:
     - docker-buildx

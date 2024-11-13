@@ -8,10 +8,14 @@
     path: "/tmp/docker-compose-linux-{{ pkg_map[arch] }}"
     mode: "0755"
 
-- name: Rename and move docker-compose to /usr/local/bin
-  command: mv /tmp/docker-compose-linux-{{ pkg_map[arch] }} /usr/local/bin/docker-compose
-
-- name: Clean up temporary file
+- name: Ensure .docker/cli-plugins directory exists in the root directory
   file:
-    path: "/tmp/docker-compose-linux-{{ pkg_map[arch] }}"
-    state: absent
+    path: "/root/.docker/cli-plugins"
+    state: directory
+    mode: '0755'
+
+- name: Rename and move docker-compose to /usr/local/bin
+  command: mv /tmp/docker-compose-linux-{{ pkg_map[arch] }} /root/.docker/cli-plugins/docker-compose
+  args:
+    removes: "/tmp/docker-compose-linux-{{ pkg_map[arch] }}"
+

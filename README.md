@@ -63,7 +63,7 @@ ansible-playbook playbooks/docker.yml -e "arch=x86_64 version=27.1.2"
 # 安装docker-compose
 ansible-playbook playbooks/docker_compose.yml -e "arch=x86_64 version=v2.29.2"
 # 安装docker-buildx
-ansible-playbook playbooks/docker_buildx.yml
+ansible-playbook playbooks/docker_buildx.yml -e "arch=x86_64 version=v0.16.2"
 ```
 
 ## Clean kube

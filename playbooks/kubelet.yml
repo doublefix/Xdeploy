@@ -2,5 +2,8 @@
 - name: Deploy kubernetes
   hosts: servers
   become: yes
+  vars:
+    arch: "{{ arch | default('x86_64') }}"
+    version: "{{ version | default('v1.31.0') }}"
   roles:
     - kubelet

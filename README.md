@@ -17,11 +17,7 @@ deactivate
 # 常用命令
 ansible all --list-hosts
 ansible all -m ping
-ansible-playbook playbook.yml
-# 使用示例：使用root安装
-ansible-playbook playbooks/vim.yml --ask-become-pass
-# 使用示例：动态获取服务器安装
-ansible-playbook -i inventory/dynamic.py dev playbooks/site.yml
+
 
 # 生成公钥
 ssh-keygen -t rsa -b 2048
@@ -46,11 +42,12 @@ ansible-playbook playbooks/socat.yml -e "arch=x86_64 version=1.7.4"
 ansible-playbook playbooks/cri.yml -e "arch=x86_64 version=v1.31.0"
 ansible-playbook playbooks/cni.yml -e "arch=x86_64 version=v1.5.1"
 ansible-playbook playbooks/kubelet.yml -e "arch=x86_64 version=v1.31.0"
-# 初始化控制节点,只需要主节点执行,详细查看roles/kubeadm/README.md,尽量手动执行
 ansible-playbook playbooks/kubeadm.yml -e "arch=x86_64 version=v1.31.0"
+# 初始化控制节点,只需要主节点执行,详细查看roles/kubeadm/README.md,尽量手动执行
 # Node节点加入Cluster
 ansible-playbook playbooks/kube_add_node.yml -e "control_plane=node:6443 kubeadm_token=xxxx.xxxxxxxxxxxx discovery_token_ca_cert_hash=sha256:xxxx is_control_plane=--control-plane"
 
+# 安装网络、监控相关
 ansible-playbook playbooks/calico.yml
 ansible-playbook playbooks/metrics_server.yml
 

@@ -1,3 +1,3 @@
 ```bash
-bash roles/docker-buildx/scripts/download.sh v0.16.2
+wget https://github.com/docker/buildx/releases/download/v0.16.2/buildx-v0.16.2.linux-amd64
 ```

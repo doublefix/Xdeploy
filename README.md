@@ -26,9 +26,8 @@ ansible-playbook playbooks/cri.yml -e "arch=x86_64 version=v1.31.0"
 ansible-playbook playbooks/cni.yml -e "arch=x86_64 version=v1.5.1"
 ansible-playbook playbooks/kubelet.yml -e "arch=x86_64 version=v1.31.0"
 ansible-playbook playbooks/kubeadm.yml -e "arch=x86_64 version=v1.31.0"
+
 # 初始化控制节点,只需要主节点执行,详细查看roles/kubeadm/README.md,尽量手动执行
-# Node节点加入Cluster
-ansible-playbook playbooks/kube_add_node.yml -e "control_plane=node:6443 kubeadm_token=xxxx.xxxxxxxxxxxx discovery_token_ca_cert_hash=sha256:xxxx is_control_plane=--control-plane"
 
 ansible-playbook playbooks/calico.yml
 ansible-playbook playbooks/metrics_server.yml
@@ -45,13 +44,13 @@ ansible-playbook playbooks/docker_buildx.yml -e "arch=x86_64 version=v0.16.2"
 Execute in sequence
 
 ```bash
-# 驱逐节点,停止服务
+# Delete node
 kubectl cordon [node-name]
 kubectl drain [node-name] --delete-emptydir-data --ignore-daemonsets --force
 kubectl delete node [node-name]
-# 初始化节点，删数据
+# Reset node
 sudo kubeadm reset
-# 初始化网络
+# Init network
 sudo iptables -F
 sudo iptables -t nat -F
 sudo iptables -t mangle -F

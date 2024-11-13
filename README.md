@@ -55,7 +55,7 @@ ansible-playbook playbooks/calico.yml
 ansible-playbook playbooks/metrics_server.yml
 
 # 安装kubectl
-ansible-playbook playbooks/kubectl.yml
+ansible-playbook playbooks/kubectl.yml -e "arch=x86_64 version=v1.31.0"
 # 安装helm
 ansible-playbook playbooks/helm.yml
 # 安装docker

@@ -1,0 +1,11 @@
+---
+- name: Ensure the /etc/kubernetes/calico directory exists
+  file:
+    path: /etc/kubernetes/calico
+    state: directory
+    mode: "0755"
+
+- name: Copy calico to target server
+  copy:
+    src: "../roles/calico/conf/v3.28.1/calico.yaml"
+    dest: "/etc/kubernetes/calico"

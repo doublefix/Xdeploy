@@ -51,6 +51,9 @@ ansible-playbook playbooks/kubeadm.yml
 # Node节点加入Cluster
 ansible-playbook playbooks/kube_add_node.yml -e "control_plane=node:6443 kubeadm_token=xxxx.xxxxxxxxxxxx discovery_token_ca_cert_hash=sha256:xxxx is_control_plane=--control-plane"
 
+ansible-playbook playbooks/calico.yml
+ansible-playbook playbooks/metrics_server.yml
+
 # 安装kubectl
 ansible-playbook playbooks/kubectl.yml
 # 安装helm

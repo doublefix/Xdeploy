@@ -1,5 +1,5 @@
 ---
-- name: Deploy kubernetes
+- name: Deploy kubelet
   hosts: servers
   become: yes
   vars:

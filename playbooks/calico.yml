@@ -1,0 +1,6 @@
+---
+- name: Deploy calico
+  hosts: servers
+  become: yes
+  roles:
+    - calico

@@ -1,0 +1,16 @@
+---
+- name: Ensure the /etc/kubernetes/metrics-server directory exists
+  file:
+    path: /etc/kubernetes/metrics-server
+    state: directory
+    mode: "0755"
+
+- name: Copy metrics-server components to target server
+  copy:
+    src: "../roles/metrics-server/conf/v0.7.1/components.yaml"
+    dest: "/etc/kubernetes/metrics-server"
+
+- name: Copy metrics-server availability to target server
+  copy:
+    src: "../roles/metrics-server/conf/v0.7.1/high-availability-1.21+.yaml"
+    dest: "/etc/kubernetes/metrics-server"

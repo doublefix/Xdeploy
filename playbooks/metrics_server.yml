@@ -1,0 +1,6 @@
+---
+- name: Deploy metrics server
+  hosts: servers
+  become: yes
+  roles:
+    - metrics-server

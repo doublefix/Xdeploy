@@ -1,4 +1,5 @@
 venv
+__pycache__
 roles/docker/release/*
 roles/docker-buildx/release/*
 roles/docker-compose/release/*

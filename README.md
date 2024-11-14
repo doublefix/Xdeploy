@@ -1,4 +1,4 @@
-# Infrahub
+# Xdeploy
 
 The project is designed to help developers install essential software.
 K8s version CHANGELOG

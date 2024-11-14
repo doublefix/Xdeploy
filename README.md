@@ -27,8 +27,6 @@ ansible-playbook playbooks/cni.yml -e "arch=x86_64 version=v1.5.1"
 ansible-playbook playbooks/kubelet.yml -e "arch=x86_64 version=v1.31.0"
 ansible-playbook playbooks/kubeadm.yml -e "arch=x86_64 version=v1.31.0"
 
-# 初始化控制节点,只需要主节点执行,详细查看roles/kubeadm/README.md,尽量手动执行
-
 ansible-playbook playbooks/calico.yml
 ansible-playbook playbooks/metrics_server.yml
 
@@ -46,7 +44,7 @@ Execute in sequence
 ```bash
 # Delete node
 kubectl cordon [node-name]
-kubectl drain [node-name] --delete-emptydir-data --ignore-daemonsets --force
+kubectl drain [node-name] --ignore-daemonsets --delete-local-data
 kubectl delete node [node-name]
 # Reset node
 sudo kubeadm reset
@@ -55,14 +53,9 @@ sudo iptables -F
 sudo iptables -t nat -F
 sudo iptables -t mangle -F
 sudo iptables -X
-# Remove container
-sudo crictl ps -a
-sudo crictl rm $(sudo crictl ps -a -q)
-# Remove image
-sudo crictl images
-sudo crictl rmi $(sudo crictl images -q)
 
 ansible-playbook playbooks/stop/kubelet.yml
+
 ansible-playbook playbooks/clean/kube_node_pod_image.yml
 ansible-playbook playbooks/clean/kubeadm.yml
 ansible-playbook playbooks/clean/kubelet.yml

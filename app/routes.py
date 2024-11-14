@@ -6,7 +6,7 @@ import uuid
 from flask import Blueprint, app, jsonify, make_response, request
 
 from app.common import load_yaml
-from app.package import manage_tools
+from app.package import TaskConfig, manage_tools
 from app.task import load_task_status, run_playbook_task, save_task_status
 
 routes = Blueprint("routes", __name__)
@@ -73,15 +73,19 @@ def manage_tools_endpoint():
             },
             400,
         )
-
     task_id = str(uuid.uuid4())
     start_time = datetime.now().isoformat()
     save_task_status(task_id, "running", start_time=start_time)
 
-    thread = threading.Thread(
-        target=manage_tools,
-        args=(task_id, themes, software_list, mode, overwrite, sources),
+    task_config = TaskConfig(
+        task_id=task_id,
+        themes=themes,
+        software_list=software_list,
+        mode=mode,
+        overwrite=overwrite,
+        sources=sources,
     )
+    thread = threading.Thread(target=manage_tools, args=(task_config,))
     thread.start()
 
     return jsonify({"task_id": task_id, "status": "started"}), 202
@@ -114,10 +118,14 @@ def manage_all_themes():
     start_time = datetime.now().isoformat()
     save_task_status(task_id, "running", start_time=start_time)
 
-    thread = threading.Thread(
-        target=manage_tools,
-        args=(task_id, themes, software_list, mode, overwrite),
+    task_config = TaskConfig(
+        task_id=task_id,
+        themes=themes,
+        software_list=software_list,
+        mode=mode,
+        overwrite=overwrite,
     )
+    thread = threading.Thread(target=manage_tools, args=(task_config,))
     thread.start()
 
     return jsonify({"task_id": task_id, "status": "started"}), 202

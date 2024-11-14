@@ -54,7 +54,7 @@ def is_tool_supported(tool, archs, versions, themes, yaml_data):
     return False
 
 
-def start_task(task_id, themes, software_list, mode, overwrite, sources):
+def start_task_job(task_id, themes, software_list, mode, overwrite, sources):
     """初始化并启动任务线程"""
     start_time = datetime.now().isoformat()
     save_task_status(task_id, "running", start_time=start_time)

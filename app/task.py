@@ -2,8 +2,9 @@ from datetime import datetime
 import json
 import os
 import shutil
-from app.task import TASKS_DIR
-from app.task import MAX_TASKS
+
+TASKS_DIR = "tasks"
+MAX_TASKS = 3
 
 import ansible_runner
 

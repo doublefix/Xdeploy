@@ -14,6 +14,7 @@ from app.service import (
     generate_inventory_file,
     generate_software_list,
     start_task,
+    start_task_job,
     validate_playbook_path,
 )
 from app.task import load_task_status, run_playbook_task, save_task_status
@@ -41,7 +42,7 @@ def manage_tools_endpoint():
             400,
         )
     task_id = str(uuid.uuid4())
-    start_task(task_id, themes, software_list, mode, overwrite, sources)
+    start_task_job(task_id, themes, software_list, mode, overwrite, sources)
 
     return jsonify({"task_id": task_id, "status": "started"}), 202
 

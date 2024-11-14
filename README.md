@@ -57,8 +57,8 @@ sudo iptables -X
 ansible-playbook playbooks/stop/kubelet.yml
 
 ansible-playbook playbooks/clean/pod_image.yml
-ansible-playbook playbooks/clean/kubeadm.yml
 ansible-playbook playbooks/clean/kubelet.yml
+ansible-playbook playbooks/clean/kubeadm.yml
 ansible-playbook playbooks/clean/nerdctl.yml
 
 ansible-playbook playbooks/clean/kubectl.yml

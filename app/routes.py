@@ -11,6 +11,7 @@ from app.task import load_task_status, run_playbook_task, save_task_status
 
 routes = Blueprint("routes", __name__)
 
+
 @routes.route("/manage-tools", methods=["POST"])
 def manage_tools_endpoint():
     data = request.json

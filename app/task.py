@@ -2,12 +2,10 @@ from datetime import datetime
 import json
 import os
 import shutil
+from app.task import TASKS_DIR
+from app.task import MAX_TASKS
 
 import ansible_runner
-
-
-TASKS_DIR = "tasks"
-MAX_TASKS = 3
 
 
 def save_task_status(task_id, status, start_time=None, end_time=None):

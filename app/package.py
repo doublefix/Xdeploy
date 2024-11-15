@@ -22,6 +22,9 @@ def manage_tools(task_config: TaskConfig):
     yaml_data = load_yaml("meta.yml")
 
     try:
+        if not task_config.themes:
+            task_config.themes = list(yaml_data.keys())
+
         for theme in task_config.themes:
             theme_data = yaml_data.get(theme)
             if not theme_data:
@@ -78,13 +81,15 @@ def process_file(tool, arch, version, file_info, task_config: TaskConfig):
     dest_path = os.path.join(dest_dir, name)
 
     overwrite_flag = task_config.overwrite
-    if (
-        tool in task_config.sources
-        and arch in task_config.sources[tool]
-        and version in task_config.sources[tool][arch]
-    ):
-        url = task_config.sources[tool][arch][version]
-        overwrite_flag = True
+
+    if task_config.sources and isinstance(task_config.sources, dict):
+        if (
+            tool in task_config.sources
+            and arch in task_config.sources[tool]
+            and version in task_config.sources[tool][arch]
+        ):
+            url = task_config.sources[tool][arch][version]
+            overwrite_flag = True
 
     if task_config.mode == "download":
         download_file(url, dest_path, overwrite=overwrite_flag)

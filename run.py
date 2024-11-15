@@ -11,4 +11,4 @@ os.makedirs(app.config["TASKS_DIR"], exist_ok=True)
 app.register_blueprint(routes)
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000)
+    app.run(host="0.0.0.0", port=5005)

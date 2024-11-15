@@ -1,4 +1,4 @@
-from flask import Flask, make_response, request, jsonify
+from flask import Flask
 import os
 
 from app.config import ProductionConfig
@@ -7,7 +7,7 @@ from app.routes import routes
 app = Flask(__name__)
 
 app.config.from_object(ProductionConfig)
-os.makedirs(app.config['TASKS_DIR'], exist_ok=True)
+os.makedirs(app.config["TASKS_DIR"], exist_ok=True)
 app.register_blueprint(routes)
 
 if __name__ == "__main__":

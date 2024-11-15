@@ -3,12 +3,13 @@ import json
 import os
 import shutil
 
+import ansible_runner
 from flask import current_app
 
-TASKS_DIR = current_app.config["TASKS_DIR"]
-MAX_TASKS = current_app.config["MAX_TASKS"]
+from app.config import ProductionConfig
 
-import ansible_runner
+TASKS_DIR = ProductionConfig.TASKS_DIR
+MAX_TASKS = ProductionConfig.MAX_TASKS
 
 
 def save_task_status(task_id, status, start_time=None, end_time=None):

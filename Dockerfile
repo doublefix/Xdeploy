@@ -6,8 +6,7 @@ COPY . .
 RUN apk update \
     && pip install --no-cache-dir -r requirements.txt \
     && rm -rf /var/cache/apk/* \
-    && rm -rf /root/.cache/pip \
-    && find . -name '__pycache__' -exec rm -rf {} \;
+    && rm -rf /root/.cache/pip
 EXPOSE 5000
 
 CMD ["gunicorn", "--bind", "0.0.0.0:5000", "run:app"]

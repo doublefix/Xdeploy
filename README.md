@@ -1,7 +1,6 @@
 # Xdeploy
 
-The project is designed to help developers install essential software.
-K8s version CHANGELOG
+The project is designed to help developers install essential software.ß
 
 ## How to use ansible
 

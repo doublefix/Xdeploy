@@ -3,8 +3,10 @@ import json
 import os
 import shutil
 
-TASKS_DIR = "tasks"
-MAX_TASKS = 3
+from flask import current_app
+
+TASKS_DIR = current_app.config["TASKS_DIR"]
+MAX_TASKS = current_app.config["MAX_TASKS"]
 
 import ansible_runner
 

@@ -115,7 +115,10 @@ def extract_playbook_data(data):
     """Extract playbook related data from the request"""
     playbook_path = data.get("playbook", "playbooks/playbook.yml")
     inventory_data = data.get("inventory", {})
-    extra_vars = data.get("extra_vars", {})
+    
+    extra_vars_list = data.get("extra_vars", [])
+    extra_vars = {item["key"]: item["value"] for item in extra_vars_list if "key" in item and "value" in item}
+    
     return playbook_path, inventory_data, extra_vars
 
 

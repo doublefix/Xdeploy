@@ -14,6 +14,8 @@ ssh-copy-id username@hostname
 Execute in sequence
 
 ```bash
+ansible-playbook playbooks/cmd.yml -e "cmd=['echo', 'Hello', 'World']" -v
+
 ansible-playbook playbooks/linux_kernel_opt.yml
 ansible-playbook playbooks/cgroup_v2.yml
 

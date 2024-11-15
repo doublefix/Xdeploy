@@ -1,0 +1,9 @@
+---
+- name: Run command
+  hosts: servers
+  become: yes
+  vars:
+    cmd_array: "{{ cmd }}"
+  tasks:
+    - name: Join the array into a single command string and execute it
+      command: "{{ cmd_array | join(' ') }}"

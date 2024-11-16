@@ -1,6 +1,7 @@
 import os
 import urllib
 import yaml
+from app.loger import log
 
 
 def load_yaml(file_path):
@@ -18,12 +19,12 @@ def download_file(url, dest_path, overwrite=False):
         overwrite (bool): Whether to overwrite the file if it already exists. Default is False.
     """
     if os.path.exists(dest_path) and not overwrite:
-        print(f"File {dest_path} already exists. Skipping download.")
+        log.info(f"File {dest_path} already exists. Skipping download.")
         return
 
-    print(f"Downloading from {url} to {dest_path}...")
+    log.info(f"Downloading from {url} to {dest_path}...")
     urllib.request.urlretrieve(url, dest_path)
-    print("Download completed.")
+    log.info("Download completed.")
 
 
 def delete_file(dest_path):
@@ -34,6 +35,6 @@ def delete_file(dest_path):
     """
     if os.path.exists(dest_path):
         os.remove(dest_path)
-        print(f"Deleted file {dest_path}.")
+        log.info(f"Deleted file {dest_path}.")
     else:
-        print(f"File {dest_path} does not exist. Skipping deletion.")
+        log.info(f"File {dest_path} does not exist. Skipping deletion.")

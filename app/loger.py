@@ -4,8 +4,8 @@ from logging.handlers import TimedRotatingFileHandler
 
 os.makedirs("logs", exist_ok=True)
 
-logger = logging.getLogger("flask_app")
-logger.setLevel(logging.INFO)
+log = logging.getLogger("xdeploy")
+log.setLevel(logging.INFO)
 
 console_handler = logging.StreamHandler()
 console_handler.setLevel(logging.INFO)
@@ -14,10 +14,12 @@ log_file_handler = TimedRotatingFileHandler(
 )
 log_file_handler.setLevel(logging.INFO)
 
-log_format = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+log_format = logging.Formatter(
+    "%(asctime)s - %(name)s - %(levelname)s - %(message)s", datefmt="%Y-%m-%dT%H:%M:%S"
+)
 console_handler.setFormatter(log_format)
 log_file_handler.setFormatter(log_format)
 
-logger.addHandler(console_handler)
-logger.addHandler(log_file_handler)
-logger.info("Logger setup complete.")
+log.addHandler(console_handler)
+log.addHandler(log_file_handler)
+log.info("Logger setup complete.")

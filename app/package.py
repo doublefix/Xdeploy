@@ -1,6 +1,7 @@
 from datetime import datetime
 import os
 from dataclasses import dataclass
+from app.loger import log
 
 from app.common import delete_file, download_file, load_yaml
 from app.task import save_task_status
@@ -46,7 +47,7 @@ def manage_tools(task_config: TaskConfig):
             start_time=start_time,
             end_time=end_time,
         )
-        print(f"Error: {e}")
+        log.error(f"Error: {e}")
 
 
 def process_software(theme_data, software, task_config: TaskConfig):

@@ -8,7 +8,7 @@ class Config:
     """Base configuration with default values"""
 
     TASKS_DIR = os.getenv("TASKS_DIR", "tasks")
-    MAX_TASKS = int(os.getenv("MAX_TASKS", 3))
+    MAX_TASKS = int(os.getenv("MAX_TASKS", 10))
     DEBUG = False
     TESTING = False
 

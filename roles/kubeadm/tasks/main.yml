@@ -24,6 +24,6 @@
 # Add main binaries
 - name: Copy kubeadm binary to /usr/local/bin
   copy:
-    src: "../roles/kubeadm/release/{{ arch }}/{{ version }}/kubeadm"
+    src: "../repo/kubeadm/{{ arch }}/{{ version }}/kubeadm"
     dest: "/usr/local/bin/kubeadm"
     mode: "0755"

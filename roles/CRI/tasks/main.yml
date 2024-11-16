@@ -2,7 +2,7 @@
 # Add CRI
 - name: Copy CRI tarball to target server
   copy:
-    src: "../roles/CRI/release/{{ arch }}/{{ version }}/{{ pkg }}"
+    src: "../repo/CRI/{{ arch }}/{{ version }}/{{ pkg }}"
     dest: "/tmp"
 
 - name: Ensure /usr/local/bin directory exists

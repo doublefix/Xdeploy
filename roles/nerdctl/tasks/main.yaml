@@ -1,7 +1,7 @@
 ---
 - name: Copy nerdctl tarball from Ansible control node to target server
   copy:
-    src: "../roles/nerdctl/release/{{ arch }}/{{ version }}/{{ pkg }}"
+    src: "../repo/nerdctl/{{ arch }}/{{ version }}/{{ pkg }}"
     dest: "/tmp/{{ pkg }}"
 
 - name: Extract nerdctl tarball to /usr/local

@@ -2,7 +2,7 @@
 # Add CNI
 - name: Copy CNI tarball to target server
   copy:
-    src: "../roles/CNI/release/{{ arch }}/{{ version }}/{{ pkg }}"
+    src: "../repo/CNI/{{ arch }}/{{ version }}/{{ pkg }}"
     dest: "/tmp"
 
 - name: Ensure /opt/cni/bin directory exists

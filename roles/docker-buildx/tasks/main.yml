@@ -1,6 +1,6 @@
 - name: Copy buildx to target server
   copy:
-    src: "../roles/docker-buildx/release/{{ arch }}/{{ version }}/buildx-{{ version }}.linux-{{ pkg_map[arch] }}"
+    src: "../repo/docker-buildx/{{ arch }}/{{ version }}/buildx-{{ version }}.linux-{{ pkg_map[arch] }}"
     dest: "/tmp/buildx-{{ version }}.linux-{{ pkg_map[arch] }}"
 
 - name: Set execute permission for buildx

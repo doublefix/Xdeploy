@@ -30,7 +30,7 @@
 
     - name: Copy socat to target server
       copy:
-        src: "../roles/socat/release/{{ arch }}/{{ version }}/{{ socat_deb }}"
+        src: "../repo/socat/{{ arch }}/{{ version }}/{{ socat_deb }}"
         dest: "/tmp/{{ socat_deb }}"
       when: socat_check.rc != 0
 
@@ -51,7 +51,7 @@
   block:
     - name: Copy socat to target server
       copy:
-        src: "../roles/socat/release/{{ arch }}/{{ version }}/{{ socat_rpm }}"
+        src: "../repo/socat/{{ arch }}/{{ version }}/{{ socat_rpm }}"
         dest: "/tmp/{{ socat_rpm }}"
 
     - name: Install socat RPM package

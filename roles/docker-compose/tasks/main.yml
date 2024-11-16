@@ -1,6 +1,6 @@
 - name: Copy docker compose to target server
   copy:
-    src: "../roles/docker-compose/release/{{ arch }}/{{ version }}/docker-compose-linux-{{ pkg_map[arch] }}"
+    src: "../repo/docker-compose/{{ arch }}/{{ version }}/docker-compose-linux-{{ pkg_map[arch] }}"
     dest: "/tmp/docker-compose-linux-{{ pkg_map[arch] }}"
 
 - name: Set execute permission for docker-compose

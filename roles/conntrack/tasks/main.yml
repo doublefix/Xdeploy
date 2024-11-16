@@ -39,7 +39,7 @@
 
     - name: Copy conntrack to target server
       copy:
-        src: "../roles/conntrack/release/{{ arch }}/{{ version }}/{{ conntrack_deb }}"
+        src: "../repo/conntrack/{{ arch }}/{{ version }}/{{ conntrack_deb }}"
         dest: "/tmp/{{ conntrack_deb }}"
       when: conntrack_check.rc != 0
 
@@ -60,25 +60,25 @@
   block:
     - name: Copy conntrack-tools RPM to target server
       copy:
-        src: "../roles/conntrack/release/{{ arch }}/{{ version }}/{{ conntrack_rpm }}"
+        src: "../repo/conntrack/{{ arch }}/{{ version }}/{{ conntrack_rpm }}"
         dest: "/tmp/{{ conntrack_rpm }}"
       when: rpm_check.rc == 0
 
     - name: Copy libnetfilter_cthelper RPM to target server
       copy:
-        src: "../roles/conntrack/release/{{ arch }}/{{ version }}/{{ libnetfilter_cthelper_rpm }}"
+        src: "../repo/conntrack/{{ arch }}/{{ version }}/{{ libnetfilter_cthelper_rpm }}"
         dest: "/tmp/{{ libnetfilter_cthelper_rpm }}"
       when: rpm_check.rc == 0
 
     - name: Copy libnetfilter_cttimeout RPM to target server
       copy:
-        src: "../roles/conntrack/release/{{ arch }}/{{ version }}/{{ libnetfilter_cttimeout_rpm }}"
+        src: "../repo/conntrack/release/{{ arch }}/{{ version }}/{{ libnetfilter_cttimeout_rpm }}"
         dest: "/tmp/{{ libnetfilter_cttimeout_rpm }}"
       when: rpm_check.rc == 0
 
     - name: Copy libnetfilter_queue RPM to target server
       copy:
-        src: "../roles/conntrack/release/{{ arch }}/{{ version }}/{{ libnetfilter_queue_rpm }}"
+        src: "../repo/conntrack/{{ arch }}/{{ version }}/{{ libnetfilter_queue_rpm }}"
         dest: "/tmp/{{ libnetfilter_queue_rpm }}"
       when: rpm_check.rc == 0
 

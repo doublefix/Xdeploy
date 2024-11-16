@@ -4,7 +4,6 @@ import os
 import shutil
 
 import ansible_runner
-from flask import current_app
 
 from app.config import ProductionConfig
 

@@ -21,7 +21,7 @@ from app.task import (
     save_task_status,
 )
 
-routes = Blueprint("routes", __name__)
+routes = Blueprint("routes", __name__, url_prefix="/api/xdeploy/v1")
 
 
 @routes.route("/manage-tools", methods=["POST"])

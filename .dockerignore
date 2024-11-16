@@ -3,3 +3,5 @@ __pycache__
 inventory/test
 /tasks
 logs
+repo
+!repo/meta.yml

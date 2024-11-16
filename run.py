@@ -1,7 +1,7 @@
 from flask import Flask
 import os
 
-from app.loger import log
+from app.logger import log
 from app.config import ProductionConfig
 from app.routes import routes
 

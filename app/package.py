@@ -1,7 +1,7 @@
 from datetime import datetime
 import os
 from dataclasses import dataclass
-from app.loger import log
+from app.logger import log
 
 from app.common import delete_file, download_file, load_yaml
 from app.task import save_task_status

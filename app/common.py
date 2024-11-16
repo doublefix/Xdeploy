@@ -1,7 +1,7 @@
 import os
 import urllib
 import yaml
-from app.loger import log
+from app.logger import log
 
 
 def load_yaml(file_path):

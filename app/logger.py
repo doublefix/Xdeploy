@@ -15,7 +15,8 @@ log_file_handler = TimedRotatingFileHandler(
 log_file_handler.setLevel(logging.INFO)
 
 log_format = logging.Formatter(
-    "%(asctime)s - %(name)s - %(levelname)s - %(message)s", datefmt="%Y-%m-%dT%H:%M:%S"
+    "%(asctime)s - %(name)s - %(levelname)s - %(filename)s:%(lineno)d - %(message)s",
+    datefmt="%Y-%m-%dT%H:%M:%S",
 )
 console_handler.setFormatter(log_format)
 log_file_handler.setFormatter(log_format)

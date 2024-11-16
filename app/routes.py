@@ -1,12 +1,9 @@
 from datetime import datetime
-import os
-import tempfile
 import threading
 import uuid
 from flask import Blueprint, app, jsonify, make_response, request
 
 from app.common import load_yaml
-from app.package import TaskConfig, manage_tools
 from app.service import (
     check_supported_tools,
     extract_playbook_data,
@@ -17,7 +14,12 @@ from app.service import (
     start_task_job,
     validate_playbook_path,
 )
-from app.task import load_task_status, run_playbook_task, save_task_status
+from app.task import (
+    load_task_status,
+    run_command_task,
+    run_playbook_task,
+    save_task_status,
+)
 
 routes = Blueprint("routes", __name__)
 
@@ -78,6 +80,43 @@ def run_playbook():
     thread = threading.Thread(
         target=run_playbook_task,
         args=(task_id, playbook_path, inventory_path, extra_vars),
+    )
+    thread.start()
+
+    return jsonify({"task_id": task_id, "status": "started"}), 202
+
+
+@routes.route("/run-command", methods=["POST"])
+def run_command():
+    data = request.json
+    cmd = data.get("cmd")
+    inventory_data = data.get("inventory")
+
+    if not isinstance(cmd, list) or not all(isinstance(item, str) for item in cmd):
+        return jsonify({"error": "Invalid cmd format, must be a list of strings"}), 400
+
+    if (
+        not isinstance(inventory_data, dict)
+        or "servers" not in inventory_data
+        or not isinstance(inventory_data["servers"], list)
+    ):
+        return (
+            jsonify(
+                {"error": "Invalid inventory format, must contain a list of servers"}
+            ),
+            400,
+        )
+
+    inventory_path = generate_inventory_file(inventory_data)
+    if not inventory_path:
+        return jsonify({"error": "Failed to generate inventory file"}), 400
+
+    task_id = str(uuid.uuid4())
+    save_task_status(task_id, "running")
+
+    thread = threading.Thread(
+        target=run_command_task,
+        args=(task_id, cmd, inventory_path),
     )
     thread.start()
 

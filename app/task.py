@@ -61,3 +61,36 @@ def run_playbook_task(task_id, playbook_path, inventory_path, extra_vars):
     finally:
         if os.path.exists(inventory_path):
             os.remove(inventory_path)
+
+
+def run_command_task(task_id, cmd, inventory_path):
+    start_time = datetime.now().isoformat()
+    try:
+        tmp_dir = os.path.join(TASKS_DIR, task_id, "ansible_runner")
+        os.makedirs(tmp_dir, exist_ok=True)
+
+        playbook_path = os.path.join(os.getcwd(), "playbooks", "cmd.yml")
+
+        if not os.path.isfile(playbook_path):
+            raise FileNotFoundError(f"Playbook not found: {playbook_path}")
+
+        runner = ansible_runner.run(
+            private_data_dir=tmp_dir,
+            playbook=playbook_path,
+            inventory=inventory_path,
+            extravars={"cmd": cmd},
+            verbosity=1,
+            roles_path=os.path.join(os.getcwd(), "roles"),
+        )
+
+        status = "success" if runner.rc == 0 else "failure"
+        end_time = datetime.now().isoformat()
+        save_task_status(task_id, status, start_time, end_time)
+
+    except Exception as e:
+        end_time = datetime.now().isoformat()
+        save_task_status(task_id, f"failure: {str(e)}", start_time, end_time)
+
+    finally:
+        if os.path.exists(inventory_path):
+            os.remove(inventory_path)

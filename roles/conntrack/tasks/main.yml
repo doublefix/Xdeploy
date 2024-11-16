@@ -72,7 +72,7 @@
 
     - name: Copy libnetfilter_cttimeout RPM to target server
       copy:
-        src: "../repo/conntrack/release/{{ arch }}/{{ version }}/{{ libnetfilter_cttimeout_rpm }}"
+        src: "../repo/conntrack/{{ arch }}/{{ version }}/{{ libnetfilter_cttimeout_rpm }}"
         dest: "/tmp/{{ libnetfilter_cttimeout_rpm }}"
       when: rpm_check.rc == 0
 

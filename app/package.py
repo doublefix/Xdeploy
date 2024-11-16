@@ -77,7 +77,7 @@ def process_software(theme_data, software, task_config: TaskConfig):
 def process_file(tool, arch, version, file_info, task_config: TaskConfig):
     name = file_info["name"]
     url = file_info["source"]
-    dest_dir = f"roles/{tool}/release/{arch}/{version}"
+    dest_dir = f"repo/{tool}/{arch}/{version}"
     os.makedirs(dest_dir, exist_ok=True)
     dest_path = os.path.join(dest_dir, name)
 

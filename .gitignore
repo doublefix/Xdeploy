@@ -16,3 +16,5 @@ roles/helm/release/*
 inventory/test
 /tasks
 logs
+repo
+!repo/meta.yml

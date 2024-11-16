@@ -44,10 +44,16 @@ kubernetes:
       1.7.6:
         - name: "nerdctl-full-1.7.6-linux-amd64.tar.gz"
           source: "https://github.com/containerd/nerdctl/releases/download/v1.7.6/nerdctl-full-1.7.6-linux-amd64.tar.gz"
+      2.0.0:
+        - name: "nerdctl-full-2.0.0-linux-amd64.tar.gz"
+          source: "https://github.com/containerd/nerdctl/releases/download/v2.0.0/nerdctl-full-2.0.0-linux-amd64.tar.gz"
     arrach64:
       1.7.6:
         - name: "nerdctl-full-1.7.6-linux-arm64.tar.gz"
           source: "https://github.com/containerd/nerdctl/releases/download/v1.7.6/nerdctl-full-1.7.6-linux-arm64.tar.gz"
+      2.0.0:
+        - name: "nerdctl-full-2.0.0-linux-arm64.tar.gz"
+          source: "https://github.com/containerd/nerdctl/releases/download/v2.0.0/nerdctl-full-2.0.0-linux-arm64.tar.gz"
   CNI:
     x86_64:
       v1.5.1:
@@ -141,4 +147,4 @@ linux:
         - name: "socat_1.7.4.4-2_arm64.deb"
           source: "http://ftp.cn.debian.org/debian/pool/main/s/socat/socat_1.7.4.4-2_arm64.deb"
         - name: "socat-1.7.4.1-5.el9.aarch64.rpm"
-          source: "https://rpmfind.net/linux/centos-stream/9-stream/AppStream/aarch64/os/Packages/socat-1.7.4.1-5.el9.aarch64.rpm"      
+          source: "https://rpmfind.net/linux/centos-stream/9-stream/AppStream/aarch64/os/Packages/socat-1.7.4.1-5.el9.aarch64.rpm"

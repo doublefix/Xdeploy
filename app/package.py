@@ -20,7 +20,7 @@ class TaskConfig:
 def manage_tools(task_config: TaskConfig):
     start_time = datetime.now().isoformat()
     save_task_status(task_config.task_id, "running", start_time=start_time)
-    yaml_data = load_yaml("meta.yml")
+    yaml_data = load_yaml("repo/meta.yml")
 
     try:
         if not task_config.themes:

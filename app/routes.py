@@ -29,7 +29,7 @@ def manage_tools_endpoint():
 
     if not software_list or not mode:
         return make_response({"error": "缺少必要的字段"}, 400)
-    yaml_data = load_yaml("meta.yml")
+    yaml_data = load_yaml("repo/meta.yml")
     themes = themes or list(yaml_data.keys())
 
     unsupported = check_supported_tools(themes, software_list, yaml_data)
@@ -53,7 +53,7 @@ def manage_all_themes():
     overwrite = data.get("overwrite", False)
     mode = data.get("mode", "download")
 
-    yaml_data = load_yaml("meta.yml")
+    yaml_data = load_yaml("repo/meta.yml")
     themes = list(yaml_data.keys())
     software_list = generate_software_list(yaml_data, themes)
 

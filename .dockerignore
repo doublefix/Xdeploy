@@ -14,3 +14,4 @@ roles/kubectl/release/*
 roles/helm/release/*
 inventory/test
 /tasks
+logs

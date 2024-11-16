@@ -8,10 +8,10 @@
         name: containerd
         state: stopped
 
-    - name: Stop buildkit service
-      systemd:
-        name: buildkit
-        state: stopped
+    # - name: Stop buildkit service
+    #   systemd:
+    #     name: buildkit
+    #     state: stopped
 
     - name: Stop stargz-snapshotter service
       systemd:

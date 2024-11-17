@@ -1,10 +1,12 @@
 # Xdeploy
 
-The project is designed to help developers install essential software.ß
+The project is designed to help developers install essential software.
 
 ## How to use ansible
 
 ```bash
+TAG=test HUB=docker.io make image
+
 ssh-keygen -t rsa -b 2048
 ssh-copy-id username@hostname
 ```

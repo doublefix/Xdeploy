@@ -59,10 +59,16 @@ kubernetes:
       v1.5.1:
         - name: "cni-plugins-linux-amd64-v1.5.1.tgz"
           source: "https://github.com/containernetworking/plugins/releases/download/v1.5.1/cni-plugins-linux-amd64-v1.5.1.tgz"
+      v1.6.0:
+        - name: "cni-plugins-linux-amd64-v1.6.0.tgz"
+          source: "https://github.com/containernetworking/plugins/releases/download/v1.6.0/cni-plugins-linux-amd64-v1.6.0.tgz"
     arrach64:
       v1.5.1:
         - name: "cni-plugins-linux-arm64-v1.5.1.tgz"
           source: "https://github.com/containernetworking/plugins/releases/download/v1.5.1/cni-plugins-linux-arm64-v1.5.1.tgz"
+      v1.6.0:
+        - name: "cni-plugins-linux-arm64-v1.6.0.tgz"
+          source: "https://github.com/containernetworking/plugins/releases/download/v1.6.0/cni-plugins-linux-arm64-v1.6.0.tgz"
 
   CRI:
     x86_64:

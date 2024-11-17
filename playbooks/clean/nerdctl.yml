@@ -39,6 +39,7 @@
     - name: Forcefully remove directories and their contents
       command: rm -rf "{{ item }}"
       loop:
+        - /opt/containerd
         - /etc/containerd/config.toml
         - /var/lib/containerd
         - /var/lib/buildkit

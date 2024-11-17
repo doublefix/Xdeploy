@@ -52,30 +52,7 @@
       command: rm -rf /etc/sysconfig/kubelet
 
     - name: Remove CNI plugins
-      file:
-        path: "/opt/cni/bin/{{ item }}"
-        state: absent
-      loop:
-        - bandwidth
-        - bridge
-        - dhcp
-        - dummy
-        - firewall
-        - host-device
-        - host-local
-        - ipvlan
-        - LICENSE
-        - loopback
-        - macvlan
-        - portmap
-        - ptp
-        - README.md
-        - sbr
-        - static
-        - tap
-        - tuning
-        - vlan
-        - vrf
+      command: rm -rf /opt/cni
 
     - name: Remove CRI tools
       file:

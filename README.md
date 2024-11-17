@@ -19,7 +19,7 @@ ansible-playbook playbooks/cmd.yml -e '{"cmd": ["echo", "Hello", "World"]}' -v
 ansible-playbook playbooks/linux_kernel_opt.yml
 ansible-playbook playbooks/cgroup_v2.yml
 
-ansible-playbook playbooks/nerdctl.yml -e "arch=x86_64 version=1.7.6"
+ansible-playbook playbooks/nerdctl.yml -e "arch=x86_64 version=v1.7.6"
 
 ansible-playbook playbooks/conntrack.yml -e "arch=x86_64 version=1.4.7"
 ansible-playbook playbooks/socat.yml -e "arch=x86_64 version=1.7.4"
@@ -58,7 +58,7 @@ sudo iptables -X
 ansible-playbook playbooks/stop/kubelet.yml
 
 ansible-playbook playbooks/clean/pod_image.yml
-ansible-playbook playbooks/clean/nerdctl.yml
+ansible-playbook playbooks/clean/nerdctl.yml -e "version=v1.7.6"
 ansible-playbook playbooks/clean/kubelet.yml
 ansible-playbook playbooks/clean/kubeadm.yml
 

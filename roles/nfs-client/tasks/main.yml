@@ -1,0 +1,81 @@
+---
+- name: Check if the system uses dpkg
+  command: dpkg --version
+  register: dpkg_check
+  ignore_errors: yes
+  failed_when: false
+
+- name: Check if the system uses rpm
+  command: rpm --version
+  register: rpm_check
+  ignore_errors: yes
+  failed_when: false
+
+- name: Set system package manager fact
+  set_fact:
+    package_manager: "{{ 'dpkg' if dpkg_check.rc == 0 else 'rpm' if rpm_check.rc == 0 else 'unknown' }}"
+
+- name: Print system package manager
+  debug:
+    msg: "The system uses {{ package_manager }} as its package manager."
+
+- name: Debug selected packages
+  debug:
+    msg:
+      - "Selected nfs_client_deb: {{ nfs_client_deb }}"
+      - "Selected nfs_client_rpm: {{ nfs_client_rpm }}"
+
+# dpkg
+- name: Install NFS client if dpkg is available
+  when: dpkg_check.rc == 0 and package_manager == "dpkg"
+  block:
+    - name: Check if NFS client is already installed
+      ansible.builtin.command: dpkg -s nfs-common
+      register: nfs_check
+      ignore_errors: true
+
+    - name: Copy NFS client to target server
+      copy:
+        src: "../repo/nfs-client/{{ arch }}/{{ version }}/{{ nfs_client_deb }}"
+        dest: "/tmp/{{ nfs_client_deb }}"
+      when: nfs_check.rc != 0
+    - name: Copy libnfsidmap to target server
+      copy:
+        src: "../repo/nfs-client/{{ arch }}/{{ version }}/{{ libnfsidmap_deb }}"
+        dest: "/tmp/{{ libnfsidmap_deb }}"
+      when: nfs_check.rc != 0
+
+    - name: Install libnfsidmap package
+      ansible.builtin.apt:
+        deb: /tmp/{{ libnfsidmap_deb }}
+      when: nfs_check.rc != 0
+    - name: Install NFS client package
+      ansible.builtin.apt:
+        deb: /tmp/{{ nfs_client_deb }}
+      when: nfs_check.rc != 0
+
+    - name: Clean up installation file
+      file:
+        path: "/tmp/{{ nfs_client_deb }}"
+        state: absent
+      when: nfs_check.rc != 0
+
+# rpm
+- name: Install NFS client if rpm is available
+  when: rpm_check.rc == 0 and package_manager == "rpm"
+  block:
+    - name: Copy NFS client to target server
+      copy:
+        src: "../repo/nfs-client/{{ arch }}/{{ version }}/{{ nfs_client_rpm }}"
+        dest: "/tmp/{{ nfs_client_rpm }}"
+
+    - name: Install NFS client RPM package
+      yum:
+        name: /tmp/{{ nfs_client_rpm }}
+        state: present
+        disable_gpg_check: yes
+
+    - name: Clean up installation file
+      file:
+        path: "/tmp/{{ nfs_client_rpm }}"
+        state: absent

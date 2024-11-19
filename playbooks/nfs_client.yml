@@ -1,0 +1,9 @@
+---
+- name: Deploy NFS client
+  hosts: servers
+  become: yes
+  vars:
+    arch: "{{ arch | default('x86_64') }}"
+    version: "{{ version | default('2.6.2') }}"
+  roles:
+    - nfs-client

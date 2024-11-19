@@ -1,0 +1,16 @@
+---
+package_names:
+  x86_64:
+    "2.6.2":
+      nfs_client_deb: "nfs-common_2.6.2-4_amd64.deb"
+      libnfsidmap_deb: "libnfsidmap1_2.6.2-4_amd64.deb"
+      nfs_client_rpm: "nfs-utils-2.5.4-27.el9.x86_64.rpm"
+  aarch64:
+    "2.6.2":
+      nfs_client_deb: "nfs-common_2.6.2-4_arm64.deb"
+      libnfsidmap_deb: "libnfsidmap1_2.6.2-4_arm64.deb"
+      nfs_client_rpm: "nfs-utils-2.5.4-27.el9.aarch64.rpm"
+
+nfs_client_deb: "{{ package_names[arch][version].nfs_client_deb | default('default_value') }}"
+libnfsidmap_deb: "{{ package_names[arch][version].libnfsidmap_deb | default('default_value') }}"
+nfs_client_rpm: "{{ package_names[arch][version].nfs_client_rpm | default('default_value') }}"

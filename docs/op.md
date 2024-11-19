@@ -15,4 +15,8 @@ ansible all -m ping
 pip download -d wheels ansible-core==2.17.2 ansible-runner==2.4.0 Flask==3.0.3
 pip install wheels/*.whl
 
+# Linux package
+https://packages.debian.org/
+https://rpmfind.net/
+
 ```

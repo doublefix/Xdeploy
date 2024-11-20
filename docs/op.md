@@ -19,4 +19,7 @@ pip install wheels/*.whl
 https://packages.debian.org/
 https://rpmfind.net/
 
+# 创建一个集群的基础环境
+# 1.保证dns数量不能太多2个，1个最佳，否则部分组件识别不准确
+
 ```

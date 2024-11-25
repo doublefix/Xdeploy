@@ -83,7 +83,7 @@ version = 2
       setup_serially = false
 
     [plugins."io.containerd.grpc.v1.cri".containerd]
-      default_runtime_name = "runc"
+      default_runtime_name = "nvidia"
       disable_snapshot_annotations = true
       discard_unpacked_layers = false
       ignore_blockio_not_enabled_errors = false

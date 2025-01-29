@@ -65,6 +65,9 @@ function kgpg() {
 function kgs() {
         $K8S get service -n $NAMESPACE -o wide
 }
+function kgvs() {
+        $K8S get VirtualService -n $NAMESPACE
+}
 function kgi() {
         $K8S get ingress -n $NAMESPACE -o wide
 }

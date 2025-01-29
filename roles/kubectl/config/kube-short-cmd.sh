@@ -245,3 +245,5 @@ function kl {
 function clean_lost {
         for f in $(kgd | grep idp-nl | awk '{print $1}'); do krd $f & done
 }
+
+# /etc/profile.d/kube-short-cmd.sh

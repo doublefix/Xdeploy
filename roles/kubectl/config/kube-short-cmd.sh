@@ -13,6 +13,37 @@ function kep() {
                         $K8S exec -it $pod -n $NAMESPACE -- /bin/sh
         fi
 }
+
+function kebash() {
+    pod=$1
+    if [ $# -gt 1 ]; then
+        container=$2
+        $K8S exec -it $pod -n $NAMESPACE --container $container -- /bin/bash
+    else
+        $K8S exec -it $pod -n $NAMESPACE -- /bin/bash
+    fi
+}
+
+function kezsh() {
+    pod=$1
+    if [ $# -gt 1 ]; then
+        container=$2
+        $K8S exec -it $pod -n $NAMESPACE --container $container -- /bin/zsh
+    else
+        $K8S exec -it $pod -n $NAMESPACE -- /bin/zsh
+    fi
+}
+
+function kesh() {
+    pod=$1
+    if [ $# -gt 1 ]; then
+        container=$2
+        $K8S exec -it $pod -n $NAMESPACE --container $container -- /bin/sh
+    else
+        $K8S exec -it $pod -n $NAMESPACE -- /bin/sh
+    fi
+}
+
 #  kubectl api-resources
 function ka() {
         $K8S api-resources

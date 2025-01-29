@@ -68,6 +68,12 @@ function kgs() {
 function kgvs() {
         $K8S get VirtualService -n $NAMESPACE
 }
+function kgj() {
+        $K8S get job -n $NAMESPACE -o wide
+}
+function kge() {
+        $K8S get event -n $NAMESPACE -o wide
+}
 function kgi() {
         $K8S get ingress -n $NAMESPACE -o wide
 }
@@ -249,5 +255,6 @@ function clean_lost {
         for f in $(kgd | grep idp-nl | awk '{print $1}'); do krd $f & done
 }
 
-# sudo cp roles/kubectl/config/kube-short-cmd.sh /etc/profile.d/
 # sudo rm -rf /etc/profile.d/kube-short-cmd.sh
+# sudo cp roles/kubectl/config/kube-short-cmd.sh /etc/profile.d/
+

@@ -43,6 +43,9 @@ function kgc() {
 function kgd() {
         $K8S get deployment -n $NAMESPACE -o wide
 }
+function kggw() {
+        $K8S get gateway -n $NAMESPACE
+}
 function kgns() {
         $K8S get ns
 }

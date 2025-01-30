@@ -68,6 +68,9 @@ function kgs() {
 function kgvs() {
         $K8S get VirtualService -n $NAMESPACE
 }
+function kgsm() {
+        $K8S get serviceMonitor -n $NAMESPACE
+}
 function kgj() {
         $K8S get job -n $NAMESPACE -o wide
 }

@@ -71,6 +71,12 @@ function kgvs() {
 function kgsm() {
         $K8S get serviceMonitor -n $NAMESPACE
 }
+function kgra() {
+        $K8S get RequestAuthentication -n $NAMESPACE
+}
+function kgap() {
+        $K8S get AuthorizationPolicy -n $NAMESPACE
+}
 function kgj() {
         $K8S get job -n $NAMESPACE -o wide
 }

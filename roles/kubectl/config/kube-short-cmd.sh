@@ -113,6 +113,9 @@ function kgpvc() {
 function kgpv() {
         $K8S get pv -owide
 }
+function kgcm() {
+        $K8S get configmaps -n $NAMESPACE -o wide
+}
 # kubectl get node -owide
 function kgn() {
         $K8S get node -owide

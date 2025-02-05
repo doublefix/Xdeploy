@@ -95,6 +95,9 @@ function kgd() {
 function kgr() {
         $K8S get replicaset -n $NAMESPACE -o wide
 }
+function kgds() {
+        $K8S get daemonset -n $NAMESPACE -o wide
+}
 function kggw() {
         $K8S get gateway -n $NAMESPACE
 }

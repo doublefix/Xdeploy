@@ -107,6 +107,12 @@ function kggw() {
 function kgns() {
         $K8S get ns
 }
+function kgpvc() {
+        $K8S get pvc -owide
+}
+function kgpv() {
+        $K8S get pv -owide
+}
 # kubectl get node -owide
 function kgn() {
         $K8S get node -owide

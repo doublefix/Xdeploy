@@ -98,6 +98,9 @@ function kgr() {
 function kgds() {
         $K8S get daemonset -n $NAMESPACE -o wide
 }
+function kgss() {
+        $K8S get statefulset -n $NAMESPACE -o wide
+}
 function kggw() {
         $K8S get gateway -n $NAMESPACE
 }

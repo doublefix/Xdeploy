@@ -2,13 +2,13 @@
 
 The project is designed to help developers install essential software.
 
-## How to use ansible
+## Setup
 
 ```bash
-TAG=test HUB=docker.io make image
-
-ssh-keygen -t rsa -b 2048
-ssh-copy-id username@hostname
+python3 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+deactivate
 ```
 
 ## Install kube

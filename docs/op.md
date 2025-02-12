@@ -1,12 +1,6 @@
 ## ENV
 
 ```bash
-# Install dependency
-python3 -m venv venv
-source venv/bin/activate
-pip install -r requirements.txt
-deactivate
-
 # Test
 ansible all --list-hosts
 ansible all -m ping
@@ -22,4 +16,13 @@ https://rpmfind.net/
 # 创建一个集群的基础环境
 # 1.保证dns数量不能太多2个，1个最佳，否则部分组件识别不准确
 
+```
+
+## Build Image
+
+```bash
+TAG=test HUB=docker.io make image
+
+ssh-keygen -t rsa -b 2048
+ssh-copy-id username@hostname
 ```

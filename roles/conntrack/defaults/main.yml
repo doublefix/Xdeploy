@@ -2,7 +2,7 @@
 package_names:
   x86_64:
     "1.4.7":
-      conntrack_deb: "conntrack_1%3a1.4.7-1+b2_amd64.deb"
+      conntrack_deb: "conntrack_1.4.7-1+b2_amd64.deb"
       conntrack_rpm: "conntrack-tools-1.4.7-2.el9.x86_64.rpm"
       libnetfilter_cthelper_rpm: "libnetfilter_cthelper-1.0.0-22.el9.x86_64.rpm"
       libnetfilter_cttimeout_rpm: "libnetfilter_cttimeout-1.0.0-19.el9.x86_64.rpm"

@@ -93,10 +93,16 @@ kubernetes:
       v1.31.0:
         - name: "crictl-v1.31.0-linux-amd64.tar.gz"
           source: "https://github.com/kubernetes-sigs/cri-tools/releases/download/v1.31.0/crictl-v1.31.0-linux-amd64.tar.gz"
+      v1.30.1:
+        - name: "crictl-v1.30.1-linux-amd64.tar.gz"
+          source: "https://github.com/kubernetes-sigs/cri-tools/releases/download/v1.30.1/crictl-v1.30.1-linux-amd64.tar.gz"
     arrach64:
       v1.31.0:
         - name: "crictl-v1.31.0-linux-arm64.tar.gz"
           source: "https://github.com/kubernetes-sigs/cri-tools/releases/download/v1.31.0/crictl-v1.31.0-linux-arm64.tar.gz"
+      v1.30.1:
+        - name: "crictl-v1.30.1-linux-arm64.tar.gz"
+          source: "https://github.com/kubernetes-sigs/cri-tools/releases/download/v1.30.1/crictl-v1.30.1-linux-arm64.tar.gz"
 
 docker:
   docker:

@@ -1,24 +1,13 @@
 # Admin
 
-## 准备yaml配置
+## 生成默认配置
+
 ```bash
-# 生成默认配置
 kubeadm config print init-defaults > default-config.yaml
-# 下载插件yaml
-https://github.com/projectcalico/calico
-curl https://raw.githubusercontent.com/projectcalico/calico/v3.28.1/manifests/calico.yaml -O
-https://github.com/kubernetes-sigs/metrics-server/
-wget https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml
-# 修改metrics-server的yaml,添加tls
-spec:
-  template:
-    spec:
-      containers:
-      - args:
-        - --kubelet-insecure-tls
 ```
 
-## 初始化与安装clico与metrics插件
+## 初始化与安装 clico 与 metrics 插件
+
 ```bash
 # 去主节点机器初始化集群
 systemctl enable --now kubelet
@@ -60,7 +49,7 @@ and service account keys on each node and then running the following as root:
 
   kubeadm join ubuntu:6443 --token ndr3bo.llkmrdlkm8zvijuu \
         --discovery-token-ca-cert-hash sha256:691f6c2d9acf855948fbe2f9c3d095d880371163b5ed30142babbfd56bb03a25 \
-        --control-plane 
+        --control-plane
 
 Then you can join any number of worker nodes by running the following on each as root:
 
@@ -70,14 +59,16 @@ kubeadm join ubuntu:6443 --token ndr3bo.llkmrdlkm8zvijuu \
 
 # 安装网络插件和监控
 kubectl apply -f /etc/kubernetes/calico/calico.yaml
-kubectl apply -f /etc/kubernetes/metrics-server/high-availability-1.21+.yaml 
+kubectl apply -f /etc/kubernetes/metrics-server/high-availability-1.21+.yaml
 
 
 # 去除主节点不支持调度污点
 kubectl taint nodes [node-name] node-role.kubernetes.io/control-plane-
 
 ```
-## Node加入集群
+
+## Node 加入集群
+
 ```bash
 # 创建一个token
 kubeadm token create --print-join-command
@@ -91,5 +82,5 @@ openssl x509 -pubkey -in /etc/kubernetes/pki/ca.crt | \
 systemctl enable --now kubelet
 kubeadm join node:6443 --token xxxx.xxxxxxxxxxxx \
     --discovery-token-ca-cert-hash sha256:xxxx \
-    --control-plane 
+    --control-plane
 ```

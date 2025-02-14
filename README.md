@@ -84,7 +84,7 @@ ansible-playbook playbooks/clean/docker_buildx.yml
 ## TODO
 
 1. Xdeploy 已经安装的机器可以会有影响
-2. 增量准备部署包
+2. 增量准备部署包，根据增量清单来
 3. Package ALL，预准备镜像(重要)
 
 ## 注意事项

@@ -4,12 +4,11 @@ import argparse
 
 
 def create_tarball_from_current_directory(output_filename=None, include_arch=None):
-    # 如果没有传入output_filename，则根据架构动态生成文件名
     if output_filename is None:
         if include_arch:
-            output_filename = f"xdeploy-{include_arch}.tar.gz"
+            output_filename = f"Xdeploy-{include_arch}.tar.gz"
         else:
-            output_filename = "xdeploy-all.tar.gz"
+            output_filename = "Xdeploy-all.tar.gz"
 
     with tarfile.open(output_filename, "w:gz") as tar:
         for root, dirs, files in os.walk(os.getcwd()):
@@ -38,10 +37,12 @@ def create_tarball_from_current_directory(output_filename=None, include_arch=Non
 
                 file_path = os.path.join(root, file)
                 arcname = os.path.relpath(file_path, os.getcwd())
+                arcname = os.path.join("Xdeploy", arcname)
                 tar.add(file_path, arcname=arcname)
 
 
 def main():
+    # 创建命令行参数解析器
     parser = argparse.ArgumentParser(
         description="Create tarball from current directory."
     )
@@ -54,6 +55,7 @@ def main():
 
     args = parser.parse_args()
 
+    # 根据命令行传入的参数调用创建tar包的函数
     create_tarball_from_current_directory(include_arch=args.arch)
 
 

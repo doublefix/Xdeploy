@@ -1,0 +1,6 @@
+server = "https://docker.io"
+[host."https://dockerproxy.cn"]
+  capabilities = ["pull", "resolve"]
+
+[host."https://docker.m.daocloud.io"]
+  capabilities = ["pull", "resolve"]

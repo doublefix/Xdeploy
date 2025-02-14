@@ -38,3 +38,13 @@ sudo rm -rf /opt/containerd
 sudo systemctl daemon-reload
 # 最后重启
 ```
+
+
+## 更换镜像源
+```bash
+cd /etc/containerd/
+mkdir -p /etc/containerd/certs.d
+
+systemctl daemon-reload
+systemctl restart containerd
+```

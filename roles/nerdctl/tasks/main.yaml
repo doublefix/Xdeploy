@@ -15,15 +15,31 @@
     path: "/tmp/{{ pkg }}"
     state: absent
 
-- name: Copy nerdctl tarball from Ansible control node to target server
-  copy:
-    src: "../roles/nerdctl/config/config.toml"
-    dest: "/etc/containerd/"
+# - name: Copy nerdctl tarball
+#   copy:
+#     src: "../roles/nerdctl/config/certs.d/"
+#     dest: "/etc/containerd/"
+#     owner: root
+#     group: root
+#     mode: '0755'
+#     recursive: yes
 
-- name: Copy nerdctl tarball from Ansible control node to target server
-  copy:
-    src: "../roles/nerdctl/config/config-aliyun.toml"
+- name: Synchronize nerdctl certs directory
+  synchronize:
+    src: "../roles/nerdctl/config/certs.d/containerd"
     dest: "/etc/containerd/"
+    mode: "push"
+
+- name: Ensure /etc/cni/net.d exists
+  file:
+    path: "/etc/cni/net.d"
+    state: directory
+    mode: '0755'
+
+- name: Copy containerd cni config
+  copy:
+    src: "../roles/nerdctl/config/cni/10-containerd-net.conflist"
+    dest: "/etc/cni/net.d/"
 
 - name: Enable and start containerd service
   systemd:

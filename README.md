@@ -71,3 +71,37 @@ ansible-playbook playbooks/clean/docker_compose.yml
 ansible-playbook playbooks/clean/docker_buildx.yml
 
 ```
+
+# 构建 k8s 平台
+
+见 docs/op.md，以下三种版本必须相同
+
+- CRI
+- kubelet
+- kubeadm
+- kubectl
+
+## TODO
+
+1. Xdeploy 已经安装的机器可以会有影响
+2. 增量准备部署包
+3. Package ALL，预准备镜像(重要)
+
+## 注意事项
+
+1. 一个集群的节点解析，主节点 hosts 连所有从节点，每个从节点连接主节点
+2. 部署完成后检查 INTERNAL-IP 是否符合预期
+3. 下载预备安装文件有两种：下载二进制包，下载镜像
+
+
+INTERNAL-IP 不符合预期，手动指定
+```bash
+# check INTERNAL-IP
+mkdir -p /etc/sysconfig
+vim /etc/sysconfig/kubelet
+KUBELET_EXTRA_ARGS="--node-ip=192.168.2.4"
+
+sudo systemctl daemon-reload
+sudo systemctl restart kubelet
+
+```

@@ -32,9 +32,9 @@ ssh-copy-id username@hostname
 手动拉取镜像，推送镜像
 
 ```bash
-docker pull docker.io/calico/cni:v3.29.2
-docker pull docker.io/calico/node:v3.29.2
-docker pull docker.io/calico/kube-controllers:v3.29.2
+docker pull --platform linux/amd64 docker.io/calico/cni:v3.29.2
+docker pull --platform linux/amd64 docker.io/calico/node:v3.29.2
+docker pull --platform linux/amd64 docker.io/calico/kube-controllers:v3.29.2
 
 docker save -o calico-cni-v3.29.2.tar docker.io/calico/cni:v3.29.2
 docker save -o calico-node-v3.29.2.tar docker.io/calico/node:v3.29.2

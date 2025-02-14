@@ -93,8 +93,22 @@ ansible-playbook playbooks/clean/docker_buildx.yml
 2. 部署完成后检查 INTERNAL-IP 是否符合预期
 3. 下载预备安装文件有两种：下载二进制包，下载镜像
 
+## 初始化集群
+
+```bash
+kubeadm init \
+    --apiserver-advertise-address=NODEIP \
+    --control-plane-endpoint=NODENAME \
+    --kubernetes-version=v1.31.0 \
+    --service-cidr=10.96.0.0/16 \
+    --pod-network-cidr=172.20.0.0/16 \
+    --cri-socket=unix:///var/run/containerd/containerd.sock \
+    --image-repository=registry.aliyuncs.com/google_containers
+
+```
 
 INTERNAL-IP 不符合预期，手动指定
+
 ```bash
 # check INTERNAL-IP
 mkdir -p /etc/sysconfig

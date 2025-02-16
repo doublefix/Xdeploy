@@ -26,7 +26,7 @@
 
 - name: Synchronize nerdctl certs directory
   synchronize:
-    src: "../roles/nerdctl/config/certs.d/containerd"
+    src: "../roles/nerdctl/config/containerd"
     dest: "/etc/containerd/"
     mode: "push"
 

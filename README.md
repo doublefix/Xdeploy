@@ -5,10 +5,15 @@ The project is designed to help developers install essential software.
 ## Setup
 
 ```bash
+# Env
 python3 -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt
 deactivate
+# Package
+python tar.py x86_64
+# Get Images
+python load_images.py
 ```
 
 ## Install kube

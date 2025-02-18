@@ -1,0 +1,6 @@
+---
+- name: Deploy images
+  hosts: servers
+  become: yes
+  roles:
+    - images

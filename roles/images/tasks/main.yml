@@ -1,0 +1,40 @@
+---
+- name: Ensure the /tmp/xdeploy_images/x86_64 directory exists
+  file:
+    path: /tmp/xdeploy_images/x86_64
+    state: directory
+    mode: "0755"
+
+- name: Ensure the /tmp/xdeploy_images/arrach64 directory exists
+  file:
+    path: /tmp/xdeploy_images/arrach64
+    state: directory
+    mode: "0755"
+
+- name: 复制x86_64镜像内容到目标服务器
+  ansible.builtin.copy:
+    src: "../repo/images/x86_64/"
+    dest: "/tmp/xdeploy_images/x86_64"
+    mode: '0644'
+    force: yes
+
+- name: 复制aarch64镜像内容到目标服务器
+  ansible.builtin.copy:
+    src: "../repo/images/aarch64/"
+    dest: "/tmp/xdeploy_images/aarch64"
+    mode: '0644'
+    force: yes
+
+- name: 加载x86_64架构容器镜像
+  become: yes
+  ansible.builtin.shell: "nerdctl load -i {{ item.path }} --namespace k8s.io"
+  loop: "{{ query('ansible.builtin.find', '/tmp/xdeploy_images/x86_64') | selectattr('path', 'match', '.*\\.tar$') }}"
+  loop_control:
+    label: "{{ item.path | basename }}"
+
+- name: 加载aarch64架构容器镜像
+  become: yes
+  ansible.builtin.shell: "nerdctl load -i {{ item.path }} --namespace k8s.io"
+  loop: "{{ query('ansible.builtin.find', '/tmp/xdeploy_images/aarch64') | selectattr('path', 'match', '.*\\.tar$') }}"
+  loop_control:
+    label: "{{ item.path | basename }}"

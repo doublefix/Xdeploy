@@ -2,6 +2,7 @@ x86_64:
   - docker.io/calico/cni:v3.29.2
   - docker.io/calico/node:v3.29.2
   - docker.io/calico/kube-controllers:v3.29.2
+  - registry.k8s.io/metrics-server/metrics-server:v0.7.1
 
 # arrach64:
 #   - docker.io/calico/cni:v3.29.2

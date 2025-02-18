@@ -6,3 +6,5 @@ inventory/test
 logs
 repo
 !repo/meta.yml
+!repo/images.yml
+

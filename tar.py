@@ -40,7 +40,6 @@ def create_tarball_from_current_directory(output_filename=None, include_arch=Non
 
 
 def main():
-    # 创建命令行参数解析器
     parser = argparse.ArgumentParser(
         description="Create tarball from current directory."
     )

@@ -13,28 +13,35 @@
 
 - name: 复制x86_64镜像内容到目标服务器
   ansible.builtin.copy:
-    src: "../repo/images/x86_64/"
-    dest: "/tmp/xdeploy_images/x86_64"
+    src: "{{ item }}"
+    dest: "/tmp/xdeploy_images/x86_64/"
     mode: '0644'
     force: yes
+  with_fileglob:
+    - "../repo/images/x86_64/*"
 
 - name: 复制aarch64镜像内容到目标服务器
   ansible.builtin.copy:
-    src: "../repo/images/aarch64/"
-    dest: "/tmp/xdeploy_images/aarch64"
+    src: "{{ item }}"
+    dest: "/tmp/xdeploy_images/aarch64/"
     mode: '0644'
     force: yes
+  with_fileglob:
+    - "../repo/images/aarch64/*"
 
-- name: 加载x86_64架构容器镜像
-  become: yes
-  ansible.builtin.shell: "nerdctl load -i {{ item.path }} --namespace k8s.io"
-  loop: "{{ query('ansible.builtin.find', '/tmp/xdeploy_images/x86_64') | selectattr('path', 'match', '.*\\.tar$') }}"
-  loop_control:
-    label: "{{ item.path | basename }}"
+- name: Shell动态查找并加载x86_64镜像
+  ansible.builtin.shell: |
+    find /tmp/xdeploy_images/x86_64 -type f -name "*.tar" -exec nerdctl load -i {} --namespace k8s.io \; || echo "No tar files found in x86_64"
+  args:
+    executable: /bin/bash
 
-- name: 加载aarch64架构容器镜像
-  become: yes
-  ansible.builtin.shell: "nerdctl load -i {{ item.path }} --namespace k8s.io"
-  loop: "{{ query('ansible.builtin.find', '/tmp/xdeploy_images/aarch64') | selectattr('path', 'match', '.*\\.tar$') }}"
-  loop_control:
-    label: "{{ item.path | basename }}"
+- name: Shell动态查找并加载aarch64镜像
+  ansible.builtin.shell: |
+    find /tmp/xdeploy_images/aarch64 -type f -name "*.tar" -exec nerdctl load -i {} --namespace k8s.io \; || echo "No tar files found in aarch64"
+  args:
+    executable: /bin/bash
+
+- name: 删除/tmp/xdeploy_images目录
+  ansible.builtin.file:
+    path: /tmp/xdeploy_images
+    state: absent

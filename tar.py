@@ -19,16 +19,14 @@ def create_tarball_from_current_directory(output_filename=None, include_arch=Non
                 if len(parts) == repo_index + 2:
                     # 当前目录是repo/<project>，处理其子目录
                     if include_arch:
-                        # 只保留include_arch子目录
                         if include_arch in dirs:
                             dirs[:] = [include_arch]
                         else:
-                            dirs[:] = []  # 没有该架构，跳过该项目的所有子目录
+                            dirs[:] = []
                     else:
-                        # 如果没有传入架构，遍历所有子目录
                         pass
 
-                    files[:] = []  # 清空文件列表，避免重复添加
+                    files[:] = []
 
             for file in files:
                 # 排除生成的tar包文件
@@ -55,7 +53,6 @@ def main():
 
     args = parser.parse_args()
 
-    # 根据命令行传入的参数调用创建tar包的函数
     create_tarball_from_current_directory(include_arch=args.arch)
 
 

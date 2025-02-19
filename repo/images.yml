@@ -14,6 +14,7 @@ x86_64:
   - quay.io/prometheus/prometheus:v2.54.1
   - quay.io/thanos/thanos:v0.28.1
   - docker.io/bitnami/thanos:0.37.2-debian-12-r5
+  - registry.k8s.io/ingress-nginx/kube-webhook-certgen:v20221220-controller-v1.5.1-58-g787ea74b6
   # nvidia
   - nvcr.io/nvidia/cloud-native/gpu-operator-validator:v24.9.0
   - nvcr.io/nvidia/gpu-operator:v24.9.0

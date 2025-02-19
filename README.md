@@ -92,12 +92,6 @@ ansible-playbook playbooks/clean/docker_buildx.yml
 - kubeadm
 - kubectl
 
-## TODO
-
-1. Xdeploy 已经安装的机器可以会有影响
-2. 增量准备部署包，根据增量清单来
-3. Package ALL，预准备镜像(重要)
-
 ## 注意事项
 
 1. 一个集群的节点解析，主节点 hosts 连所有从节点，每个从节点连接主节点

@@ -2,7 +2,7 @@ import os
 import tarfile
 import pathspec
 
-def create_tar_from_gitignore(gitignore_path, output_tar='code.tar.gz'):
+def create_tar_from_gitignore(gitignore_path, output_tar='xdeploy-code.tar.gz'):
     # 读取.gitignore文件并解析规则
     try:
         with open(gitignore_path, 'r') as f:
@@ -21,10 +21,20 @@ def create_tar_from_gitignore(gitignore_path, output_tar='code.tar.gz'):
                 # 修改遍历的目录列表，提前排除被忽略的目录
                 dirs[:] = [d for d in dirs if not spec.match_file(os.path.relpath(os.path.join(root, d), '.'))]
                 
+                # 显式排除'code.tar.gz'和'.git'文件夹
+                if '.git' in dirs:
+                    dirs.remove('.git')
+                
+                # 遍历文件并检查是否需要排除
                 for file in files:
                     file_full_path = os.path.join(root, file)
                     rel_path = os.path.relpath(file_full_path, '.')
 
+                    # 显式排除'code.tar.gz'文件
+                    if file == os.path.basename(output_tar):
+                        print(f"Ignored: {rel_path}")
+                        continue
+                    
                     # 检查文件是否未被.gitignore规则忽略
                     if not spec.match_file(rel_path):
                         print(f"Adding: {rel_path}")

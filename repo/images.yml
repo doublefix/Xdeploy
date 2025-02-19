@@ -3,6 +3,15 @@ x86_64:
   - docker.io/calico/node:v3.29.2
   - docker.io/calico/kube-controllers:v3.29.2
   - registry.k8s.io/metrics-server/metrics-server:v0.7.1
+  - quay.io/prometheus-operator/prometheus-config-reloader:v0.76.1
+  - docker.io/grafana/grafana:11.2.0
+  - quay.io/kiwigrid/k8s-sidecar:1.27.4
+  - quay.io/prometheus-operator/prometheus-operator:v0.76.1
+  - registry.k8s.io/kube-state-metrics/kube-state-metrics:v2.13.0
+  - quay.io/prometheus/node-exporter:v1.8.2
+  - quay.io/prometheus/prometheus:v2.54.1
+  - quay.io/thanos/thanos:v0.28.1
+  - docker.io/bitnami/thanos:0.37.2-debian-12-r5
 
 # arrach64:
 #   - docker.io/calico/cni:v3.29.2

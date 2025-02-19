@@ -97,10 +97,46 @@ def process_incremental_load(config_path, output_tar="xdeploy-incremental.tar.gz
         # 读取 YAML 配置文件
         with open(config_path, "r") as f:
             config = yaml.safe_load(f)
-
         # 判断是否需要打包代码
         if config.get("code", False):
             create_code_tar_from_gitignore(".gitignore", output_tar)
+        if not config.get("code"):
+            with open("repo/incremental_load.yaml", "r") as f:
+                config = yaml.safe_load(f)
+            with tarfile.open(output_tar, "w:gz") as tar:
+                if "binary" in config:
+                    for binary, platforms in config["binary"].items():
+                        for platform, versions in platforms.items():
+                            for version in versions:
+                                # 拼接路径
+                                binary_path = os.path.join(
+                                    "repo", binary, platform, version
+                                )
+                                if os.path.exists(binary_path):
+                                    print(f"Adding binary: {binary_path}")
+                                    tar.add(
+                                        binary_path,
+                                        arcname=os.path.relpath(binary_path, "."),
+                                    )
+                                else:
+                                    print(f"Warning: Binary path not found: {binary_path}")
+
+                if "images" in config:
+                    for platform, images in config["images"].items():
+                        for image in images:
+                            image_name = image.replace("/", "-").replace(
+                                ":", "_"
+                            )
+                            image_path = os.path.join(
+                                "repo", "images", platform, f"{image_name}.tar"
+                            )
+                            if os.path.exists(image_path):
+                                print(f"Adding image: {image_path}")
+                                tar.add(
+                                    image_path, arcname=os.path.relpath(image_path, ".")
+                                )
+                            else:
+                                print(f"Warning: Image path not found: {image_path}")
 
     except FileNotFoundError:
         print(f"Error: {config_path} not found.")

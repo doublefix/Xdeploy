@@ -1,26 +1,23 @@
 code: true
 
-binary: 
-  kubectl:
-    x86_64:
-      - v1.31.0
-      - v1.30.9
-    arrach64:
-      - v1.31.0
-      - v1.30.9
-  kubeadm:
-    x86_64:
-      - v1.31.0
-      - v1.30.9
-    arrach64:
-      - v1.31.0
-      - v1.30.9
+# binary: 
+#   kubectl:
+#     x86_64:
+#       - v1.31.0
+#       - v1.30.9
+#     arrach64:
+#       - v1.31.0
+#       - v1.30.9
+#   kubeadm:
+#     x86_64:
+#       - v1.31.0
+#       - v1.30.9
+#     arrach64:
+#       - v1.31.0
+#       - v1.30.9
 
 images:
   x86_64:
-    - docker.io/calico/cni:v3.29.2
-    - docker.io/calico/node:v3.29.2
-    - docker.io/calico/kube-controllers:v3.29.2
     - registry.k8s.io/metrics-server/metrics-server:v0.7.1
     - quay.io/prometheus-operator/prometheus-config-reloader:v0.76.1
     - docker.io/grafana/grafana:11.2.0

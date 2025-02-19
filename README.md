@@ -45,6 +45,10 @@ ansible-playbook playbooks/helm.yml -e "arch=x86_64 version=v3.15.4"
 ansible-playbook playbooks/docker.yml -e "arch=x86_64 version=27.1.2"
 ansible-playbook playbooks/docker_compose.yml -e "arch=x86_64 version=v2.29.2"
 ansible-playbook playbooks/docker_buildx.yml -e "arch=x86_64 version=v0.16.2"
+
+python package_incremental.py
+python update.py backupcode
+python update.py load xdeploy-incremental_20250219_195822.tar.gz
 ```
 
 ## Clean kube

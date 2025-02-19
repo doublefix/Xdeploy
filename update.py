@@ -60,6 +60,15 @@ def create_tar_from_gitignore(gitignore_path, output_tar_prefix="xdeploy-backup"
 
         for root, dirs, files in os.walk(".", topdown=False):
             for file in files:
+                if file.startswith("xdeploy-incremental_"):
+                    print(f"Ignored: {rel_path} (matches xdeploy-incremental_)")
+                    continue
+                if file.startswith("update.py"):
+                    print(f"Ignored: {rel_path} (matches xdeploy-incremental_)")
+                    continue
+                if file.startswith("backup"):
+                    print(f"Ignored: {rel_path} (matches xdeploy-incremental_)")
+                    continue
                 file_full_path = os.path.join(root, file)
                 rel_path = os.path.relpath(file_full_path, ".")
 
@@ -89,15 +98,30 @@ def create_tar_from_gitignore(gitignore_path, output_tar_prefix="xdeploy-backup"
 
 
 if __name__ == "__main__":
-    if os.path.isdir('.git'):
-        print("Error: .git folder found. Cannot proceed with the tar creation.")
-    else:
-        create_tar_from_gitignore(".gitignore")
-
     if len(sys.argv) > 1:
-        tar_file = sys.argv[1]
-        if tar_file.endswith('.tar.gz') and os.path.exists(tar_file):
-            print(f"Extracting {tar_file}...")
-            with tarfile.open(tar_file, 'r:gz') as tar:
-                tar.extractall()
-            print(f"Extraction of {tar_file} complete.")
+        action = sys.argv[1]
+
+        if action == "backupcode":
+            # Backup code
+            create_tar_from_gitignore(".gitignore")
+            print("Backup completed.")
+
+        elif action == "load":
+            # Load and extract tar file
+            if len(sys.argv) > 2:
+                tar_file = sys.argv[2]
+                if tar_file.endswith('.tar.gz') and os.path.exists(tar_file):
+                    print(f"Extracting {tar_file}...")
+                    with tarfile.open(tar_file, 'r:gz') as tar:
+                        tar.extractall()
+                    print(f"Extraction of {tar_file} complete.")
+                else:
+                    print(f"Error: {tar_file} is not a valid .tar.gz file or does not exist.")
+            else:
+                print("Error: Please provide a tar file to extract.")
+        
+        else:
+            print("Error: Invalid argument. Use 'backupcode' to create a backup or 'load' to extract a tar file.")
+    
+    else:
+        print("Error: No argument provided. Use 'backupcode' to create a backup or 'load' to extract a tar file.")

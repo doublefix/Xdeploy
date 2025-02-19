@@ -1,6 +1,7 @@
 import os
 import tarfile
 import pathspec
+import yaml
 
 def create_code_tar_from_gitignore(gitignore_path, output_tar='xdeploy-code.tar.gz'):
     try:
@@ -45,5 +46,48 @@ def create_code_tar_from_gitignore(gitignore_path, output_tar='xdeploy-code.tar.
     except Exception as e:
         print(f"Error creating tar file {output_tar}: {e}")
 
+def process_incremental_load(config_path, output_tar='xdeploy-code.tar.gz'):
+    try:
+        # 读取 YAML 配置文件
+        with open(config_path, 'r') as f:
+            config = yaml.safe_load(f)
+
+        # 判断是否需要打包代码
+        if config.get('code', False):
+            create_code_tar_from_gitignore('.gitignore', output_tar)
+
+        # 处理 binary 配置
+        with tarfile.open(output_tar, 'a:gz') as tar:  # 使用'a:gz'模式追加内容
+            if 'binary' in config:
+                for binary, platforms in config['binary'].items():
+                    for platform, versions in platforms.items():
+                        for version in versions:
+                            # 拼接路径
+                            binary_path = os.path.join('repo', binary, platform, version)
+                            if os.path.exists(binary_path):
+                                print(f"Adding binary: {binary_path}")
+                                tar.add(binary_path, arcname=os.path.relpath(binary_path, '.'))
+                            else:
+                                print(f"Warning: Binary path not found: {binary_path}")
+            
+            # 处理 images 配置
+            if 'images' in config:
+                for platform, images in config['images'].items():
+                    for image in images:
+                        image_name = image.replace('/', '-').replace(':', '_')  # 规范化 image 名称
+                        image_path = os.path.join('repo', 'images', platform, f"{image_name}.tar")
+                        if os.path.exists(image_path):
+                            print(f"Adding image: {image_path}")
+                            tar.add(image_path, arcname=os.path.relpath(image_path, '.'))
+                        else:
+                            print(f"Warning: Image path not found: {image_path}")
+    
+    except FileNotFoundError:
+        print(f"Error: {config_path} not found.")
+    except yaml.YAMLError as e:
+        print(f"Error reading YAML file: {e}")
+    except Exception as e:
+        print(f"Error processing {config_path}: {e}")
+
 if __name__ == '__main__':
-    create_code_tar_from_gitignore('.gitignore')
+    process_incremental_load('repo/incremental_load.yaml', 'xdeploy-code.tar.gz')

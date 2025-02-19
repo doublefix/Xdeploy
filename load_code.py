@@ -1,58 +1,39 @@
 import os
 import tarfile
+import pathspec
 
-def parse_gitignore(gitignore_file):
-    ignore_patterns = []
-    include_patterns = []
+def create_tar_from_gitignore(gitignore_path, output_tar='code.tar.gz'):
+    # 读取.gitignore文件并解析规则
+    try:
+        with open(gitignore_path, 'r') as f:
+            spec = pathspec.GitIgnoreSpec.from_lines(f)
+    except FileNotFoundError:
+        print(f"Error: {gitignore_path} not found.")
+        return
+    except Exception as e:
+        print(f"Error reading {gitignore_path}: {e}")
+        return
     
-    with open(gitignore_file, 'r') as f:
-        lines = f.readlines()
-        for line in lines:
-            line = line.strip()
-            if line.startswith('!'):
-                include_patterns.append(line[1:])
-            elif line and not line.startswith('#'):
-                ignore_patterns.append(line)
-    
-    return ignore_patterns, include_patterns
+    # 创建tar.gz文件
+    try:
+        with tarfile.open(output_tar, 'w:gz') as tar:
+            for root, dirs, files in os.walk('.', topdown=True):
+                # 修改遍历的目录列表，提前排除被忽略的目录
+                dirs[:] = [d for d in dirs if not spec.match_file(os.path.relpath(os.path.join(root, d), '.'))]
+                
+                for file in files:
+                    file_full_path = os.path.join(root, file)
+                    rel_path = os.path.relpath(file_full_path, '.')
 
-def should_include(file_path, ignore_patterns, include_patterns):
-    # Check if the file is explicitly included
-    for include in include_patterns:
-        if os.path.normpath(file_path).endswith(include):
-            return True
-    
-    # Check if the file matches any ignore pattern
-    for ignore in ignore_patterns:
-        if os.path.normpath(file_path).endswith(ignore):
-            return False
-    
-    return True
-
-def create_tarball(source_dir, tarball_name, ignore_patterns, include_patterns):
-    with tarfile.open(tarball_name, "w:gz") as tar:
-        for dirpath, dirnames, filenames in os.walk(source_dir):
-            # Check the directory to include or ignore
-            if not should_include(dirpath, ignore_patterns, include_patterns):
-                continue
-            
-            # Add the directory itself
-            tar.add(dirpath, arcname=os.path.relpath(dirpath, source_dir))
-
-            # Add the files in the directory
-            for filename in filenames:
-                file_path = os.path.join(dirpath, filename)
-                if should_include(file_path, ignore_patterns, include_patterns):
-                    tar.add(file_path, arcname=os.path.relpath(file_path, source_dir))
+                    # 检查文件是否未被.gitignore规则忽略
+                    if not spec.match_file(rel_path):
+                        print(f"Adding: {rel_path}")
+                        # 将文件添加到tar包中，保持相对路径
+                        tar.add(file_full_path, arcname=rel_path)
+                    else:
+                        print(f"Ignored: {rel_path}")
+    except Exception as e:
+        print(f"Error creating tar file {output_tar}: {e}")
 
 if __name__ == '__main__':
-    source_dir = '.'  # Change this to the root directory of your code
-    gitignore_file = '.gitignore'
-    tarball_name = 'code.tar.gz'
-    
-    # Parse the .gitignore file
-    ignore_patterns, include_patterns = parse_gitignore(gitignore_file)
-    
-    # Create the tarball
-    create_tarball(source_dir, tarball_name, ignore_patterns, include_patterns)
-    print(f'Tarball {tarball_name} created successfully!')
+    create_tar_from_gitignore('.gitignore')

@@ -33,3 +33,9 @@ images:
     - quay.io/prometheus/prometheus:v2.54.1
     - quay.io/thanos/thanos:v0.28.1
     - docker.io/bitnami/thanos:0.37.2-debian-12-r5
+    # nvidia
+    - nvcr.io/nvidia/cloud-native/gpu-operator-validator:v24.9.0
+    - nvcr.io/nvidia/gpu-operator:v24.9.0
+    - nvcr.io/nvidia/cloud-native/gpu-operator-validator:v24.9.0
+    - nvcr.io/nvidia/k8s/dcgm-exporter:3.3.8-3.6.0-ubuntu22.04
+    - nvcr.io/nvidia/k8s-device-plugin:v0.17.0-ubi9

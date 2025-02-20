@@ -1,0 +1,9 @@
+---
+- name: Deploy nvidia-container-toolkit
+  hosts: servers
+  become: yes
+  vars:
+    arch: "{{ arch | default('x86_64') }}"
+    version: "{{ version | default('1.17.4') }}"
+  roles:
+    - nvidia-container-toolkit

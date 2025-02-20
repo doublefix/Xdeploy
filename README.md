@@ -39,6 +39,8 @@ ansible-playbook playbooks/calico.yml
 ansible-playbook playbooks/metrics_server.yml
 # Load images
 ansible-playbook playbooks/images.yml
+# Install nvidia-container-toolkit
+ansible-playbook playbooks/nvidia-container-toolkit.yaml -e "arch=x86_64 version=1.17.4"
 
 ansible-playbook playbooks/kubectl.yml -e "arch=x86_64 version=v1.31.0"
 ansible-playbook playbooks/helm.yml -e "arch=x86_64 version=v3.15.4"

@@ -1,0 +1,31 @@
+- name: Ensure /tmp/nvidia-container-toolkit exists
+  file:
+    path: "/tmp/nvidia-container-toolkit"
+    state: directory
+    mode: '0755'
+
+- name: Copy packages to target server
+  copy:
+    src: "../repo/nvidia-container-toolkit/{{ arch }}/{{ version }}/{{ item }}"
+    dest: "/tmp/nvidia-container-toolkit/{{ item }}"
+  loop: "{{ package[arch][version].deb }}"
+
+- name: Install all .deb packages using dpkg
+  become: true
+  ansible.builtin.command:
+    cmd: "dpkg -i {{ package[arch][version].deb | map('regex_replace', '^', '/tmp/nvidia-container-toolkit/') | join(' ') }}"
+  ignore_errors: true
+
+
+- name: Clean up .deb files after installation
+  become: true
+  file:
+    path: "/tmp/nvidia-container-toolkit/{{ item }}"
+    state: absent
+  loop: "{{ package[arch][version].deb }}"
+
+- name: Remove /tmp/nvidia-container-toolkit directory
+  become: true
+  file:
+    path: "/tmp/nvidia-container-toolkit"
+    state: absent

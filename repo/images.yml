@@ -21,6 +21,8 @@ x86_64:
   - nvcr.io/nvidia/cloud-native/gpu-operator-validator:v24.9.0
   - nvcr.io/nvidia/k8s/dcgm-exporter:3.3.8-3.6.0-ubuntu22.04
   - nvcr.io/nvidia/k8s-device-plugin:v0.17.0-ubi9
+  # nfd
+  - registry.k8s.io/nfd/node-feature-discovery:v0.16.6
 
 # arrach64:
 #   - docker.io/calico/cni:v3.29.2

@@ -41,4 +41,7 @@ images:
     # - nvcr.io/nvidia/k8s/dcgm-exporter:3.3.8-3.6.0-ubuntu22.04
     # - nvcr.io/nvidia/k8s-device-plugin:v0.17.0-ubi9
     # nfd
-    - registry.k8s.io/nfd/node-feature-discovery:v0.16.6
+    # - registry.k8s.io/nfd/node-feature-discovery:v0.16.6
+    # ray
+    - quay.io/kuberay/operator:v1.2.2
+    - rayproject/ray:2.41.0

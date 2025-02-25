@@ -181,14 +181,15 @@ function krp() {
 function krs() {
         $K8S delete service $1 -n $NAMESPACE
 }
-function kgrc() {
+function krrc() {
         $K8S delete rayclusters -owide -n $NAMESPACE
 }
-function kgrj() {
+function krrj() {
         $K8S delete rayjobs -owide -n $NAMESPACE
 }
-function kgrs() {
+function krrs() {
         $K8S delete rayservices -owide -n $NAMESPACE
+}
 function kri() {
         $K8S delete ingress $1 -n $NAMESPACE
 }

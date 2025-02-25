@@ -230,7 +230,13 @@ function set-ns() {
 
 function change_ns() {
     export NAMESPACE=$1
+    kubectl config set-context --current --namespace=$NAMESPACE
 }
+
+function sns() {
+        echo $NAMESPACE
+}
+
 
 function kcp() {
         $K8S -n $NAMESPACE cp $@

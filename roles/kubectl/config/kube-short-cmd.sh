@@ -224,12 +224,14 @@ function hhg() {
 
 # Tools
 function set-ns() {
-        export NAMESPACE=$1
+        NAMESPACE=${1:-default}
+        export NAMESPACE
         kubectl config set-context --current --namespace=$NAMESPACE
 }
 
 function change_ns() {
-    export NAMESPACE=$1
+    NAMESPACE=${1:-default}
+    export NAMESPACE
     kubectl config set-context --current --namespace=$NAMESPACE
 }
 

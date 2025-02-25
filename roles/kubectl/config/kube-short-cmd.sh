@@ -56,6 +56,15 @@ function kgp() {
 function kgq() {
         $K8S get queue
 }
+function kgrc() {
+        $K8S get rayclusters -owide -n $NAMESPACE
+}
+function kgrj() {
+        $K8S get rayjobs -owide -n $NAMESPACE
+}
+function kgrs() {
+        $K8S get rayservices -owide -n $NAMESPACE
+}
 function kgvj() {
         $K8S get vj -n $NAMESPACE
 }

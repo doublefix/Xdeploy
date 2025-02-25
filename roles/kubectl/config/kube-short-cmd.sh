@@ -201,6 +201,15 @@ function kdq() {
 function kdvj() {
         $K8S describe vj $1 -n $NAMESPACE
 }
+function kdrc() {
+        $K8S describe rayclusters $1 -n $NAMESPACE
+}
+function kdrj() {
+        $K8S describe rayjobs $1 -n $NAMESPACE
+}
+function kdrs() {
+        $K8S describe rayservices $1 -n $NAMESPACE
+}
 function kdvj() {
         $K8S describe pg $1 -n $NAMESPACE
 }

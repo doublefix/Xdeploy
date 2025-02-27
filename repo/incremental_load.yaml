@@ -43,5 +43,7 @@ images:
     # nfd
     # - registry.k8s.io/nfd/node-feature-discovery:v0.16.6
     # ray
-    - quay.io/kuberay/operator:v1.2.2
-    - rayproject/ray:2.41.0
+    # - quay.io/kuberay/operator:v1.2.2
+    # - rayproject/ray:2.41.0
+    # Custom
+    - docker.io/alpine/curl:8.12.1

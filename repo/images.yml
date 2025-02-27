@@ -26,6 +26,8 @@ x86_64:
   # ray
   - quay.io/kuberay/operator:v1.2.2
   - rayproject/ray:2.41.0
+  # Custom
+  - docker.io/alpine/curl:8.12.1
 
 # arrach64:
 #   - docker.io/calico/cni:v3.29.2

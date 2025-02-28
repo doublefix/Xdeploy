@@ -145,3 +145,6 @@ if __name__ == "__main__":
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     filename = f"xdeploy-incremental_{timestamp}.tar.gz"
     process_incremental_load("repo/incremental_load.yaml", filename)
+
+
+# docker save -o rayproject_ray_2.41.0-vllm.tar rayproject/ray:2.41.0-vllm

@@ -28,6 +28,7 @@ x86_64:
   - rayproject/ray:2.41.0
   # Custom
   - docker.io/alpine/curl:8.12.1
+  - registry.k8s.io/sig-storage/nfs-subdir-external-provisioner:v4.0.2
 
 # arrach64:
 #   - docker.io/calico/cni:v3.29.2

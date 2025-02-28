@@ -46,4 +46,5 @@ images:
     # - quay.io/kuberay/operator:v1.2.2
     # - rayproject/ray:2.41.0
     # Custom
-    - docker.io/alpine/curl:8.12.1
+    # - docker.io/alpine/curl:8.12.1
+    - registry.k8s.io/sig-storage/nfs-subdir-external-provisioner:v4.0.2

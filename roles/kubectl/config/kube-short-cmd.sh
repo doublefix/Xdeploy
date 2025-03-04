@@ -95,7 +95,7 @@ function kge() {
 function kgi() {
         $K8S get ingress -n $NAMESPACE -o wide
 }
-function kgc() {
+function kgcm() {
         $K8S get configmap -n $NAMESPACE -o wide
 }
 function kgd() {
@@ -264,6 +264,56 @@ function change_ns() {
 
 function sns() {
         echo $NAMESPACE
+}
+
+# kubectl config view --minify --flatten
+# Cluster
+function kgc() {
+    kubectl config get-clusters
+}
+# User
+function kgu() {
+    kubectl config get-users
+}
+
+# Contexts
+function kcgc() {
+    kubectl config get-contexts
+}
+
+# kubectl config set-context kubernetes-admin@kubernetes-new --cluster=kubernetes --user=kubernetes-admin --namespace=kube-system
+function kcnc() {
+    if [ -z "$1" ] || [ -z "$2" ] || [ -z "$3" ] || [ -z "$4" ]; then
+        echo "请提供上下文名称、集群名称、用户名称和命名空间！"
+        return 1
+    fi
+
+    CONTEXT_NAME=$1
+    CLUSTER_NAME=$2
+    USER_NAME=$3
+    NAMESPACE=$4
+    
+    kubectl config set-context $CONTEXT_NAME --cluster=$CLUSTER_NAME --user=$USER_NAME --namespace=$NAMESPACE
+}
+function kcuc() {
+    if [ -z "$1" ]; then
+        echo "请提供上下文名称作为参数！"
+        return 1
+    fi
+    NAME=$1
+    kubectl config use-context $NAME
+
+    NAMESPACE=$(kubectl config view --minify --output 'jsonpath={.contexts[?(@.name=="'$NAME'")].context.namespace}')
+    kubectl config set-context --current --namespace=$NAMESPACE
+}
+
+function kcrc() {
+    if [ -z "$1" ]; then
+        echo "请提供上下文名称作为参数！"
+        return 1
+    fi
+    CONTEXT=$1
+    kubectl config unset contexts.$CONTEXT
 }
 
 

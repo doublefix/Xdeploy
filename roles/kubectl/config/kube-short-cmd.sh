@@ -266,6 +266,10 @@ function sns() {
         echo $NAMESPACE
 }
 
+function kccc() {
+    kubectl config current-context
+}
+
 # kubectl config view --minify --flatten
 # Cluster
 function kgc() {

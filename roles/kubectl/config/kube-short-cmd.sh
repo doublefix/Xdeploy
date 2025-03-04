@@ -193,7 +193,7 @@ function krrs() {
 function kri() {
         $K8S delete ingress $1 -n $NAMESPACE
 }
-function krc() {
+function krcm() {
         $K8S delete configmap $1 -n $NAMESPACE
 }
 function krd() {
@@ -228,7 +228,7 @@ function kds() {
 function kdi() {
         $K8S describe ingress $1 -n $NAMESPACE
 }
-function kdc() {
+function kdcm() {
         $K8S describe configmap $1 -n $NAMESPACE
 }
 function kdd() {
@@ -271,9 +271,55 @@ function sns() {
 function kgc() {
     kubectl config get-clusters
 }
+
+function krc() {
+    if [ -z "$1" ]; then
+        echo "请提供集群名称作为参数"
+        return 1
+    fi
+
+    local NAME=$1
+
+    read -p "请再次输入集群名称 '$NAME' 以确认删除: " CONFIRM_NAME
+
+    if [ "$CONFIRM_NAME" = "$NAME" ]; then
+        if kubectl config delete-cluster "$NAME"; then
+            echo "集群 '$NAME' 已成功删除。"
+        else
+            echo "删除集群 '$NAME' 失败。"
+            return 1
+        fi
+    else
+        echo "删除操作已取消，输入的集群名称不匹配。"
+        return 1
+    fi
+}
 # User
 function kgu() {
     kubectl config get-users
+}
+
+function kru() {
+    if [ -z "$1" ]; then
+        echo "请提供用户名称作为参数"
+        return 1
+    fi
+
+    local NAME=$1
+
+    read -p "请再次输入用户名称 '$NAME' 以确认删除: " CONFIRM_NAME
+
+    if [ "$CONFIRM_NAME" = "$NAME" ]; then
+        if kubectl config delete-user "$NAME"; then
+            echo "用户 '$NAME' 已成功删除。"
+        else
+            echo "删除用户 '$NAME' 失败。"
+            return 1
+        fi
+    else
+        echo "删除操作已取消，输入的用户名称不匹配。"
+        return 1
+    fi
 }
 
 # Contexts

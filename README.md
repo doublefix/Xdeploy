@@ -9,6 +9,8 @@ The project is designed to help developers install essential software.
 python3 -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt
+ansible-galaxy collection install ansible.posix
+ansible-galaxy collection install community.general
 deactivate
 # Package
 python tar.py x86_64
@@ -107,7 +109,6 @@ ansible-playbook playbooks/clean/docker_buildx.yml
 3. 部署完成后检查 INTERNAL-IP 是否符合预期
 4. 下载预备安装文件有两种：下载二进制包，下载镜像
 
-ansible-galaxy collection install community.general
 
 ## 初始化集群
 

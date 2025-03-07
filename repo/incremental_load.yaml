@@ -1,6 +1,6 @@
 code: false
 
-# binary: 
+binary:
 #   kubectl:
 #     x86_64:
 #       - v1.31.0
@@ -15,9 +15,13 @@ code: false
 #     arrach64:
 #       - v1.31.0
 #       - v1.30.9
+  nvidia-container-toolkit:
+    x86_64:
+      - 1.17.4
 
-images:
-  x86_64:
+
+# images:
+#   x86_64:
     # calico
     # - docker.io/calico/cni:v3.29.2
     # - docker.io/calico/node:v3.29.2

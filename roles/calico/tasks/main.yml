@@ -7,5 +7,5 @@
 
 - name: Copy calico to target server
   copy:
-    src: "../roles/calico/conf/v3.28.1/calico.yaml"
+    src: "../roles/calico/conf/v3.29.2/calico.yaml"
     dest: "/etc/kubernetes/calico"

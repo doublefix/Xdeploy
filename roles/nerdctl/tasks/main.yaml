@@ -27,7 +27,7 @@
 - name: Synchronize nerdctl certs directory
   synchronize:
     src: "../roles/nerdctl/config/containerd"
-    dest: "/etc/containerd/"
+    dest: "/etc/"
     mode: "push"
 
 - name: Ensure /etc/cni/net.d exists

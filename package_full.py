@@ -58,4 +58,4 @@ def main():
 if __name__ == "__main__":
     main()
 
-# python tar.py x86_64
+# python package_full.py x86_64

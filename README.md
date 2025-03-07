@@ -98,8 +98,16 @@ ansible-playbook playbooks/clean/docker_buildx.yml
 ## 注意事项
 
 1. 一个集群的节点解析，主节点 hosts 连所有从节点，每个从节点连接主节点
-2. 部署完成后检查 INTERNAL-IP 是否符合预期
-3. 下载预备安装文件有两种：下载二进制包，下载镜像
+
+- 收集 hostname(大小写注意)+ip 制成 hosts
+- 修改 hosts
+- 修改 authorized_keys,把部署机的key放到被管理机器
+
+2. 使用 Xdeploy
+3. 部署完成后检查 INTERNAL-IP 是否符合预期
+4. 下载预备安装文件有两种：下载二进制包，下载镜像
+
+ansible-galaxy collection install community.general
 
 ## 初始化集群
 

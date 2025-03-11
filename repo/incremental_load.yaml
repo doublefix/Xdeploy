@@ -20,8 +20,8 @@ binary:
       - 1.17.4
 
 
-# images:
-#   x86_64:
+images:
+  x86_64:
     # calico
     # - docker.io/calico/cni:v3.29.2
     # - docker.io/calico/node:v3.29.2
@@ -50,17 +50,17 @@ binary:
     # - quay.io/kuberay/operator:v1.2.2
     # - rayproject/ray:2.41.0
     # longhornio
-    # - longhornio/longhorn-manager:v1.8.0
-    # - longhornio/longhorn-share-manager:v1.8.0
-    # - longhornio/longhorn-ui:v1.8.0
-    # - longhornio/csi-attacher:v4.8.0
-    # - longhornio/csi-node-driver-registrar:v2.13.0
-    # - longhornio/csi-provisioner:v5.1.0-20241220
-    # - longhornio/csi-resizer:v1.13.1
-    # - longhornio/csi-snapshotter:v8.2.0
-    # - longhornio/livenessprobe:v2.15.0
-    # - longhornio/longhorn-engine:v1.8.0
-    # - longhornio/longhorn-instance-manager:v1.8.0
+    - longhornio/csi-attacher:v4.8.1
+    - longhornio/csi-node-driver-registrar:v2.13.0
+    - longhornio/csi-provisioner:v5.2.0
+    - longhornio/csi-resizer:v1.13.2
+    - longhornio/csi-snapshotter:v8.2.0
+    - longhornio/livenessprobe:v2.15.0
+    - longhornio/longhorn-engine:v1.8.1
+    - longhornio/longhorn-instance-manager:v1.8.1
+    - longhornio/longhorn-manager:v1.8.1
+    - longhornio/longhorn-share-manager:v1.8.1
+    - longhornio/longhorn-ui:v1.8.1
     # Custom
     # - litmuschaos/fio:latest # 存储性能测试
     # - docker.io/alpine/curl:8.12.1

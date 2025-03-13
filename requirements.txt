@@ -3,3 +3,4 @@ ansible-runner==2.4.0
 Flask==3.0.3
 gunicorn==23.0.0
 python-dotenv==1.0.0
+pathspec==0.12.1

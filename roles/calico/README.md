@@ -67,5 +67,13 @@ kubectl set env daemonset/calico-node -n kube-system IP_AUTODETECTION_METHOD=int
 # 能够ping通目标的网卡
 kubectl set env daemonset/calico-node -n kube-system IP_AUTODETECTION_METHOD=interface=can-reach=www.google.com
 
+# 或者直接 edit 修改
+kubectl edit ds calico-node -n kube-system
+# 找到
+- name: CLUSTER_TYPE
+  value: "k8s,bgp"
+# 在下面添加
+- name: IP_AUTODETECTION_METHOD
+  value: "interface=eth0"
 
 ```

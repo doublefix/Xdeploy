@@ -1,0 +1,43 @@
+syntax = "proto3";
+
+package ssh;
+
+message SSHStream {
+  string session_id = 1;
+  oneof payload {
+    SSHInit init = 2;
+    SSHInput input = 3;
+    SSHOutput output = 4;
+    SSHError error = 5;
+    SSHEnd end = 6;
+  }
+}
+
+message SSHInit {
+  string host = 1;
+  int32 port = 2;
+  string username = 3;
+  string password = 4;
+  int32 rows = 5;
+  int32 cols = 6;
+}
+
+message SSHInput {
+  string data = 1;
+}
+
+message SSHOutput {
+  string data = 1;
+}
+
+message SSHError {
+  string message = 1;
+}
+
+message SSHEnd {
+  int32 exit_code = 1;
+}
+
+service SSHService {
+  rpc StartStream(stream SSHStream) returns (stream SSHStream);
+}

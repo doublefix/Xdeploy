@@ -1,138 +1,143 @@
-use futures::{Stream, StreamExt};
-use ssh2::{Channel, Session};
 use std::{
+    collections::HashMap,
     io::{Read, Write},
     net::TcpStream,
-    pin::Pin,
+    sync::Arc,
 };
-use tokio::sync::mpsc;
-use tonic::{Request, Response, Status, Streaming};
-use uuid::Uuid;
+use tokio::{
+    sync::{Mutex, mpsc},
+    task::JoinHandle,
+};
+use tokio_stream::StreamExt;
+use tonic::{Request, transport::Channel};
 
 pub mod ssh {
     tonic::include_proto!("ssh");
 }
 
 use ssh::{
-    SshEnd, SshError, SshInit, SshOutput, SshStream,
-    ssh_service_server::{SshService, SshServiceServer},
+    SshError, SshInit, SshInput, SshOutput, SshStream, ssh_service_client::SshServiceClient,
 };
 
-struct SshServiceImpl;
-
-#[tonic::async_trait]
-impl SshService for SshServiceImpl {
-    type StartStreamStream = Pin<Box<dyn Stream<Item = Result<SshStream, Status>> + Send>>;
-
-    async fn start_stream(
-        &self,
-        request: Request<Streaming<SshStream>>,
-    ) -> Result<Response<Self::StartStreamStream>, Status> {
-        let mut input_stream = request.into_inner();
-        let (tx, rx) = mpsc::channel(100);
-
-        tokio::spawn(async move {
-            if let Some(init_msg) = input_stream.next().await {
-                match init_msg {
-                    Ok(stream) => {
-                        if let Some(ssh::ssh_stream::Payload::Init(init)) = stream.payload {
-                            match handle_ssh_session(init, input_stream, tx.clone()).await {
-                                Ok(_) => {}
-                                Err(e) => {
-                                    let _ = tx.send(Err(e)).await;
-                                }
-                            }
-                        } else {
-                            let _ = tx
-                                .send(Err(Status::invalid_argument(
-                                    "First message must be of type Init",
-                                )))
-                                .await;
-                        }
-                    }
-                    Err(e) => {
-                        let _ = tx.send(Err(e)).await;
-                    }
-                }
-            }
-        });
-
-        Ok(Response::new(Box::pin(
-            tokio_stream::wrappers::ReceiverStream::new(rx),
-        )))
-    }
+struct SshSession {
+    tx: mpsc::Sender<SshInput>,
+    #[allow(dead_code)]
+    task: JoinHandle<()>,
 }
 
-async fn handle_ssh_session(
+#[derive(Clone)]
+struct AppState {
+    ssh_sessions: Arc<Mutex<HashMap<String, SshSession>>>,
+    grpc_client: SshServiceClient<Channel>,
+}
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    // 连接到gRPC服务
+    let grpc_addr = "http://localhost:50052";
+    let client = SshServiceClient::connect(grpc_addr).await?;
+
+    let state = AppState {
+        ssh_sessions: Arc::new(Mutex::new(HashMap::new())),
+        grpc_client: client,
+    };
+
+    // 创建双向流
+    let (_tx, rx) = mpsc::channel(100);
+    let request_stream = tokio_stream::wrappers::ReceiverStream::new(rx);
+    let mut response_stream = state
+        .grpc_client
+        .clone()
+        .start_stream(Request::new(request_stream))
+        .await?
+        .into_inner();
+
+    // 处理来自服务器的消息
+    while let Some(message) = response_stream.next().await {
+        match message {
+            Ok(stream) => handle_server_message(stream, state.clone()).await?,
+            Err(e) => eprintln!("gRPC error: {e}"),
+        }
+    }
+
+    Ok(())
+}
+
+async fn handle_server_message(
+    stream: SshStream,
+    state: AppState,
+) -> Result<(), Box<dyn std::error::Error>> {
+    if let Some(payload) = stream.payload {
+        println!("Received payload: {payload:?}");
+        match payload {
+            ssh::ssh_stream::Payload::Init(init) => {
+                start_ssh_session(init, stream.session_id, state).await?
+            }
+            ssh::ssh_stream::Payload::Input(input) => {
+                send_ssh_input(stream.session_id, input, state).await?
+            }
+            _ => {}
+        }
+    }
+    Ok(())
+}
+
+async fn start_ssh_session(
     init: SshInit,
-    mut input_stream: Streaming<SshStream>,
-    tx: mpsc::Sender<Result<SshStream, Status>>,
-) -> Result<(), Status> {
-    let session_id = Uuid::new_v4().to_string();
+    session_id: String,
+    state: AppState,
+) -> Result<(), Box<dyn std::error::Error>> {
+    // 建立 SSH 连接
+    let tcp = TcpStream::connect(format!("{}:{}", init.host, init.port))?;
+    let mut sess = ssh2::Session::new()?;
+    sess.set_tcp_stream(tcp);
+    sess.handshake()?;
+    sess.userauth_password(&init.username, &init.password)?;
+    let mut channel = sess.channel_session()?;
+    channel.request_pty(
+        "xterm",
+        None,
+        Some((init.cols as u32, init.rows as u32, 0, 0)),
+    )?;
+    channel.shell()?;
 
-    let tcp_stream = TcpStream::connect(format!("{}:{}", init.host, init.port))
-        .map_err(|e| Status::internal(format!("Failed to connect to SSH: {e}")))?;
+    // 创建 channel 通道用于异步写入
+    let (tx, mut rx) = mpsc::channel::<SshInput>(100);
 
-    let mut channel = start_ssh_session(
-        tcp_stream,
-        &init.username,
-        &init.password,
-        init.rows,
-        init.cols,
-    )
-    .map_err(|e| Status::internal(format!("SSH session initialization failed: {e}")))?;
+    // 启动任务读取 SSH 输出
+    let mut read_channel = channel.clone(); // ssh2::Channel 不实现 Send，所以用 clone
+    let client_clone = state.grpc_client.clone();
+    let session_id_clone = session_id.clone();
 
-    let _ = tx
-        .send(Ok(SshStream {
-            session_id: session_id.clone(),
-            payload: Some(ssh::ssh_stream::Payload::Init(init)),
-        }))
-        .await;
-
-    let tx_read = tx.clone();
-    let channel_clone = channel.stream(0);
-    let sid_clone = session_id.clone();
-
-    tokio::spawn(async move {
-        let mut buf = [0u8; 1024];
+    let output_task = tokio::spawn(async move {
+        let mut buf = [0; 1024];
         loop {
-            match tokio::task::spawn_blocking({
-                let mut ch = channel_clone.clone();
-                move || ch.read(&mut buf)
-            })
-            .await
-            {
-                Ok(Ok(n)) if n > 0 => {
+            match read_channel.read(&mut buf) {
+                Ok(n) if n > 0 => {
                     let output = String::from_utf8_lossy(&buf[..n]).to_string();
-                    let _ = tx_read
-                        .send(Ok(SshStream {
-                            session_id: sid_clone.clone(),
+                    let _ = client_clone
+                        .clone()
+                        .start_stream(Request::new(tokio_stream::iter(vec![SshStream {
+                            session_id: session_id_clone.clone(),
                             payload: Some(ssh::ssh_stream::Payload::Output(SshOutput {
                                 data: output,
                             })),
-                        }))
+                        }])))
                         .await;
                 }
-                Ok(Ok(_)) => break,
-                Ok(Err(e)) => {
-                    let _ = tx_read
-                        .send(Ok(SshStream {
-                            session_id: sid_clone.clone(),
-                            payload: Some(ssh::ssh_stream::Payload::Error(SshError {
-                                message: format!("Read failed: {e}"),
-                            })),
-                        }))
-                        .await;
+                Ok(_) => {
+                    // EOF
                     break;
                 }
                 Err(e) => {
-                    let _ = tx_read
-                        .send(Ok(SshStream {
-                            session_id: sid_clone.clone(),
+                    let _ = client_clone
+                        .clone()
+                        .start_stream(Request::new(tokio_stream::iter(vec![SshStream {
+                            session_id: session_id_clone.clone(),
                             payload: Some(ssh::ssh_stream::Payload::Error(SshError {
-                                message: format!("Task failed: {e}"),
+                                message: e.to_string(),
                             })),
-                        }))
+                        }])))
                         .await;
                     break;
                 }
@@ -140,67 +145,36 @@ async fn handle_ssh_session(
         }
     });
 
-    while let Some(input) = input_stream.next().await {
-        match input {
-            Ok(stream) => {
-                if let Some(ssh::ssh_stream::Payload::Input(input)) = stream.payload {
-                    if let Err(e) = channel.write_all(input.data.as_bytes()) {
-                        let _ = tx
-                            .send(Ok(SshStream {
-                                session_id: session_id.clone(),
-                                payload: Some(ssh::ssh_stream::Payload::Error(SshError {
-                                    message: format!("Write failed: {e}"),
-                                })),
-                            }))
-                            .await;
-                        break;
-                    }
-                }
+    // 启动任务读取输入并写入 SSH
+    let mut write_channel = channel;
+    tokio::spawn(async move {
+        while let Some(input) = rx.recv().await {
+            if let Err(e) = write_channel.write_all(input.data.as_bytes()) {
+                eprintln!("Failed to write to SSH: {e}");
+                break;
             }
-            Err(e) => return Err(e),
         }
-    }
+    });
 
-    let exit_code = channel.exit_status().unwrap_or(-1);
-    let _ = tx
-        .send(Ok(SshStream {
-            session_id,
-            payload: Some(ssh::ssh_stream::Payload::End(SshEnd { exit_code })),
-        }))
-        .await;
+    // 保存 session
+    state.ssh_sessions.lock().await.insert(
+        session_id,
+        SshSession {
+            tx,
+            task: output_task,
+        },
+    );
 
     Ok(())
 }
 
-fn start_ssh_session(
-    stream: TcpStream,
-    username: &str,
-    password: &str,
-    rows: i32,
-    cols: i32,
-) -> Result<Channel, ssh2::Error> {
-    let mut sess = Session::new()?;
-    sess.set_tcp_stream(stream);
-    sess.handshake()?;
-    sess.userauth_password(username, password)?;
-
-    let mut channel = sess.channel_session()?;
-    channel.request_pty("xterm", None, Some((cols as u32, rows as u32, 0, 0)))?;
-    channel.shell()?;
-
-    Ok(channel)
-}
-
-#[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let addr = "0.0.0.0:50051".parse()?;
-    let service = SshServiceImpl;
-
-    println!("Starting SSH service on {addr}");
-    tonic::transport::Server::builder()
-        .add_service(SshServiceServer::new(service))
-        .serve(addr)
-        .await?;
-
+async fn send_ssh_input(
+    session_id: String,
+    input: SshInput,
+    state: AppState,
+) -> Result<(), Box<dyn std::error::Error>> {
+    if let Some(session) = state.ssh_sessions.lock().await.get(&session_id) {
+        session.tx.send(input).await?;
+    }
     Ok(())
 }

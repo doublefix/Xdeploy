@@ -1,25 +1,15 @@
 use ssh2::Session;
-use std::collections::HashMap;
-use std::io::Write;
+use std::env;
+use std::io::{Read, Write};
 use std::net::TcpStream;
 use std::path::Path;
-use std::sync::Arc;
-use tokio::sync::Mutex;
-use tokio::sync::mpsc;
-
-mod ssh {
-    tonic::include_proto!("ssh");
-}
-
-use ssh::ssh_service_client::SshServiceClient;
-use ssh::{SshClose, SshData, SshStreamMessage, ssh_stream_message::Payload};
 
 enum AuthMethod {
     Password(String),
     Key {
         pubkey: String,
         privkey: String,
-        passphrase: Option<String>,
+        passphrase: Option<String>, // 可选支持 key 密码
     },
 }
 
@@ -30,14 +20,7 @@ struct SshConfig {
     auth: AuthMethod,
 }
 
-struct SshSession {
-    // session: Session,
-    channel: ssh2::Channel,
-}
-
-type SharedSessions = Arc<Mutex<HashMap<String, SshSession>>>;
-
-fn connect_ssh(config: &SshConfig) -> Result<SshSession, Box<dyn std::error::Error + Send + Sync>> {
+fn connect_ssh(config: &SshConfig) -> Result<Session, Box<dyn std::error::Error>> {
     let tcp = TcpStream::connect(format!("{}:{}", config.host, config.port))?;
     let mut sess = Session::new()?;
     sess.set_tcp_stream(tcp);
@@ -67,139 +50,52 @@ fn connect_ssh(config: &SshConfig) -> Result<SshSession, Box<dyn std::error::Err
         return Err("Authentication failed".into());
     }
 
+    Ok(sess)
+}
+
+fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let home = env::var("HOME")?;
+    let config = SshConfig {
+        host: "ubuntu".to_string(),
+        port: 22,
+        username: "root".to_string(),
+        auth: AuthMethod::Key {
+            pubkey: format!("{home}/.ssh/id_rsa.pub"),
+            privkey: format!("{home}/.ssh/id_rsa"),
+            passphrase: None,
+        },
+        // 或者使用密码认证:
+        // auth: AuthMethod::Password("your-password".to_string()),
+    };
+
+    let sess = connect_ssh(&config)?;
     let mut channel = sess.channel_session()?;
     channel.request_pty("xterm", None, Some((80, 24, 0, 0)))?;
     channel.shell()?;
 
-    Ok(SshSession {
-        // session: sess,
-        channel,
-    })
-}
+    println!("SSH session established. Type 'exit' to quit.");
 
-#[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let mut client = SshServiceClient::connect("http://127.0.0.1:50051").await?;
-    let (tx, rx) = mpsc::channel(32);
+    let mut input = String::new();
+    let mut buf = [0; 1024];
 
-    // Shared state for managing SSH sessions
-    let ssh_sessions: SharedSessions = Arc::new(Mutex::new(HashMap::new()));
-
-    // Spawn a task to handle incoming messages from Manager
-    let mut stream = client
-        .start_stream(tokio_stream::wrappers::ReceiverStream::new(rx))
-        .await?
-        .into_inner();
-    let ssh_sessions_clone = ssh_sessions.clone();
-    tokio::spawn(async move {
-        while let Some(msg) = stream.message().await.unwrap_or(None) {
-            match msg.payload {
-                Some(Payload::Init(init)) => {
-                    println!("Received SshInit: {init:?}");
-                    let ssh_sessions = ssh_sessions_clone.clone();
-                    tokio::spawn(async move {
-                        if let Err(e) = handle_ssh_init(init, ssh_sessions).await {
-                            eprintln!("Error handling SshInit: {e:?}");
-                        }
-                    });
-                }
-                Some(Payload::Data(data)) => {
-                    println!("Received SshData: {data:?}");
-                    let ssh_sessions = ssh_sessions_clone.clone();
-                    tokio::spawn(async move {
-                        if let Err(e) = handle_ssh_data(data, ssh_sessions).await {
-                            eprintln!("Error handling SshData: {e:?}");
-                        }
-                    });
-                }
-                Some(Payload::Close(close)) => {
-                    println!("Session closed: {close:?}");
-                    let ssh_sessions = ssh_sessions_clone.clone();
-                    tokio::spawn(async move {
-                        if let Err(e) = handle_ssh_close(close, ssh_sessions).await {
-                            eprintln!("Error handling SshClose: {e:?}");
-                        }
-                    });
-                }
-                _ => {}
+    loop {
+        match channel.read(&mut buf) {
+            Ok(n) if n > 0 => {
+                print!("{}", String::from_utf8_lossy(&buf[..n]));
             }
+            _ => {}
         }
-    });
 
-    // Send AgentHello to register with Manager
-    tx.send(SshStreamMessage {
-        payload: Some(Payload::Hello(ssh::AgentHello {
-            agent_id: "agent-123".to_string(),
-            hostname: "localhost".to_string(),
-        })),
-    })
-    .await?;
-
-    println!("Agent connected to Manager");
-    Ok(())
-}
-
-async fn handle_ssh_init(
-    init: ssh::SshInit,
-    ssh_sessions: SharedSessions,
-) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-    let auth = match init.auth {
-        Some(ssh::ssh_init::Auth::Password(password)) => AuthMethod::Password(password.password),
-        Some(ssh::ssh_init::Auth::Key(key)) => AuthMethod::Key {
-            pubkey: key.pubkey_path,
-            privkey: key.privkey_path,
-            passphrase: Some(key.passphrase),
-        },
-        None => return Err("No authentication method provided".into()),
-    };
-
-    let config = SshConfig {
-        host: init.target_host,
-        port: init.target_port as u16,
-        username: init.username,
-        auth,
-    };
-
-    match connect_ssh(&config) {
-        Ok(ssh_session) => {
-            let session_id = init.session_id.clone();
-            ssh_sessions
-                .lock()
-                .await
-                .insert(session_id.clone(), ssh_session);
-            println!("SSH session established for session_id: {session_id}");
+        std::io::stdin().read_line(&mut input)?;
+        if input.trim() == "exit" {
+            break;
         }
-        Err(e) => {
-            eprintln!("Failed to establish SSH session: {e:?}");
-        }
+
+        channel.write_all(input.as_bytes())?;
+        input.clear();
     }
 
-    Ok(())
-}
-
-async fn handle_ssh_data(
-    data: SshData,
-    ssh_sessions: SharedSessions,
-) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-    let mut sessions = ssh_sessions.lock().await;
-    if let Some(ssh_session) = sessions.get_mut(&data.session_id) {
-        ssh_session.channel.write_all(&data.data)?;
-    } else {
-        eprintln!("No SSH session found for session_id: {}", data.session_id);
-    }
-    Ok(())
-}
-
-async fn handle_ssh_close(
-    close: SshClose,
-    ssh_sessions: SharedSessions,
-) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-    let mut sessions = ssh_sessions.lock().await;
-    if let Some(mut ssh_session) = sessions.remove(&close.session_id) {
-        ssh_session.channel.close()?;
-        println!("SSH session closed for session_id: {}", close.session_id);
-    } else {
-        eprintln!("No SSH session found for session_id: {}", close.session_id);
-    }
+    channel.close()?;
+    println!("Session closed");
     Ok(())
 }

@@ -2,42 +2,59 @@ syntax = "proto3";
 
 package ssh;
 
-message SSHStream {
+// Rust Agent 注册到 Manager
+message AgentHello {
+  string agent_id = 1;
+  string hostname = 2;
+}
+
+// Manager 命令 Agent 去连接目标主机
+message SshInit {
   string session_id = 1;
-  oneof payload {
-    SSHInit init = 2;
-    SSHInput input = 3;
-    SSHOutput output = 4;
-    SSHError error = 5;
-    SSHEnd end = 6;
+  string target_host = 2;
+  uint32 target_port = 3;
+  string username = 4;
+
+  oneof auth {
+    PasswordAuth password = 5;
+    KeyAuth key = 6;
   }
 }
 
-message SSHInit {
-  string host = 1;
-  int32 port = 2;
-  string username = 3;
-  string password = 4;
-  int32 rows = 5;
-  int32 cols = 6;
+message PasswordAuth {
+  string password = 1;
 }
 
-message SSHInput {
-  string data = 1;
+message KeyAuth {
+  string pubkey_path = 1;
+  string privkey_path = 2;
+  string passphrase = 3;
 }
 
-message SSHOutput {
-  string data = 1;
+// 用于传输输入/输出流
+message SshData {
+  string session_id = 1;
+  bytes data = 2;
+  bool is_stdin = 3;
 }
 
-message SSHError {
-  string message = 1;
+// 通知会话关闭或异常
+message SshClose {
+  string session_id = 1;
+  string reason = 2;
 }
 
-message SSHEnd {
-  int32 exit_code = 1;
+// 包裹所有消息
+message SshStreamMessage {
+  oneof payload {
+    AgentHello hello = 1;
+    SshInit init = 2;
+    SshData data = 3;
+    SshClose close = 4;
+  }
 }
 
-service SSHService {
-  rpc StartStream(stream SSHStream) returns (stream SSHStream);
+service SshService {
+  // 双向流：Agent<->Manager
+  rpc StartStream(stream SshStreamMessage) returns (stream SshStreamMessage);
 }

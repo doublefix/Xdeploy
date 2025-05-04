@@ -44,6 +44,29 @@ message SshClose {
   string reason = 2;
 }
 
+// 确认消息，用于反馈连接/命令是否成功
+message SshAck {
+  string session_id = 1;
+  bool success = 2;
+  string message = 3; // 错误原因或提示
+}
+
+// 用于心跳检测
+message AgentPing {
+  int64 timestamp = 1;
+}
+
+message AgentPong {
+  int64 timestamp = 1;
+}
+
+// 用于终端窗口大小变化
+message PtyResize {
+  string session_id = 1;
+  uint32 cols = 2;
+  uint32 rows = 3;
+}
+
 // 包裹所有消息
 message SshStreamMessage {
   oneof payload {
@@ -51,6 +74,10 @@ message SshStreamMessage {
     SshInit init = 2;
     SshData data = 3;
     SshClose close = 4;
+    SshAck ack = 5;
+    AgentPing ping = 6;
+    AgentPong pong = 7;
+    PtyResize resize = 8;
   }
 }
 

@@ -325,73 +325,82 @@ mod client {
 
         async fn handle_tunnel_message(&self, msg: TunnelMessage, tx: mpsc::Sender<AgentMessage>) {
             tokio::spawn(async move {
-                // Print the received tunnel message
                 println!("Received TunnelMessage:");
                 println!("Session ID: {}", msg.session_id);
                 println!("Metadata: {:?}", msg.metadata);
 
-                // Try to unpack the payload if it exists
+                // 处理原始payload并准备响应字段
+                let mut response_fields = HashMap::new();
+
+                // 添加固定字段
+                response_fields.insert(
+                    "processed_by".to_string(),
+                    proto_convert::json_to_prost_value(&serde_json::Value::String(
+                        "rust-agent".to_string(),
+                    )),
+                );
+                response_fields.insert(
+                    "original_session".to_string(),
+                    proto_convert::json_to_prost_value(&serde_json::Value::String(
+                        msg.session_id.clone(),
+                    )),
+                );
+
+                // 处理并添加原始payload内容
                 if let Some(payload) = msg.payload {
                     match Self::unpack_tunnel_payload(payload) {
-                        Ok(payload) => {
+                        Ok(unpacked) => {
                             println!("TunnelPayload content:");
-                            for (key, value) in payload.fields {
+                            for (key, value) in unpacked.fields {
                                 println!(
                                     "{}: {:?}",
                                     key,
                                     proto_convert::prost_value_to_json(&value)
                                 );
+                                // 将原始payload的每个字段添加到响应中
+                                response_fields.insert(format!("original.{key}"), value);
                             }
                         }
-                        Err(e) => println!("Failed to unpack payload: {e}"),
+                        Err(e) => {
+                            println!("Failed to unpack payload: {e}");
+                            // 即使解包失败，也添加错误信息
+                            response_fields.insert(
+                                "payload_error".to_string(),
+                                proto_convert::json_to_prost_value(&serde_json::Value::String(
+                                    format!("Failed to unpack: {e}"),
+                                )),
+                            );
+                        }
                     }
                 } else {
                     println!("No payload in TunnelMessage");
                 }
 
-                // Rest of the function remains the same...
-                // Create a response with a random number
-                let random_number = rand::random::<i32>();
-
-                // Create a response payload (optional)
+                // 创建响应payload
                 let response_payload = TunnelPayload {
-                    fields: {
-                        let mut map = HashMap::new();
-                        map.insert(
-                            "processed_by".to_string(),
-                            proto_convert::json_to_prost_value(&serde_json::Value::String(
-                                "rust-agent".to_string(),
-                            )),
-                        );
-                        map.insert(
-                            "original_session".to_string(),
-                            proto_convert::json_to_prost_value(&serde_json::Value::String(
-                                msg.session_id.clone(),
-                            )),
-                        );
-                        map
-                    },
+                    fields: response_fields,
                 };
 
-                // Pack the payload into Any
+                // 打包并发送响应
                 let any_payload = prost_types::Any {
                     type_url: "type.googleapis.com/api.TunnelPayload".to_string(),
                     value: response_payload.encode_to_vec(),
                 };
 
-                // Create and send the response
                 let response = TunnelResponse {
                     session_id: msg.session_id,
-                    random_number,
+                    random_number: rand::random::<i32>(),
                     payload: Some(any_payload),
                     status: "processed".to_string(),
                 };
 
-                let msg = AgentMessage {
-                    body: Some(Body::TunnelResponse(response)),
-                };
-
-                if tx.send(msg).await.is_err() {
+                if tx
+                    .send(AgentMessage {
+                        body: Some(Body::TunnelResponse(response)),
+                    })
+                    .await
+                    .is_err()
+                {
                     eprintln!("Failed to send TunnelResponse");
                 }
             });
@@ -487,3 +496,5 @@ async fn main() -> Result<()> {
     println!("Server closed stream");
     Ok(())
 }
+
+// {"session_id":"test-session","payload":{"input":"pwd"},"metadata":{"source":"test"}}

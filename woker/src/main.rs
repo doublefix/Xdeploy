@@ -497,4 +497,5 @@ async fn main() -> Result<()> {
     Ok(())
 }
 
-// {"session_id":"test-session","payload":{"input":"pwd"},"metadata":{"source":"test"}}
+// websocat ws://localhost:8080/api/v1/tunnel/rust-agent-001
+// {"payload":{"input":"pwd"},"metadata":{"source":"test"}}

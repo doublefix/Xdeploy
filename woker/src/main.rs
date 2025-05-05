@@ -59,7 +59,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let mut client = AgentServiceClient::connect(endpoint.to_string()).await?;
 
-    println!("Connected to server at {}", endpoint);
+    println!("Connected to server at {endpoint}");
     let (tx, rx) = mpsc::channel(32);
     let outbound = ReceiverStream::new(rx);
     println!("Creating outbound stream");
@@ -126,7 +126,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 });
             }
             Some(Body::CancelTask(CancelTask { request_id })) => {
-                println!("Received CancelTask for request_id: {}", request_id);
+                println!("Received CancelTask for request_id: {request_id}");
                 // TODO: 实现取消逻辑
             }
             Some(Body::Heartbeat(hb)) => {

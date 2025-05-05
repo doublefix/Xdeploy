@@ -2,7 +2,8 @@ syntax = "proto3";
 
 package api;
 
-import "google/protobuf/struct.proto"; // 引入结构化参数支持
+import "google/protobuf/struct.proto";
+import "google/protobuf/any.proto";
 
 service AgentService {
   rpc AgentStream(stream AgentMessage) returns (stream AgentMessage);
@@ -15,7 +16,29 @@ message AgentMessage {
     FunctionResult function_result = 2;
     Heartbeat heartbeat = 3;
     CancelTask cancel_task = 4;
+    TunnelMessage tunnel_message = 5;      // 隧道消息
+    TunnelResponse tunnel_response = 6;    // 隧道响应
   }
+}
+
+// 隧道请求
+message TunnelMessage {
+  string session_id = 1;                  // 会话ID
+  google.protobuf.Any payload = 2;        // 任意类型的负载，例如 TunnelPayload 等
+  map<string, string> metadata = 3;       // 元数据，例如来源、用户等
+}
+
+// 隧道响应
+message TunnelResponse {
+  string session_id = 1;                  // 对应请求的会话ID
+  int32 random_number = 2;                // 随机数响应
+  google.protobuf.Any payload = 3;        // 可选负载
+  string status = 4;                      // 状态信息
+}
+
+// 隧道负载
+message TunnelPayload {
+  map<string, google.protobuf.Value> fields = 1;
 }
 
 // 函数调用请求

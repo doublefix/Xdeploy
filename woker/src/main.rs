@@ -14,8 +14,8 @@ pub mod agent {
 }
 
 use agent::{
-    AgentMessage, CancelTask, FunctionRequest, FunctionResult, Heartbeat, agent_message::Body,
-    agent_service_client::AgentServiceClient,
+    AgentMessage, CancelTask, FunctionRequest, FunctionResult, Heartbeat, TunnelMessage,
+    TunnelPayload, TunnelResponse, agent_message::Body, agent_service_client::AgentServiceClient,
 };
 
 // 错误类型
@@ -194,6 +194,7 @@ mod proto_convert {
 mod client {
     use super::*;
     use function_handlers::FUNCTION_REGISTRY;
+    use prost::Message;
     use proto_convert::{struct_to_value, value_to_struct};
 
     pub struct AgentClient {
@@ -309,10 +310,102 @@ mod client {
                     Some(Body::Heartbeat(hb)) => {
                         println!("Received Heartbeat from server: {}", hb.agent_id);
                     }
+                    Some(Body::TunnelMessage(tunnel_msg)) => {
+                        println!(
+                            "Received TunnelMessage with session_id: {}",
+                            tunnel_msg.session_id
+                        );
+                        self.handle_tunnel_message(tunnel_msg, tx.clone()).await;
+                    }
                     _ => {}
                 }
             }
             Ok(())
+        }
+
+        async fn handle_tunnel_message(&self, msg: TunnelMessage, tx: mpsc::Sender<AgentMessage>) {
+            tokio::spawn(async move {
+                // Print the received tunnel message
+                println!("Received TunnelMessage:");
+                println!("Session ID: {}", msg.session_id);
+                println!("Metadata: {:?}", msg.metadata);
+
+                // Try to unpack the payload if it exists
+                if let Some(payload) = msg.payload {
+                    match Self::unpack_tunnel_payload(payload) {
+                        Ok(payload) => {
+                            println!("TunnelPayload content:");
+                            for (key, value) in payload.fields {
+                                println!(
+                                    "{}: {:?}",
+                                    key,
+                                    proto_convert::prost_value_to_json(&value)
+                                );
+                            }
+                        }
+                        Err(e) => println!("Failed to unpack payload: {e}"),
+                    }
+                } else {
+                    println!("No payload in TunnelMessage");
+                }
+
+                // Rest of the function remains the same...
+                // Create a response with a random number
+                let random_number = rand::random::<i32>();
+
+                // Create a response payload (optional)
+                let response_payload = TunnelPayload {
+                    fields: {
+                        let mut map = HashMap::new();
+                        map.insert(
+                            "processed_by".to_string(),
+                            proto_convert::json_to_prost_value(&serde_json::Value::String(
+                                "rust-agent".to_string(),
+                            )),
+                        );
+                        map.insert(
+                            "original_session".to_string(),
+                            proto_convert::json_to_prost_value(&serde_json::Value::String(
+                                msg.session_id.clone(),
+                            )),
+                        );
+                        map
+                    },
+                };
+
+                // Pack the payload into Any
+                let any_payload = prost_types::Any {
+                    type_url: "type.googleapis.com/api.TunnelPayload".to_string(),
+                    value: response_payload.encode_to_vec(),
+                };
+
+                // Create and send the response
+                let response = TunnelResponse {
+                    session_id: msg.session_id,
+                    random_number,
+                    payload: Some(any_payload),
+                    status: "processed".to_string(),
+                };
+
+                let msg = AgentMessage {
+                    body: Some(Body::TunnelResponse(response)),
+                };
+
+                if tx.send(msg).await.is_err() {
+                    eprintln!("Failed to send TunnelResponse");
+                }
+            });
+        }
+
+        fn unpack_tunnel_payload(
+            any: prost_types::Any,
+        ) -> std::result::Result<TunnelPayload, Box<dyn std::error::Error>> {
+            if any.type_url != "type.googleapis.com/api.TunnelPayload" {
+                return Err("Invalid type URL".into());
+            }
+
+            let payload = TunnelPayload::decode(&*any.value)?;
+            Ok(payload)
         }
 
         async fn handle_function_request(

@@ -5,5 +5,5 @@
 // }
 
 fn main() {
-    tonic_build::compile_protos("proto/ssh.proto").unwrap();
+    tonic_build::compile_protos("proto/agent.proto").unwrap();
 }

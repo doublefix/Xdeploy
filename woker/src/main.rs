@@ -18,222 +18,379 @@ use agent::{
     agent_service_client::AgentServiceClient,
 };
 
-// Function handler 类型和注册表
-type FunctionHandler =
-    fn(&serde_json::Value) -> Result<serde_json::Value, Box<dyn std::error::Error + Send + Sync>>;
+// 错误类型
+type Error = Box<dyn std::error::Error + Send + Sync>;
+type Result<T> = std::result::Result<T, Error>;
 
-static FUNCTION_REGISTRY: Lazy<HashMap<String, FunctionHandler>> = Lazy::new(|| {
-    let mut map: HashMap<String, FunctionHandler> = HashMap::new();
-    map.insert("Hello".to_string(), hello_handler);
-    map
-});
+// 配置常量
+const RECONNECT_INTERVAL: Duration = Duration::from_secs(5);
+const MAX_RECONNECT_ATTEMPTS: usize = 10;
 
-#[derive(Debug, Serialize, Deserialize)]
-struct InputStruct {
-    name: String,
-    message: String,
+// 共享类型
+mod types {
+    use super::*;
+
+    #[derive(Debug, Serialize, Deserialize)]
+    pub struct HelloInput {
+        pub name: String,
+        pub message: String,
+    }
+
+    #[derive(Debug, Serialize, Deserialize)]
+    pub struct HelloOutput {
+        pub greeting: String,
+        pub original: HelloInput,
+    }
 }
 
-#[derive(Debug, Serialize, Deserialize)]
-struct OutputStruct {
-    greeting: String,
-    original: InputStruct,
+// 函数处理器模块
+mod function_handlers {
+    use super::*;
+    use crate::types::{HelloInput, HelloOutput};
+
+    // 定义函数处理器特征
+    pub trait FunctionHandler<I, O>: Send + Sync
+    where
+        I: for<'de> Deserialize<'de>,
+        O: Serialize,
+    {
+        fn handle(&self, input: I) -> Result<O>;
+    }
+
+    // 函数注册表类型
+    type HandlerMap =
+        HashMap<String, Box<dyn FunctionHandler<serde_json::Value, serde_json::Value>>>;
+
+    // 全局函数注册表
+    pub static FUNCTION_REGISTRY: Lazy<HandlerMap> = Lazy::new(|| {
+        let mut map: HandlerMap = HashMap::new();
+        map.insert(
+            "Hello".to_string(),
+            Box::new(JsonFunctionWrapper::new(hello_handler)),
+        );
+        map
+    });
+
+    // 具体函数实现
+    pub fn hello_handler(input: HelloInput) -> Result<HelloOutput> {
+        Ok(HelloOutput {
+            greeting: format!("Hello, {}", input.name),
+            original: input,
+        })
+    }
+
+    // 包装器，将具体类型的函数适配到通用JSON接口
+    struct JsonFunctionWrapper<F, I, O>
+    where
+        F: Fn(I) -> Result<O> + Send + Sync,
+        I: for<'de> Deserialize<'de>,
+        O: Serialize,
+    {
+        handler: F,
+        _phantom_i: std::marker::PhantomData<I>,
+        _phantom_o: std::marker::PhantomData<O>,
+    }
+
+    impl<F, I, O> JsonFunctionWrapper<F, I, O>
+    where
+        F: Fn(I) -> Result<O> + Send + Sync,
+        I: for<'de> Deserialize<'de>,
+        O: Serialize,
+    {
+        fn new(handler: F) -> Self {
+            Self {
+                handler,
+                _phantom_i: std::marker::PhantomData,
+                _phantom_o: std::marker::PhantomData,
+            }
+        }
+    }
+
+    impl<F, I, O> FunctionHandler<serde_json::Value, serde_json::Value> for JsonFunctionWrapper<F, I, O>
+    where
+        F: Fn(I) -> Result<O> + Send + Sync,
+        I: for<'de> Deserialize<'de> + Send + Sync + 'static,
+        O: Serialize + Send + Sync + 'static,
+    {
+        fn handle(&self, input: serde_json::Value) -> Result<serde_json::Value> {
+            let concrete_input: I = serde_json::from_value(input)?;
+            let output = (self.handler)(concrete_input)?;
+            Ok(serde_json::to_value(output)?)
+        }
+    }
 }
 
-fn hello_handler(
-    params: &serde_json::Value,
-) -> Result<serde_json::Value, Box<dyn std::error::Error + Send + Sync>> {
-    let input: InputStruct = serde_json::from_value(params.clone())?;
-    let output = OutputStruct {
-        greeting: format!("Hello, {}", input.name),
-        original: input,
-    };
-    Ok(serde_json::to_value(output)?)
+// 协议转换模块
+mod proto_convert {
+    use super::*;
+
+    // Struct → serde_json::Value
+    pub fn struct_to_value(s: &Struct) -> serde_json::Value {
+        let map = s
+            .fields
+            .iter()
+            .map(|(k, v)| (k.clone(), prost_value_to_json(v)))
+            .collect::<serde_json::Map<_, _>>();
+        serde_json::Value::Object(map)
+    }
+
+    // serde_json::Value → Struct
+    pub fn value_to_struct(v: &serde_json::Value) -> Struct {
+        if let serde_json::Value::Object(map) = v {
+            let fields = map
+                .iter()
+                .map(|(k, v)| (k.clone(), json_to_prost_value(v)))
+                .collect();
+            Struct { fields }
+        } else {
+            Struct {
+                fields: Default::default(),
+            }
+        }
+    }
+
+    // prost_types::Value → serde_json::Value
+    pub fn prost_value_to_json(v: &Value) -> serde_json::Value {
+        match &v.kind {
+            Some(prost_types::value::Kind::NullValue(_)) => serde_json::Value::Null,
+            Some(prost_types::value::Kind::NumberValue(n)) => serde_json::Value::from(*n),
+            Some(prost_types::value::Kind::StringValue(s)) => serde_json::Value::from(s.clone()),
+            Some(prost_types::value::Kind::BoolValue(b)) => serde_json::Value::from(*b),
+            Some(prost_types::value::Kind::StructValue(s)) => struct_to_value(s),
+            Some(prost_types::value::Kind::ListValue(l)) => {
+                serde_json::Value::Array(l.values.iter().map(prost_value_to_json).collect())
+            }
+            None => serde_json::Value::Null,
+        }
+    }
+
+    // serde_json::Value → prost_types::Value
+    pub fn json_to_prost_value(v: &serde_json::Value) -> Value {
+        Value {
+            kind: Some(match v {
+                serde_json::Value::Null => prost_types::value::Kind::NullValue(0),
+                serde_json::Value::Bool(b) => prost_types::value::Kind::BoolValue(*b),
+                serde_json::Value::Number(n) => {
+                    prost_types::value::Kind::NumberValue(n.as_f64().unwrap_or(0.0))
+                }
+                serde_json::Value::String(s) => prost_types::value::Kind::StringValue(s.clone()),
+                serde_json::Value::Array(arr) => {
+                    prost_types::value::Kind::ListValue(prost_types::ListValue {
+                        values: arr.iter().map(json_to_prost_value).collect(),
+                    })
+                }
+                serde_json::Value::Object(map) => prost_types::value::Kind::StructValue(Struct {
+                    fields: map
+                        .iter()
+                        .map(|(k, v)| (k.clone(), json_to_prost_value(v)))
+                        .collect(),
+                }),
+            }),
+        }
+    }
+}
+
+// 客户端模块
+mod client {
+    use super::*;
+    use function_handlers::FUNCTION_REGISTRY;
+    use proto_convert::{struct_to_value, value_to_struct};
+
+    pub struct AgentClient {
+        endpoint: String,
+        agent_id: String,
+    }
+
+    impl AgentClient {
+        pub fn new(endpoint: &str, agent_id: &str) -> Self {
+            Self {
+                endpoint: endpoint.to_string(),
+                agent_id: agent_id.to_string(),
+            }
+        }
+
+        pub async fn run(&self) -> Result<()> {
+            let mut attempt = 0;
+
+            loop {
+                attempt += 1;
+                println!("Attempting to connect (attempt {attempt}/{MAX_RECONNECT_ATTEMPTS})...");
+
+                match self.try_connect().await {
+                    Ok(_) => {
+                        println!("Connection to server lost, will attempt to reconnect...");
+                        attempt = 0; // Reset attempt counter after successful connection
+                    }
+                    Err(e) => {
+                        println!("Connection attempt failed: {e}");
+                        if attempt >= MAX_RECONNECT_ATTEMPTS {
+                            return Err("Max reconnect attempts reached".into());
+                        }
+                    }
+                }
+
+                tokio::time::sleep(RECONNECT_INTERVAL).await;
+            }
+        }
+
+        async fn try_connect(&self) -> Result<()> {
+            let mut client = AgentServiceClient::connect(self.endpoint.clone()).await?;
+            println!("Connected to server at {}", self.endpoint);
+
+            let (tx, rx) = mpsc::channel(32);
+            let outbound = ReceiverStream::new(rx);
+
+            // 发送初始心跳
+            self.send_initial_heartbeat(tx.clone()).await?;
+
+            // 连接服务器流
+            let mut stream = client
+                .agent_stream(Request::new(outbound))
+                .await?
+                .into_inner();
+
+            // 启动心跳任务
+            let heartbeat_handle = self.spawn_heartbeat_task(tx.clone());
+
+            // 处理服务器消息
+            let result = self.handle_server_messages(&mut stream, tx).await;
+
+            // 取消心跳任务
+            heartbeat_handle.abort();
+
+            result
+        }
+
+        async fn send_initial_heartbeat(&self, tx: mpsc::Sender<AgentMessage>) -> Result<()> {
+            let initial_heartbeat = self.create_heartbeat();
+            tx.send(initial_heartbeat).await?;
+            Ok(())
+        }
+
+        fn spawn_heartbeat_task(
+            &self,
+            tx: mpsc::Sender<AgentMessage>,
+        ) -> tokio::task::JoinHandle<()> {
+            let agent_id = self.agent_id.clone();
+            tokio::spawn(async move {
+                let mut interval = tokio::time::interval(Duration::from_secs(10));
+                loop {
+                    interval.tick().await;
+                    let heartbeat = AgentMessage {
+                        body: Some(Body::Heartbeat(Heartbeat {
+                            agent_id: agent_id.clone(),
+                            agent_type: "xdeployer".into(),
+                            timestamp: current_timestamp(),
+                        })),
+                    };
+                    if tx.send(heartbeat).await.is_err() {
+                        println!("Heartbeat send failed, stream likely closed");
+                        break;
+                    }
+                }
+            })
+        }
+
+        async fn handle_server_messages(
+            &self,
+            stream: &mut tonic::Streaming<AgentMessage>,
+            tx: mpsc::Sender<AgentMessage>,
+        ) -> Result<()> {
+            while let Some(msg) = stream.message().await? {
+                match msg.body {
+                    Some(Body::FunctionRequest(req)) => {
+                        println!("Received FunctionRequest: {}", req.function_name);
+                        self.handle_function_request(req, tx.clone()).await;
+                    }
+                    Some(Body::CancelTask(CancelTask { request_id })) => {
+                        println!("Received CancelTask for request_id: {request_id}");
+                        // TODO: 实现取消逻辑
+                    }
+                    Some(Body::Heartbeat(hb)) => {
+                        println!("Received Heartbeat from server: {}", hb.agent_id);
+                    }
+                    _ => {}
+                }
+            }
+            Ok(())
+        }
+
+        async fn handle_function_request(
+            &self,
+            req: FunctionRequest,
+            tx: mpsc::Sender<AgentMessage>,
+        ) {
+            tokio::spawn(async move {
+                let response = handle_function(req).await;
+                let msg = AgentMessage {
+                    body: Some(Body::FunctionResult(response)),
+                };
+                if tx.send(msg).await.is_err() {
+                    eprintln!("Failed to send FunctionResult");
+                }
+            });
+        }
+
+        fn create_heartbeat(&self) -> AgentMessage {
+            AgentMessage {
+                body: Some(Body::Heartbeat(Heartbeat {
+                    agent_id: self.agent_id.clone(),
+                    agent_type: "xdeployer".into(),
+                    timestamp: current_timestamp(),
+                })),
+            }
+        }
+    }
+
+    async fn handle_function(req: FunctionRequest) -> FunctionResult {
+        let json_value = req
+            .parameters
+            .as_ref()
+            .map(struct_to_value)
+            .unwrap_or_default();
+
+        match FUNCTION_REGISTRY.get(&req.function_name) {
+            Some(handler) => match handler.handle(json_value) {
+                Ok(val) => FunctionResult {
+                    request_id: req.request_id,
+                    success: true,
+                    result: Some(value_to_struct(&val)),
+                    error_message: "".to_string(),
+                },
+                Err(e) => FunctionResult {
+                    request_id: req.request_id,
+                    success: false,
+                    result: None,
+                    error_message: e.to_string(),
+                },
+            },
+            None => FunctionResult {
+                request_id: req.request_id,
+                success: false,
+                result: None,
+                error_message: "Unknown function".to_string(),
+            },
+        }
+    }
+}
+
+// 辅助函数
+fn current_timestamp() -> i64 {
+    SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .unwrap()
+        .as_secs() as i64
 }
 
 #[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
+async fn main() -> Result<()> {
     println!("Starting agent client...");
     let endpoint = "http://localhost:50051";
     let agent_id = "rust-agent-001";
 
-    let mut client = AgentServiceClient::connect(endpoint.to_string()).await?;
-
-    println!("Connected to server at {endpoint}");
-    let (tx, rx) = mpsc::channel(32);
-    let outbound = ReceiverStream::new(rx);
-    println!("Creating outbound stream");
-
-    // 👇 立即发送一条消息，避免 server 端阻塞
-    let initial_heartbeat = AgentMessage {
-        body: Some(Body::Heartbeat(Heartbeat {
-            agent_id: agent_id.to_string(),
-            agent_type: "xdeployer".into(),
-            timestamp: SystemTime::now()
-                .duration_since(UNIX_EPOCH)
-                .unwrap()
-                .as_secs() as i64,
-        })),
-    };
-    tx.send(initial_heartbeat).await?;
-
-    // 再连接 stream
-    let mut stream = client
-        .agent_stream(Request::new(outbound))
-        .await?
-        .into_inner();
-
-    println!("Connected to server stream");
-    let tx_clone = tx.clone();
-    let agent_id_clone = agent_id.to_string();
-
-    // 心跳任务
-    println!("Starting heartbeat task");
-    tokio::spawn(async move {
-        loop {
-            let heartbeat = AgentMessage {
-                body: Some(Body::Heartbeat(Heartbeat {
-                    agent_id: agent_id_clone.clone(),
-                    agent_type: "xdeployer".into(),
-                    timestamp: SystemTime::now()
-                        .duration_since(UNIX_EPOCH)
-                        .unwrap()
-                        .as_secs() as i64,
-                })),
-            };
-            if tx_clone.send(heartbeat).await.is_err() {
-                println!("stream closed, heartbeat task exiting");
-                break;
-            }
-            tokio::time::sleep(Duration::from_secs(10)).await;
-        }
-    });
-
-    // 接收服务端消息
-    while let Some(msg) = stream.message().await? {
-        match msg.body {
-            Some(Body::FunctionRequest(req)) => {
-                println!("Received FunctionRequest: {}", req.function_name);
-                let tx = tx.clone();
-                tokio::spawn(async move {
-                    let response = handle_function(req).await;
-                    let msg = AgentMessage {
-                        body: Some(Body::FunctionResult(response)),
-                    };
-                    if tx.send(msg).await.is_err() {
-                        eprintln!("Failed to send FunctionResult");
-                    }
-                });
-            }
-            Some(Body::CancelTask(CancelTask { request_id })) => {
-                println!("Received CancelTask for request_id: {request_id}");
-                // TODO: 实现取消逻辑
-            }
-            Some(Body::Heartbeat(hb)) => {
-                println!("Received Heartbeat from server: {}", hb.agent_id);
-            }
-            _ => {}
-        }
-    }
+    let client = client::AgentClient::new(endpoint, agent_id);
+    client.run().await?;
 
     println!("Server closed stream");
     Ok(())
-}
-
-// 处理函数调用
-async fn handle_function(req: FunctionRequest) -> FunctionResult {
-    let json_value = req
-        .parameters
-        .as_ref()
-        .map(struct_to_value)
-        .unwrap_or_default();
-
-    if let Some(handler) = FUNCTION_REGISTRY.get(&req.function_name) {
-        match handler(&json_value) {
-            Ok(val) => FunctionResult {
-                request_id: req.request_id,
-                success: true,
-                result: Some(value_to_struct(&val)),
-                error_message: "".to_string(),
-            },
-            Err(e) => FunctionResult {
-                request_id: req.request_id,
-                success: false,
-                result: None,
-                error_message: e.to_string(),
-            },
-        }
-    } else {
-        FunctionResult {
-            request_id: req.request_id,
-            success: false,
-            result: None,
-            error_message: "Unknown function".to_string(),
-        }
-    }
-}
-
-// Struct → serde_json::Value
-fn struct_to_value(s: &Struct) -> serde_json::Value {
-    let map = s
-        .fields
-        .iter()
-        .map(|(k, v)| (k.clone(), prost_value_to_json(v)))
-        .collect::<serde_json::Map<_, _>>();
-    serde_json::Value::Object(map)
-}
-
-// serde_json::Value → Struct
-fn value_to_struct(v: &serde_json::Value) -> Struct {
-    if let serde_json::Value::Object(map) = v {
-        let fields = map
-            .iter()
-            .map(|(k, v)| (k.clone(), json_to_prost_value(v)))
-            .collect();
-        Struct { fields }
-    } else {
-        Struct {
-            fields: Default::default(),
-        }
-    }
-}
-
-// prost_types::Value → serde_json::Value
-fn prost_value_to_json(v: &Value) -> serde_json::Value {
-    match &v.kind {
-        Some(prost_types::value::Kind::NullValue(_)) => serde_json::Value::Null,
-        Some(prost_types::value::Kind::NumberValue(n)) => serde_json::Value::from(*n),
-        Some(prost_types::value::Kind::StringValue(s)) => serde_json::Value::from(s.clone()),
-        Some(prost_types::value::Kind::BoolValue(b)) => serde_json::Value::from(*b),
-        Some(prost_types::value::Kind::StructValue(s)) => struct_to_value(s),
-        Some(prost_types::value::Kind::ListValue(l)) => {
-            serde_json::Value::Array(l.values.iter().map(prost_value_to_json).collect())
-        }
-        None => serde_json::Value::Null,
-    }
-}
-
-// serde_json::Value → prost_types::Value
-fn json_to_prost_value(v: &serde_json::Value) -> Value {
-    Value {
-        kind: Some(match v {
-            serde_json::Value::Null => prost_types::value::Kind::NullValue(0),
-            serde_json::Value::Bool(b) => prost_types::value::Kind::BoolValue(*b),
-            serde_json::Value::Number(n) => {
-                prost_types::value::Kind::NumberValue(n.as_f64().unwrap_or(0.0))
-            }
-            serde_json::Value::String(s) => prost_types::value::Kind::StringValue(s.clone()),
-            serde_json::Value::Array(arr) => {
-                prost_types::value::Kind::ListValue(prost_types::ListValue {
-                    values: arr.iter().map(json_to_prost_value).collect(),
-                })
-            }
-            serde_json::Value::Object(map) => prost_types::value::Kind::StructValue(Struct {
-                fields: map
-                    .iter()
-                    .map(|(k, v)| (k.clone(), json_to_prost_value(v)))
-                    .collect(),
-            }),
-        }),
-    }
 }

@@ -9,3 +9,5 @@ repo
 !repo/meta.yml
 !repo/incremental_load.yaml
 target
+artifacts
+env

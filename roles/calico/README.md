@@ -77,3 +77,13 @@ kubectl edit ds calico-node -n kube-system
   value: "interface=eth0"
 
 ```
+
+Cgroup 错误
+
+```bash
+# 容器报错
+Failed to create pod sandbox: rpc error: code = Unknown desc = failed to create containerd task: cgroups: cgroup mountpoint does not exist: unknown
+
+# 解决方案
+sudo mkdir -p /sys/fs/cgroup/systemd||sudo mount -t cgroup -o none,name=systemd cgroup /sys/fs/cgroup/systemd
+```

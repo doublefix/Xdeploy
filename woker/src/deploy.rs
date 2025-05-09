@@ -1,6 +1,5 @@
 use pyo3::prelude::*;
 use pyo3::types::PyDict;
-use tokio::task;
 use uuid::Uuid;
 
 // export PYTHON_SYS_EXECUTABLE=$(pwd)/venv/bin/python
@@ -143,25 +142,13 @@ impl AnsibleRunParams {
 }
 
 pub async fn run_ansible(params: AnsibleRunParams) -> PyResult<()> {
-    // TODO: NEED REAL ASYNC
-    task::spawn_blocking(move || {
-        pyo3::prepare_freethreaded_python();
+    pyo3::prepare_freethreaded_python();
 
-        Python::with_gil(|py| {
-            let ansible_runner = py.import("ansible_runner")?;
+    Python::with_gil(|py| {
+        let ansible_runner = py.import("ansible_runner")?;
+        let kwargs = params.to_py_dict(py)?;
 
-            println!("Running ansible with ident: {}", params.ident);
-
-            let kwargs = params.to_py_dict(py)?;
-            let result: Bound<'_, PyAny> =
-                ansible_runner.call_method("run_async", (), Some(&kwargs))?;
-
-            let thread: &Bound<'_, PyAny> = &result.get_item(0)?;
-            thread.call_method0("join")?;
-
-            Ok(())
-        })
+        ansible_runner.call_method("run_async", (), Some(&kwargs))?;
+        Ok(())
     })
-    .await
-    .map_err(|e| pyo3::exceptions::PyRuntimeError::new_err(format!("Task failed: {e}")))?
 }

@@ -1,3 +1,5 @@
+mod deploy;
+
 use once_cell::sync::Lazy;
 use prost_types::{Struct, Value};
 use serde::{Deserialize, Serialize};
@@ -68,6 +70,10 @@ mod function_handlers {
             "Hello".to_string(),
             Box::new(JsonFunctionWrapper::new(hello_handler)),
         );
+        map.insert(
+            "Deploy".to_string(),
+            Box::new(JsonFunctionWrapper::new(deploy_handler)),
+        );
         map
     });
 
@@ -76,6 +82,32 @@ mod function_handlers {
         Ok(HelloOutput {
             greeting: format!("Hello, {}", input.name),
             original: input,
+        })
+    }
+
+    pub fn deploy_handler(input: HelloInput) -> Result<HelloOutput> {
+        print!("Deploying with input: {:?}", input.name);
+        let private_data_dir = std::env::var("PRIVATE_DATA_DIR").expect("PRIVATE_DATA_DIR not set");
+        let params_full = deploy::AnsibleRunParams::builder(private_data_dir, "playbooks/cmd.yml")
+            .with_cmd(vec!["echo", "Hello", "World"])
+            .with_optional()
+            .ident(uuid::Uuid::new_v4().to_string())
+            .verbosity(1)
+            // .quiet(true)
+            .build();
+
+        tokio::spawn(async move {
+            if let Err(e) = deploy::run_ansible(params_full).await {
+                eprintln!("Ansible task failed: {e}");
+            }
+        });
+
+        Ok(HelloOutput {
+            greeting: format!("Hello, {}", "world"),
+            original: HelloInput {
+                name: "world".to_string(),
+                message: "Default message".to_string(),
+            },
         })
     }
 

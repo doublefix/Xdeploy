@@ -6,7 +6,9 @@ The project is designed to help developers install essential software.
 
 ```bash
 # Env
-python3 -m venv venv
+sudo apt install python3.12 python3.12-dev
+ls /usr/lib/x86_64-linux-gnu/libpython3.1*
+python3 -m venv venv --system-site-packages
 source venv/bin/activate
 pip install -r requirements.txt
 ansible-galaxy collection install ansible.posix

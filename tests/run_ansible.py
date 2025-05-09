@@ -16,7 +16,6 @@ r = ansible_runner.run(
 # 打印状态和事件输出
 print(f"Status: {r.status}")
 print(f"RC: {r.rc}")
-print(type(r))
 
 print("\n--- STDOUT ---")
 for ev in r.events:

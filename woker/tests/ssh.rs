@@ -5,7 +5,7 @@ use std::net::TcpStream;
 use std::path::Path;
 
 enum AuthMethod {
-    Password(String),
+    // Password(String),
     Key {
         pubkey: String,
         privkey: String,
@@ -27,10 +27,10 @@ fn connect_ssh(config: &SshConfig) -> Result<Session, Box<dyn std::error::Error>
     sess.handshake()?;
 
     match &config.auth {
-        AuthMethod::Password(pw) => {
-            println!("[auth] Using password authentication...");
-            sess.userauth_password(&config.username, pw)?;
-        }
+        // AuthMethod::Password(pw) => {
+        //     println!("[auth] Using password authentication...");
+        //     sess.userauth_password(&config.username, pw)?;
+        // }
         AuthMethod::Key {
             pubkey,
             privkey,

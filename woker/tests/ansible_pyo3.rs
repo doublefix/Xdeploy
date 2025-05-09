@@ -32,11 +32,15 @@ impl RequiredParams {
         }
     }
 
-    pub fn with_cmd(self, cmd: impl Into<Vec<String>>) -> ParamsWithCmd {
+    pub fn with_cmd<S: AsRef<str>>(self, cmd: impl Into<Vec<S>>) -> ParamsWithCmd {
         ParamsWithCmd {
             private_data_dir: self.private_data_dir,
             playbook: self.playbook,
-            cmd: cmd.into(),
+            cmd: cmd
+                .into()
+                .into_iter()
+                .map(|s| s.as_ref().to_string())
+                .collect(),
         }
     }
 }
@@ -168,11 +172,7 @@ async fn test_ansible_pyo3() -> PyResult<()> {
         env::var("PRIVATE_DATA_DIR").expect("PRIVATE_DATA_DIR not set"),
         "playbooks/cmd.yml",
     )
-    .with_cmd(vec![
-        "echo".to_string(),
-        "Hello".to_string(),
-        "World".to_string(),
-    ])
+    .with_cmd(vec!["echo", "Hello", "World"])
     .with_optional()
     .ident(Uuid::new_v4().to_string())
     .verbosity(1)

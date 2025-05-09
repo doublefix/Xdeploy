@@ -51,7 +51,6 @@ fn test_ansible_pyo3() -> PyResult<()> {
     Python::with_gil(|py| {
         let ansible_runner = py.import("ansible_runner")?;
 
-        // 使用结构体封装参数
         let params = AnsibleRunParams::new(
             env::var("PRIVATE_DATA_DIR").expect("Environment variable 'private_data_dir' not set"),
             "playbooks/cmd.yml".to_string(),
@@ -60,27 +59,13 @@ fn test_ansible_pyo3() -> PyResult<()> {
 
         println!("Ident: {}", params.ident);
 
-        // 运行 Ansible Runner
         let kwargs = params.to_py_dict(py)?;
-        let r = ansible_runner.call_method("run", (), Some(&kwargs))?;
+        let result: Bound<'_, PyAny> =
+            ansible_runner.call_method("run_async", (), Some(&kwargs))?;
 
-        // 获取并打印结果
-        let status: String = r.getattr("status")?.extract()?;
-        let rc: i32 = r.getattr("rc")?.extract()?;
-        println!("Status: {status}");
-        println!("RC: {rc}");
+        let thread: &Bound<'_, PyAny> = &result.get_item(0)?;
 
-        // 打印 stdout 事件
-        println!("\n--- STDOUT ---");
-        let events = r.getattr("events")?;
-        for event in events.try_iter()? {
-            let event = event?;
-            if let Ok(stdout) = event.get_item("stdout") {
-                if !stdout.is_none() {
-                    println!("{stdout}");
-                }
-            }
-        }
+        thread.call_method0("join")?;
 
         Ok(())
     })

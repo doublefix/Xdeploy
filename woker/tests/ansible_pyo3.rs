@@ -144,6 +144,7 @@ impl AnsibleRunParams {
 }
 
 async fn run_ansible(params: AnsibleRunParams) -> PyResult<()> {
+    // TODO: NEED REAL ASYNC
     task::spawn_blocking(move || {
         pyo3::prepare_freethreaded_python();
 

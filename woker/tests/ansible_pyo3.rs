@@ -168,16 +168,14 @@ async fn run_ansible(params: AnsibleRunParams) -> PyResult<()> {
 
 #[tokio::test]
 async fn test_ansible_pyo3() -> PyResult<()> {
-    let params_full = AnsibleRunParams::builder(
-        env::var("PRIVATE_DATA_DIR").expect("PRIVATE_DATA_DIR not set"),
-        "playbooks/cmd.yml",
-    )
-    .with_cmd(vec!["echo", "Hello", "World"])
-    .with_optional()
-    .ident(Uuid::new_v4().to_string())
-    .verbosity(1)
-    // .quiet(true)
-    .build();
+    let private_data_dir = env::var("PRIVATE_DATA_DIR").expect("PRIVATE_DATA_DIR not set");
+    let params_full = AnsibleRunParams::builder(private_data_dir, "playbooks/cmd.yml")
+        .with_cmd(vec!["echo", "Hello", "World"])
+        .with_optional()
+        .ident(Uuid::new_v4().to_string())
+        .verbosity(1)
+        // .quiet(true)
+        .build();
 
     run_ansible(params_full).await
 }

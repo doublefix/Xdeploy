@@ -8,32 +8,60 @@ use uuid::Uuid;
 // export LD_LIBRARY_PATH=$(pwd)/venv/lib:$LD_LIBRARY_PATH
 // export PRIVATE_DATA_DIR=/tmp/ansible_runner
 
+#[derive(Debug)]
+struct AnsibleRunParams {
+    private_data_dir: String,
+    playbook: String,
+    cmd: Vec<String>,
+    ident: String,
+    verbosity: i32,
+}
+
+impl AnsibleRunParams {
+    fn new(private_data_dir: String, playbook: String, cmd: Vec<String>) -> Self {
+        Self {
+            private_data_dir,
+            playbook,
+            cmd,
+            ident: Uuid::new_v4().to_string(),
+            verbosity: 1,
+        }
+    }
+
+    fn to_py_dict<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyDict>> {
+        let kwargs = PyDict::new(py);
+        kwargs.set_item("private_data_dir", &self.private_data_dir)?;
+        kwargs.set_item("playbook", &self.playbook)?;
+
+        let extravars = PyDict::new(py);
+        extravars.set_item("cmd", &self.cmd)?;
+        kwargs.set_item("extravars", extravars)?;
+
+        kwargs.set_item("ident", &self.ident)?;
+        kwargs.set_item("verbosity", self.verbosity)?;
+
+        Ok(kwargs)
+    }
+}
+
 #[test]
 fn test_ansible_pyo3() -> PyResult<()> {
     pyo3::prepare_freethreaded_python();
-    // 初始化 Python 解释器
+
     Python::with_gil(|py| {
         let ansible_runner = py.import("ansible_runner")?;
-        let run_uuid: String = Uuid::new_v4().to_string();
-        println!("Generated UUID for this run: {run_uuid}",);
-        let private_data_dir =
-            env::var("PRIVATE_DATA_DIR").expect("Environment variable 'private_data_dir' not set");
 
-        // 准备参数
-        let kwargs = PyDict::new(py);
-        kwargs.set_item("private_data_dir", private_data_dir)?;
-        kwargs.set_item("playbook", "playbooks/cmd.yml")?;
+        // 使用结构体封装参数
+        let params = AnsibleRunParams::new(
+            env::var("PRIVATE_DATA_DIR").expect("Environment variable 'private_data_dir' not set"),
+            "playbooks/cmd.yml".to_string(),
+            vec!["echo".to_string(), "Hello".to_string(), "World".to_string()],
+        );
 
-        // 创建 extravars 字典
-        let extravars = PyDict::new(py);
-        let cmd = vec!["echo", "Hello", "World"];
-        extravars.set_item("cmd", cmd)?;
-        kwargs.set_item("extravars", extravars)?;
-
-        kwargs.set_item("ident", run_uuid)?;
-        kwargs.set_item("verbosity", 1)?;
+        println!("Ident: {}", params.ident);
 
         // 运行 Ansible Runner
+        let kwargs = params.to_py_dict(py)?;
         let r = ansible_runner.call_method("run", (), Some(&kwargs))?;
 
         // 获取并打印结果

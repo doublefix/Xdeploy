@@ -87,7 +87,7 @@ async fn test_ansible_pyo3() -> PyResult<()> {
         "playbooks/cmd.yml".to_string(),
         vec!["echo".to_string(), "Hello".to_string(), "World".to_string()],
         Some(1),
-        Some(true),
+        None,
     );
 
     run_ansible(params).await

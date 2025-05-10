@@ -68,3 +68,49 @@ message Heartbeat {
 message CancelTask {
   string request_id = 1; // 要取消的 request_id
 }
+
+// Ansible 核心参数结构（保持与Rust结构体1:1映射）
+message AnsibleRunParams {
+  string private_data_dir = 1;
+  string playbook = 2;
+  repeated string cmd = 3;  // 使用repeated而非数组
+  
+  oneof verbosity {
+    int32 verbosity_value = 4;  // 精确匹配Option<i32>
+  }
+  
+  oneof quiet {
+    bool quiet_flag = 5;  // 精确匹配Option<bool>
+  }
+  
+  string ident = 6;  // 建议改为required（通过业务逻辑保证）
+}
+
+// Ansible 增强的请求结构
+message DeployRequest {
+  string request_id = 1;  // 建议使用UUID v7
+  AnsibleRunParams params = 2;
+  int32 timeout_sec = 3;  // 默认值建议在业务逻辑设置
+}
+
+// Ansible 专业化的响应结构
+message DeployResponse {
+  string task_ident = 1;  // 更明确的字段名
+  int64 start_time = 2;   // 使用int64表示毫秒时间戳
+  string initial_status = 3;
+}
+
+// 通用响应包装器
+message Response {
+  int32 code = 1;  // 使用HTTP状态码语义
+  string request_id = 2;
+  string message = 3;
+  google.protobuf.Any data = 4;
+  repeated ErrorDetail errors = 5;
+  
+  message ErrorDetail {
+    string field = 1;
+    string code = 2;  // 错误类型编码（如INVALID_FORMAT）
+    string message = 3;
+  }
+}

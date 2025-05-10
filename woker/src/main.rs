@@ -20,6 +20,12 @@ use agent::{
     TunnelPayload, TunnelResponse, agent_message::Body, agent_service_client::AgentServiceClient,
 };
 
+pub mod ansible {
+    tonic::include_proto!("ansible");
+}
+
+use ansible::{DeployRequest, DeployResponse};
+
 // 错误类型
 type Error = Box<dyn std::error::Error + Send + Sync>;
 type Result<T> = std::result::Result<T, Error>;
@@ -85,29 +91,41 @@ mod function_handlers {
         })
     }
 
-    pub fn deploy_handler(input: HelloInput) -> Result<HelloOutput> {
-        print!("Deploying with input: {:?}", input.name);
-        let private_data_dir = std::env::var("PRIVATE_DATA_DIR").expect("PRIVATE_DATA_DIR not set");
-        let params_full = deploy::AnsibleRunParams::builder(private_data_dir, "playbooks/cmd.yml")
-            .with_cmd(vec!["echo", "Hello", "World"])
-            .with_optional()
-            .ident(uuid::Uuid::new_v4().to_string())
-            .verbosity(1)
-            // .quiet(true)
-            .build();
+    pub fn deploy_handler(input: DeployRequest) -> Result<DeployResponse> {
+        println!("Deploying with request_id: {input:#?}");
 
-        tokio::spawn(async move {
-            if let Err(e) = deploy::run_ansible(params_full).await {
-                eprintln!("Ansible task failed: {e}");
-            }
-        });
+        // 获取配置路径
+        let private_data_dir = std::env::var("PRIVATE_DATA_DIR")
+            .expect("PRIVATE_DATA_DIR environment variable not set");
+        let task_ident = uuid::Uuid::new_v4().to_string();
 
-        Ok(HelloOutput {
-            greeting: format!("Hello, {}", "world"),
-            original: HelloInput {
-                name: "world".to_string(),
-                message: "Default message".to_string(),
-            },
+        // 构建 Ansible 参数（保持你原有 builder 调用）
+        if let Some(params) = input.params {
+            let params_full = deploy::AnsibleRunParams::builder(private_data_dir, params.playbook)
+                .with_cmd(params.cmd)
+                .with_optional()
+                .ident(task_ident.clone())
+                .verbosity(1)
+                // .quiet(true)
+                .build();
+
+            tokio::spawn(async move {
+                if let Err(e) = deploy::run_ansible(params_full).await {
+                    eprintln!("Ansible task failed: {e}");
+                }
+            });
+        } else {
+            println!("No deploy params provided");
+        }
+
+        let start_time = 21412;
+
+        // 启动 ansible 异步任务
+
+        Ok(DeployResponse {
+            task_ident,
+            start_time,
+            initial_status: "scheduled".to_string(),
         })
     }
 

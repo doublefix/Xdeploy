@@ -5,5 +5,11 @@
 // }
 
 fn main() {
-    tonic_build::compile_protos("proto/agent.proto").unwrap();
+    tonic_build::compile_protos("proto/api.proto").unwrap();
+    tonic_build::configure()
+        .type_attribute(".", "#[derive(serde::Serialize, serde::Deserialize)]")
+        .compile_protos(&["proto/ansible.proto"], &["proto/"])
+        .unwrap();
+
+    tonic_build::compile_protos("proto/api.proto").unwrap();
 }

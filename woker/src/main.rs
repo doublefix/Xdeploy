@@ -24,7 +24,7 @@ pub mod ansible {
     tonic::include_proto!("ansible");
 }
 
-use ansible::{DeployRequest, DeployResponse};
+use ansible::{AnsibleTaskStatusRequest, AnsibleTaskStatusResponse, DeployRequest, DeployResponse};
 
 // 错误类型
 type Error = Box<dyn std::error::Error + Send + Sync>;
@@ -53,6 +53,8 @@ mod types {
 
 // 函数处理器模块
 mod function_handlers {
+    use std::path::PathBuf;
+
     use super::*;
     use crate::types::{HelloInput, HelloOutput};
 
@@ -79,6 +81,10 @@ mod function_handlers {
         map.insert(
             "Deploy".to_string(),
             Box::new(JsonFunctionWrapper::new(deploy_handler)),
+        );
+        map.insert(
+            "DeployStatus".to_string(),
+            Box::new(JsonFunctionWrapper::new(deploy_status_handler)),
         );
         map
     });
@@ -126,6 +132,73 @@ mod function_handlers {
             task_ident,
             start_time,
             initial_status: "scheduled".to_string(),
+        })
+    }
+
+    pub fn deploy_status_handler(
+        input: AnsibleTaskStatusRequest,
+    ) -> Result<AnsibleTaskStatusResponse> {
+        // 获取环境变量并验证
+        let private_data_dir = std::env::var("PRIVATE_DATA_DIR")
+            .map_err(|e| anyhow::anyhow!("PRIVATE_DATA_DIR environment variable not set: {}", e))?;
+
+        // 构建任务目录路径
+        let task_dir = PathBuf::from(&private_data_dir).join(&input.ident);
+
+        // 检查任务目录是否存在
+        if !task_dir.exists() {
+            return Ok(AnsibleTaskStatusResponse {
+                ident: input.ident,
+                success: false,
+                rc: 127, // Not found
+                status: format!("ERROR: Task directory not found at {}", task_dir.display()),
+            });
+        }
+
+        // 读取rc文件
+        let rc_file = task_dir.join("rc");
+        let rc = if rc_file.exists() {
+            std::fs::read_to_string(&rc_file)
+                .map_err(|e| {
+                    anyhow::anyhow!("Failed to read rc file at {}: {}", rc_file.display(), e)
+                })?
+                .trim()
+                .parse::<i32>()
+                .map_err(|e| anyhow::anyhow!("Invalid rc value in {}: {}", rc_file.display(), e))?
+        } else {
+            return Ok(AnsibleTaskStatusResponse {
+                ident: input.ident,
+                success: false,
+                rc: 127,
+                status: format!("ERROR: rc file not found at {}", rc_file.display()),
+            });
+        };
+
+        // 读取status文件
+        let status_file = task_dir.join("status");
+        let status = if status_file.exists() {
+            std::fs::read_to_string(&status_file).map_err(|e| {
+                anyhow::anyhow!(
+                    "Failed to read status file at {}: {}",
+                    status_file.display(),
+                    e
+                )
+            })?
+        } else {
+            return Ok(AnsibleTaskStatusResponse {
+                ident: input.ident,
+                success: false,
+                rc: 127,
+                status: format!("ERROR: status file not found at {}", status_file.display()),
+            });
+        };
+
+        // 返回实际读取的结果
+        Ok(AnsibleTaskStatusResponse {
+            ident: input.ident,
+            success: rc == 0, // rc为0表示成功
+            rc,
+            status, // 直接使用从文件读取的状态
         })
     }
 

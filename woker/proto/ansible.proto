@@ -31,3 +31,15 @@ message AnsibleRunParams {
     string initial_status = 3;
   }
   
+// 查询任务状态的请求（输入任务标识）
+message AnsibleTaskStatusRequest {
+  string ident = 1;  // 要查询的任务标识（对应AnsibleRunParams.ident）
+}
+
+// 查询任务状态的响应（返回详细执行结果）
+message  AnsibleTaskStatusResponse {
+  string ident = 1;               // 任务标识
+  bool success = 2;               // 整体是否成功
+  int32 rc = 3;                   // 返回码（0=成功，非0=失败）
+  string status = 4;              // 标准输出
+}

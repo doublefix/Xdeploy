@@ -1,8 +1,6 @@
 mod deploy;
 
-use once_cell::sync::Lazy;
 use prost_types::{Struct, Value};
-use serde::{Deserialize, Serialize};
 use std::{
     collections::HashMap,
     time::{Duration, SystemTime, UNIX_EPOCH},
@@ -24,8 +22,6 @@ pub mod ansible {
     tonic::include_proto!("ansible");
 }
 
-use ansible::{AnsibleTaskStatusRequest, AnsibleTaskStatusResponse, DeployRequest, DeployResponse};
-
 // 错误类型
 type Error = Box<dyn std::error::Error + Send + Sync>;
 type Result<T> = std::result::Result<T, Error>;
@@ -35,213 +31,6 @@ const RECONNECT_INTERVAL: Duration = Duration::from_secs(5);
 const MAX_RECONNECT_ATTEMPTS: usize = 10;
 
 // 共享类型
-mod types {
-    use super::*;
-
-    #[derive(Debug, Serialize, Deserialize)]
-    pub struct HelloInput {
-        pub name: String,
-        pub message: String,
-    }
-
-    #[derive(Debug, Serialize, Deserialize)]
-    pub struct HelloOutput {
-        pub greeting: String,
-        pub original: HelloInput,
-    }
-}
-
-// 函数处理器模块
-mod function_handlers {
-    use std::path::PathBuf;
-
-    use super::*;
-    use crate::types::{HelloInput, HelloOutput};
-
-    // 定义函数处理器特征
-    pub trait FunctionHandler<I, O>: Send + Sync
-    where
-        I: for<'de> Deserialize<'de>,
-        O: Serialize,
-    {
-        fn handle(&self, input: I) -> Result<O>;
-    }
-
-    // 函数注册表类型
-    type HandlerMap =
-        HashMap<String, Box<dyn FunctionHandler<serde_json::Value, serde_json::Value>>>;
-
-    // 全局函数注册表
-    pub static FUNCTION_REGISTRY: Lazy<HandlerMap> = Lazy::new(|| {
-        let mut map: HandlerMap = HashMap::new();
-        map.insert(
-            "Hello".to_string(),
-            Box::new(JsonFunctionWrapper::new(hello_handler)),
-        );
-        map.insert(
-            "Deploy".to_string(),
-            Box::new(JsonFunctionWrapper::new(deploy_handler)),
-        );
-        map.insert(
-            "DeployStatus".to_string(),
-            Box::new(JsonFunctionWrapper::new(deploy_status_handler)),
-        );
-        map
-    });
-
-    // 具体函数实现
-    pub fn hello_handler(input: HelloInput) -> Result<HelloOutput> {
-        Ok(HelloOutput {
-            greeting: format!("Hello, {}", input.name),
-            original: input,
-        })
-    }
-
-    pub fn deploy_handler(input: DeployRequest) -> Result<DeployResponse> {
-        println!("Deploying with request_id: {input:#?}");
-
-        // 获取配置路径
-        let private_data_dir = std::env::var("PRIVATE_DATA_DIR")
-            .expect("PRIVATE_DATA_DIR environment variable not set");
-        let task_ident = uuid::Uuid::new_v4().to_string();
-
-        // 构建 Ansible 参数（保持你原有 builder 调用）
-        if let Some(params) = input.params {
-            let params_full = deploy::AnsibleRunParams::builder(private_data_dir, params.playbook)
-                .with_cmd(params.cmd)
-                .with_optional()
-                .ident(task_ident.clone())
-                .verbosity(1)
-                // .quiet(true)
-                .build();
-
-            tokio::spawn(async move {
-                if let Err(e) = deploy::run_ansible(params_full).await {
-                    eprintln!("Ansible task failed: {e}");
-                }
-            });
-        } else {
-            println!("No deploy params provided");
-        }
-
-        let start_time = 21412;
-
-        // 启动 ansible 异步任务
-
-        Ok(DeployResponse {
-            task_ident,
-            start_time,
-            initial_status: "scheduled".to_string(),
-        })
-    }
-
-    pub fn deploy_status_handler(
-        input: AnsibleTaskStatusRequest,
-    ) -> Result<AnsibleTaskStatusResponse> {
-        // 获取环境变量并验证
-        let private_data_dir = std::env::var("PRIVATE_DATA_DIR")
-            .map_err(|e| anyhow::anyhow!("PRIVATE_DATA_DIR environment variable not set: {}", e))?;
-
-        // 构建任务目录路径
-        let task_dir = PathBuf::from(&private_data_dir).join(&input.ident);
-
-        // 检查任务目录是否存在
-        if !task_dir.exists() {
-            return Ok(AnsibleTaskStatusResponse {
-                ident: input.ident,
-                success: false,
-                rc: 127, // Not found
-                status: format!("ERROR: Task directory not found at {}", task_dir.display()),
-            });
-        }
-
-        // 读取rc文件
-        let rc_file = task_dir.join("rc");
-        let rc = if rc_file.exists() {
-            std::fs::read_to_string(&rc_file)
-                .map_err(|e| {
-                    anyhow::anyhow!("Failed to read rc file at {}: {}", rc_file.display(), e)
-                })?
-                .trim()
-                .parse::<i32>()
-                .map_err(|e| anyhow::anyhow!("Invalid rc value in {}: {}", rc_file.display(), e))?
-        } else {
-            return Ok(AnsibleTaskStatusResponse {
-                ident: input.ident,
-                success: false,
-                rc: 127,
-                status: format!("ERROR: rc file not found at {}", rc_file.display()),
-            });
-        };
-
-        // 读取status文件
-        let status_file = task_dir.join("status");
-        let status = if status_file.exists() {
-            std::fs::read_to_string(&status_file).map_err(|e| {
-                anyhow::anyhow!(
-                    "Failed to read status file at {}: {}",
-                    status_file.display(),
-                    e
-                )
-            })?
-        } else {
-            return Ok(AnsibleTaskStatusResponse {
-                ident: input.ident,
-                success: false,
-                rc: 127,
-                status: format!("ERROR: status file not found at {}", status_file.display()),
-            });
-        };
-
-        // 返回实际读取的结果
-        Ok(AnsibleTaskStatusResponse {
-            ident: input.ident,
-            success: rc == 0, // rc为0表示成功
-            rc,
-            status, // 直接使用从文件读取的状态
-        })
-    }
-
-    // 包装器，将具体类型的函数适配到通用JSON接口
-    struct JsonFunctionWrapper<F, I, O>
-    where
-        F: Fn(I) -> Result<O> + Send + Sync,
-        I: for<'de> Deserialize<'de>,
-        O: Serialize,
-    {
-        handler: F,
-        _phantom_i: std::marker::PhantomData<I>,
-        _phantom_o: std::marker::PhantomData<O>,
-    }
-
-    impl<F, I, O> JsonFunctionWrapper<F, I, O>
-    where
-        F: Fn(I) -> Result<O> + Send + Sync,
-        I: for<'de> Deserialize<'de>,
-        O: Serialize,
-    {
-        fn new(handler: F) -> Self {
-            Self {
-                handler,
-                _phantom_i: std::marker::PhantomData,
-                _phantom_o: std::marker::PhantomData,
-            }
-        }
-    }
-
-    impl<F, I, O> FunctionHandler<serde_json::Value, serde_json::Value> for JsonFunctionWrapper<F, I, O>
-    where
-        F: Fn(I) -> Result<O> + Send + Sync,
-        I: for<'de> Deserialize<'de> + Send + Sync + 'static,
-        O: Serialize + Send + Sync + 'static,
-    {
-        fn handle(&self, input: serde_json::Value) -> Result<serde_json::Value> {
-            let concrete_input: I = serde_json::from_value(input)?;
-            let output = (self.handler)(concrete_input)?;
-            Ok(serde_json::to_value(output)?)
-        }
-    }
-}
 
 // 协议转换模块
 mod proto_convert {
@@ -316,9 +105,9 @@ mod proto_convert {
 // 客户端模块
 mod client {
     use super::*;
-    use function_handlers::FUNCTION_REGISTRY;
     use prost::Message;
     use proto_convert::{struct_to_value, value_to_struct};
+    use woker::function_handlers::FUNCTION_REGISTRY;
 
     pub struct AgentClient {
         endpoint: String,

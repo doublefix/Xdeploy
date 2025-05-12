@@ -6,7 +6,7 @@ use uuid::Uuid;
 // export LD_LIBRARY_PATH=$(pwd)/venv/lib:$LD_LIBRARY_PATH
 // export PRIVATE_DATA_DIR=/tmp/ansible_runner
 
-#[derive(Debug, Clone)]
+// #[derive(Debug, Clone)]
 pub struct AnsibleRunParams {
     private_data_dir: String,
     playbook: String,

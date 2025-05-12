@@ -4,8 +4,7 @@ use uuid::Uuid;
 
 // export PYTHON_SYS_EXECUTABLE=$(pwd)/venv/bin/python
 // export LD_LIBRARY_PATH=$(pwd)/venv/lib:$LD_LIBRARY_PATH
-// export PRIVATE_DATA_DIR=/tmp/ansible_runner
-
+// export PRIVATE_DATA_DIR=$(pwd)
 // #[derive(Debug, Clone)]
 pub struct AnsibleRunParams {
     private_data_dir: String,

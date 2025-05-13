@@ -185,10 +185,10 @@ async fn test_ansible_pyo3() -> PyResult<()> {
 #[test]
 fn test_deploy_status_handler_success_case() {
     let test_ident = "0f63bc61-a2af-47a0-ac69-420e9f5ee9cf";
-    let request = woker::ansible::AnsibleTaskStatusRequest {
+    let request = woker::client::ansible::AnsibleTaskStatusRequest {
         ident: test_ident.to_string(),
     };
-    let response = woker::function_handlers::deploy_status_handler(request).unwrap();
+    let response = woker::client::function_handlers::deploy_status_handler(request).unwrap();
 
     println!("Response: {response:?}");
 }

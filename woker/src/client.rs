@@ -335,6 +335,46 @@ pub mod function_handlers {
         fn handle(&self, input: I) -> Result<O>;
     }
 
+    impl<F, I, O> FunctionHandler<serde_json::Value, serde_json::Value> for JsonFunctionWrapper<F, I, O>
+    where
+        F: Fn(I) -> Result<O> + Send + Sync,
+        I: for<'de> Deserialize<'de> + Send + Sync + 'static,
+        O: Serialize + Send + Sync + 'static,
+    {
+        fn handle(&self, input: serde_json::Value) -> Result<serde_json::Value> {
+            let concrete_input: I = serde_json::from_value(input)?;
+            let output = (self.handler)(concrete_input)?;
+            Ok(serde_json::to_value(output)?)
+        }
+    }
+
+    // 包装器，将具体类型的函数适配到通用JSON接口
+    struct JsonFunctionWrapper<F, I, O>
+    where
+        F: Fn(I) -> Result<O> + Send + Sync,
+        I: for<'de> Deserialize<'de>,
+        O: Serialize,
+    {
+        handler: F,
+        _phantom_i: std::marker::PhantomData<I>,
+        _phantom_o: std::marker::PhantomData<O>,
+    }
+
+    impl<F, I, O> JsonFunctionWrapper<F, I, O>
+    where
+        F: Fn(I) -> Result<O> + Send + Sync,
+        I: for<'de> Deserialize<'de>,
+        O: Serialize,
+    {
+        fn new(handler: F) -> Self {
+            Self {
+                handler,
+                _phantom_i: std::marker::PhantomData,
+                _phantom_o: std::marker::PhantomData,
+            }
+        }
+    }
+
     // 函数注册表类型
     type HandlerMap =
         HashMap<String, Box<dyn FunctionHandler<serde_json::Value, serde_json::Value>>>;
@@ -472,46 +512,6 @@ pub mod function_handlers {
             rc: 127,
             status: format!("ERROR: {message}"),
         })
-    }
-
-    // 包装器，将具体类型的函数适配到通用JSON接口
-    struct JsonFunctionWrapper<F, I, O>
-    where
-        F: Fn(I) -> Result<O> + Send + Sync,
-        I: for<'de> Deserialize<'de>,
-        O: Serialize,
-    {
-        handler: F,
-        _phantom_i: std::marker::PhantomData<I>,
-        _phantom_o: std::marker::PhantomData<O>,
-    }
-
-    impl<F, I, O> JsonFunctionWrapper<F, I, O>
-    where
-        F: Fn(I) -> Result<O> + Send + Sync,
-        I: for<'de> Deserialize<'de>,
-        O: Serialize,
-    {
-        fn new(handler: F) -> Self {
-            Self {
-                handler,
-                _phantom_i: std::marker::PhantomData,
-                _phantom_o: std::marker::PhantomData,
-            }
-        }
-    }
-
-    impl<F, I, O> FunctionHandler<serde_json::Value, serde_json::Value> for JsonFunctionWrapper<F, I, O>
-    where
-        F: Fn(I) -> Result<O> + Send + Sync,
-        I: for<'de> Deserialize<'de> + Send + Sync + 'static,
-        O: Serialize + Send + Sync + 'static,
-    {
-        fn handle(&self, input: serde_json::Value) -> Result<serde_json::Value> {
-            let concrete_input: I = serde_json::from_value(input)?;
-            let output = (self.handler)(concrete_input)?;
-            Ok(serde_json::to_value(output)?)
-        }
     }
 }
 

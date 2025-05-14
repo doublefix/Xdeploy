@@ -295,12 +295,6 @@ fn current_timestamp() -> i64 {
         .as_secs() as i64
 }
 
-pub mod ansible {
-    tonic::include_proto!("ansible");
-}
-
-use ansible::{AnsibleTaskStatusRequest, AnsibleTaskStatusResponse, DeployRequest, DeployResponse};
-
 mod types {
     use super::*;
 
@@ -319,6 +313,12 @@ mod types {
 // 函数处理器模块
 pub mod function_handlers {
     use std::path::{Path, PathBuf};
+
+    use anyhow::Context;
+
+    use crate::deploy::{
+        AnsibleTaskStatusRequest, AnsibleTaskStatusResponse, DeployRequest, DeployResponse,
+    };
 
     use super::{
         types::{HelloInput, HelloOutput},
@@ -406,35 +406,32 @@ pub mod function_handlers {
     }
 
     pub fn deploy_handler(input: DeployRequest) -> Result<DeployResponse> {
-        println!("Deploying with request_id: {input:#?}");
+        println!("Deploying with request: {input:#?}");
 
         // 获取配置路径
         let private_data_dir = std::env::var("PRIVATE_DATA_DIR")
-            .expect("PRIVATE_DATA_DIR environment variable not set");
+            .context("PRIVATE_DATA_DIR environment variable not set")?;
         let task_ident = uuid::Uuid::new_v4().to_string();
+        let start_time = chrono::Utc::now().timestamp(); // 更真实的时间戳
 
         // 构建 Ansible 参数（保持你原有 builder 调用）
-        if let Some(params) = input.params {
-            let params_full = AnsibleRunParams::builder(private_data_dir, params.playbook)
-                .with_cmd(params.cmd)
-                .with_optional()
-                .ident(task_ident.clone())
-                .verbosity(1)
-                // .quiet(true)
-                .build();
+        let params = input.params.context("No deploy params provided")?;
+        let inventory = params
+            .inventory
+            .context("Deploy params must include inventory")?;
 
-            tokio::spawn(async move {
-                if let Err(e) = deploy::run_ansible(params_full).await {
-                    eprintln!("Ansible task failed: {e}");
-                }
-            });
-        } else {
-            println!("No deploy params provided");
-        }
+        let params_full = AnsibleRunParams::builder(private_data_dir, params.playbook, inventory)
+            .with_cmd(params.cmd)
+            .with_optional()
+            .ident(task_ident.clone())
+            .verbosity(1)
+            .build();
 
-        let start_time = 21412;
-
-        // 启动 ansible 异步任务
+        tokio::spawn(async move {
+            if let Err(e) = deploy::run_ansible(params_full).await {
+                eprintln!("Ansible task failed: {e}");
+            }
+        });
 
         Ok(DeployResponse {
             task_ident,

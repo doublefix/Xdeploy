@@ -5,11 +5,15 @@ import ansible_runner
 run_uuid = str(uuid.uuid4())
 
 inventory_dict = {
-    "servers": {
-        "hosts": {
-            "debian-root": {"ansible_user": "root"},
-            "rocky-root": {"ansible_user": "root"},
-            "ubuntu-root": {"ansible_user": "root"},
+    "all": {
+        "children": {
+            "servers": {
+                "hosts": {
+                    "debian-root": {"ansible_user": "root"},
+                    "rocky-root": {"ansible_user": "root"},
+                    "ubuntu-root": {"ansible_user": "root"},
+                }
+            }
         }
     }
 }

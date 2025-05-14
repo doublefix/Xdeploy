@@ -43,3 +43,13 @@ message  AnsibleTaskStatusResponse {
   int32 rc = 3;                   // 返回码（0=成功，非0=失败）
   string status = 4;              // 标准输出
 }
+
+message HelloInput {
+  string name = 1;
+  string message = 2;
+}
+
+message HelloOutput {
+  string greeting = 1;
+  HelloInput original = 2;
+}

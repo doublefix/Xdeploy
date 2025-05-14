@@ -11,3 +11,4 @@ repo
 target
 artifacts
 env
+hosts.json

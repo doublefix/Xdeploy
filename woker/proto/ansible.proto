@@ -16,6 +16,21 @@ message AnsibleRunParams {
   }
   
   string ident = 6;  // 建议改为required（通过业务逻辑保证）
+  AnsibleInventory inventory = 7;
+}
+
+message AnsibleHost {
+  map<string, string> vars = 2;
+}
+
+message AnsibleGroup {
+  map<string, AnsibleHost> hosts = 2;
+  map<string, string> vars = 3;
+  map<string, AnsibleGroup> children = 4;
+}
+
+message AnsibleInventory {
+  map<string, AnsibleGroup> children = 1;
 }
   
 // Ansible 增强的请求结构

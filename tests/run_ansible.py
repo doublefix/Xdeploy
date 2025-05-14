@@ -9,14 +9,17 @@ inventory_dict = {
         "children": {
             "servers": {
                 "hosts": {
-                    "debian-root": {"ansible_user": "root"},
-                    "rocky-root": {"ansible_user": "root"},
-                    "ubuntu-root": {"ansible_user": "root"},
-                }
+                    "debian-root": {"vars": {"ansible_user": "root"}},
+                    "rocky-root": {"vars": {"ansible_user": "root"}},
+                    "ubuntu-root": {"vars": {"ansible_user": "root"}},
+                },
+                "vars": {},
+                "children": {},
             }
         }
     }
 }
+
 print(f"Generated UUID for this run: {run_uuid}")
 
 r = ansible_runner.run(

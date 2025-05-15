@@ -139,38 +139,3 @@ sudo systemctl restart kubelet
 
 ```
 
-## Curl k8s apiserver
-```bash
-# 获取 API Server 地址
-APISERVER=$(kubectl config view --minify -o jsonpath='{.clusters[0].cluster.server}')
-
-# 获取 Token（推荐方式）
-TOKEN=$(kubectl create token default --duration=1h)
-
-# 使用 curl 创建 Pod
-curl -X POST "$APISERVER/api/v1/namespaces/default/pods" \
-  --header "Authorization: Bearer $TOKEN" \
-  --header "Content-Type: application/json" \
-  --insecure \
-  --data '{
-    "apiVersion": "v1",
-    "kind": "Pod",
-    "metadata": {
-      "name": "nginx-pod",
-      "namespace": "default"
-    },
-    "spec": {
-      "containers": [
-        {
-          "name": "nginx",
-          "image": "nginx:latest",
-          "ports": [
-            {
-              "containerPort": 80
-            }
-          ]
-        }
-      ]
-    }
-  }'
-```

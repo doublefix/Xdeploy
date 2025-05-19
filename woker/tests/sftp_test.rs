@@ -101,12 +101,13 @@ fn test_sftp() -> Result<(), Box<dyn std::error::Error>> {
 
     let sess = connect_ssh(&config)?;
 
-    let path = "jupyter";
-    let source_path = format!("{home}/{path}");
-    let target_path = format!("/root/{path}");
+    let folder_name = "jupyter";
+    let target_path = "/root";
+    let source_path_with_folder_name = format!("{home}/{folder_name}");
+    let target_path_with_folder_name = format!("{target_path}/{folder_name}");
 
-    let local_path = Path::new(&source_path);
-    let remote_path = Path::new(&target_path);
+    let local_path = Path::new(&source_path_with_folder_name);
+    let remote_path = Path::new(&target_path_with_folder_name);
 
     println!("Starting folder upload...");
     upload_folder(&sess, local_path, remote_path)?;

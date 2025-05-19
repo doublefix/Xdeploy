@@ -105,12 +105,11 @@ ansible-playbook playbooks/clean/docker_buildx.yml
 
 - 收集 hostname(大小写注意)+ip 制成 hosts
 - 修改 hosts
-- 修改 authorized_keys,把部署机的key放到被管理机器
+- 修改 authorized_keys,把部署机的 key 放到被管理机器
 
 2. 使用 Xdeploy
 3. 部署完成后检查 INTERNAL-IP 是否符合预期
 4. 下载预备安装文件有两种：下载二进制包，下载镜像
-
 
 ## 初始化集群
 
@@ -139,3 +138,21 @@ sudo systemctl restart kubelet
 
 ```
 
+## 复制容器内的二进制安装文件
+
+```bash
+
+nerdctl pull harbor.openpaper.co/chess/containerd:v1
+
+IMAGE_ID=$(nerdctl image inspect --format '{{.ID}}' harbor.openpaper.co/chess/containerd:v1 | cut -d ':' -f 2)
+
+mkdir -p ./"$IMAGE_ID"
+
+nerdctl run --rm \
+  -v ./"$IMAGE_ID":/extract \
+  harbor.openpaper.co/chess/containerd:v1 \
+  sh -c 'cp -r /chess/* /extract/'
+
+ls -l ./"$IMAGE_ID"/
+
+```

@@ -23,6 +23,7 @@ pyo3 = "0.24.2"
 anyhow = "1.0.98"
 chrono = "0.4.41"
 clap = { version = "4.5.38", features = ["derive"] }
+rayon = "1.10.0"
 
 [dependencies.uuid]
 version = "1.16.0"

@@ -146,13 +146,13 @@ nerdctl pull harbor.openpaper.co/chess/kubernetes:v1.31.0
 
 IMAGE_ID=$(nerdctl image inspect --format '{{.ID}}' harbor.openpaper.co/chess/kubernetes:v1.31.0 | cut -d ':' -f 2)
 
-mkdir -p $(pwd)/var/tmp/chess/"$IMAGE_ID"
+mkdir -p /var/tmp/chess/"$IMAGE_ID"
 
 nerdctl run --rm \
-  -v $(pwd)/var/tmp/chess/"$IMAGE_ID":/extract \
+  -v /var/tmp/chess/"$IMAGE_ID":/extract \
   harbor.openpaper.co/chess/kubernetes:v1.31.0 \
   sh -c 'cp -r /archive/ /extract/'
 
-ls -l $(pwd)/var/tmp/chess/"$IMAGE_ID"/
+ls -l /var/tmp/chess/"$IMAGE_ID"/
 
 ```

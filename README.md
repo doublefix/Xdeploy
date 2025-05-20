@@ -153,6 +153,6 @@ nerdctl run --rm \
   harbor.openpaper.co/chess/kubernetes:v1.31.0 \
   sh -c 'cp -r /archive/ /extract/'
 
-ls -l ./var/tmp/chess/"$IMAGE_ID"/
+ls -l $(pwd)/var/tmp/chess/"$IMAGE_ID"/
 
 ```

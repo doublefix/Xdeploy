@@ -142,17 +142,17 @@ sudo systemctl restart kubelet
 
 ```bash
 
-nerdctl pull harbor.openpaper.co/chess/containerd:v1
+nerdctl pull harbor.openpaper.co/chess/kubernetes:v1.31.0
 
-IMAGE_ID=$(nerdctl image inspect --format '{{.ID}}' harbor.openpaper.co/chess/containerd:v1 | cut -d ':' -f 2)
+IMAGE_ID=$(nerdctl image inspect --format '{{.ID}}' harbor.openpaper.co/chess/kubernetes:v1.31.0 | cut -d ':' -f 2)
 
-mkdir -p ./"$IMAGE_ID"
+mkdir -p $(pwd)/var/tmp/chess/"$IMAGE_ID"
 
 nerdctl run --rm \
-  -v ./"$IMAGE_ID":/extract \
-  harbor.openpaper.co/chess/containerd:v1 \
-  sh -c 'cp -r /chess/* /extract/'
+  -v $(pwd)/var/tmp/chess/"$IMAGE_ID":/extract \
+  harbor.openpaper.co/chess/kubernetes:v1.31.0 \
+  sh -c 'cp -r /archive/ /extract/'
 
-ls -l ./"$IMAGE_ID"/
+ls -l ./var/tmp/chess/"$IMAGE_ID"/
 
 ```

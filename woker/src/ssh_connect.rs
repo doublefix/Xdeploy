@@ -1,7 +1,6 @@
-use rayon::prelude::*;
 use ssh2::Session;
 use std::{path::Path, time::Duration};
-use tokio::{net::TcpStream as AsyncTcpStream, runtime::Runtime, time::timeout};
+use tokio::{net::TcpStream as AsyncTcpStream, task, time::timeout};
 
 #[derive(Debug, Clone)]
 pub struct HostConfig {
@@ -180,19 +179,19 @@ fn check_sudo_with_password(sess: &Session, password: &String) -> bool {
     channel.exit_status().unwrap_or(1) == 0
 }
 
-pub fn bulk_check_hosts(hosts: Vec<HostConfig>) -> Vec<HostCheckResult> {
-    hosts
-        .par_iter()
-        .map(|host| {
-            let rt = Runtime::new().unwrap();
-            rt.block_on(async {
-                let timeout_duration = Duration::from_secs(5); // 总超时5秒
-                timeout(timeout_duration, check_single_host_async(host))
-                    .await
-                    .unwrap_or_else(|_| {
-                        HostCheckResult::new(host.ip.clone(), host.username.clone())
-                    })
-            })
+pub async fn bulk_check_hosts(hosts: Vec<HostConfig>) -> Vec<HostCheckResult> {
+    let futures = hosts.into_iter().map(|host| {
+        task::spawn(async move {
+            let timeout_duration = Duration::from_secs(5);
+            timeout(timeout_duration, check_single_host_async(&host))
+                .await
+                .unwrap_or_else(|_| HostCheckResult::new(host.ip.clone(), host.username.clone()))
         })
+    });
+
+    futures::future::join_all(futures)
+        .await
+        .into_iter()
+        .map(|res| res.unwrap())
         .collect()
 }

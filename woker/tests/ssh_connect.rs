@@ -2,8 +2,8 @@ use std::env;
 
 use woker::ssh_connect::{HostConfig, bulk_check_hosts};
 
-#[test]
-fn test_bulk_check() {
+#[tokio::test]
+async fn test_bulk_check() {
     let home = env::var("HOME").unwrap();
     let hosts = vec![
         HostConfig {
@@ -29,7 +29,7 @@ fn test_bulk_check() {
         // },
     ];
 
-    let results = bulk_check_hosts(hosts);
+    let results = bulk_check_hosts(hosts).await;
     for result in results {
         println!("{result:#?}");
         println!(

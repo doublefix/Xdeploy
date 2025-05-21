@@ -65,9 +65,9 @@ pub async fn handle_command(command: Commands) -> Result<()> {
                 })
                 .collect();
 
-            info!("{hosts:?}");
+            info!("HOSTS: {hosts:?}");
             // 执行批量检查
-            let results = bulk_check_hosts(hosts);
+            let results = bulk_check_hosts(hosts).await;
 
             // 检查每个结果
             for result in results {

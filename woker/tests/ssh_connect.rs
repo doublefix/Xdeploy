@@ -15,7 +15,7 @@ pub struct HostConfig {
 #[derive(Debug)]
 pub struct HostCheckResult {
     pub ip: String,
-    pub username: String, // Added username field
+    pub username: String,
     pub ssh_accessible: bool,
     pub auth_method: Option<AuthMethod>,
     pub has_root_access: bool,
@@ -44,7 +44,7 @@ impl HostCheckResult {
 }
 
 async fn check_single_host_async(host: &HostConfig) -> HostCheckResult {
-    let mut result = HostCheckResult::new(host.ip.clone(), host.username.clone()); // Pass username
+    let mut result = HostCheckResult::new(host.ip.clone(), host.username.clone());
 
     // Rest of the function remains the same...
     let conn = match AsyncTcpStream::connect((host.ip.as_str(), host.port)).await {

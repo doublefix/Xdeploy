@@ -27,7 +27,9 @@ pub fn build_cli() -> Command {
         )
 }
 
-pub async fn run(matches: &ArgMatches) -> Result<(), Box<dyn std::error::Error>> {
+pub async fn run(
+    matches: &ArgMatches,
+) -> Result<Vec<String>, Box<dyn std::error::Error + Send + Sync>> {
     let images = matches
         .get_many::<String>("images")
         .unwrap()
@@ -41,30 +43,43 @@ pub async fn run(matches: &ArgMatches) -> Result<(), Box<dyn std::error::Error>>
         PathBuf::from("/var/tmp/chess")
     };
 
-    // Process images concurrently
+    // Process images concurrently and collect SHA256 values
     let mut handles = vec![];
     for image in images {
         let base_output_dir = base_output_dir.clone();
         let handle = tokio::spawn(async move {
-            if let Err(e) = process_image(&image, base_output_dir.as_path()).await {
-                eprintln!("Error processing image {image}: {e}");
+            match process_image(&image, base_output_dir.as_path()).await {
+                Ok(sha256) => Ok(sha256),
+                Err(e) => {
+                    eprintln!("Error processing image {image}: {e}");
+                    Err(e)
+                }
             }
         });
         handles.push(handle);
     }
 
-    // Wait for all tasks to complete
+    // Wait for all tasks to complete and collect results
+    let mut sha256_values = Vec::new();
     for handle in handles {
-        handle.await?;
+        match handle.await {
+            Ok(Ok(sha256)) => sha256_values.push(sha256),
+            Ok(Err(e)) => return Err(e),
+            Err(e) => return Err(e.into()),
+        }
     }
 
-    Ok(())
+    // Deduplicate SHA256 values while preserving order
+    sha256_values.sort();
+    sha256_values.dedup();
+
+    Ok(sha256_values)
 }
 
 async fn process_image(
     image: &str,
     base_output_dir: &std::path::Path,
-) -> Result<(), Box<dyn std::error::Error>> {
+) -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
     println!("Processing image: {image}");
 
     // Get image ID first to check if content already exists
@@ -97,7 +112,7 @@ async fn process_image(
     // Check if content already exists
     if fs::metadata(&output_dir).await.is_ok() {
         println!("Content already exists at: {}", output_dir.display());
-        return Ok(());
+        return Ok(image_id);
     }
 
     // If content doesn't exist, proceed with pulling and extracting
@@ -144,13 +159,13 @@ async fn process_image(
         output_dir.display()
     );
 
-    Ok(())
+    Ok(image_id)
 }
 
 async fn run_command(
     program: &str,
     args: &[&str],
-) -> Result<std::process::Output, Box<dyn std::error::Error>> {
+) -> Result<std::process::Output, Box<dyn std::error::Error + Send + Sync>> {
     let output = ProcessCommand::new(program).args(args).output().await?;
 
     if !output.stdout.is_empty() {
@@ -164,16 +179,34 @@ async fn run_command(
     Ok(output)
 }
 
+pub async fn load_image(
+    images: Vec<String>,
+    output_dir: Option<String>,
+) -> Result<Vec<String>, Box<dyn std::error::Error + Send + Sync>> {
+    let mut args = vec!["extractor".to_string(), "-i".to_string()];
+    args.push(images.join(","));
+
+    if let Some(dir) = output_dir {
+        args.push("-o".to_string());
+        args.push(dir);
+    }
+    let cli_args: Vec<&str> = args.iter().map(|s| s.as_str()).collect();
+
+    let matches = build_cli().try_get_matches_from(cli_args)?;
+    let sha256_values = run(&matches).await?;
+
+    Ok(sha256_values)
+}
+
 #[tokio::test]
-async fn test_load_images() -> Result<(), Box<dyn std::error::Error>> {
-    // Test with multiple images
-    let args = vec![
-        "extractor",
-        "-i",
-        "harbor.openpaper.co/chess/kubernetes:v1.31.0,harbor.openpaper.co/chess/kubernetes:v1.31.0",
+async fn test_get_image_sha256() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    let images = vec![
+        "harbor.openpaper.co/chess/kubernetes:v1.31.0".to_string(),
+        "harbor.openpaper.co/chess/kubernetes:v1.31.0".to_string(), // Duplicate to test deduplication
     ];
-    let matches = build_cli().try_get_matches_from(args)?;
-    run(&matches).await?;
+
+    let sha256_values = load_image(images, None).await?;
+    println!("Image SHA256 values: {sha256_values:?}");
 
     Ok(())
 }

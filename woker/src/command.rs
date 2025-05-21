@@ -3,7 +3,10 @@ use std::env;
 use clap::{Parser, Subcommand};
 use log::{info, warn};
 
-use crate::ssh_connect::{HostConfig, bulk_check_hosts};
+use crate::{
+    load_image::load_image,
+    ssh_connect::{HostConfig, bulk_check_hosts},
+};
 
 type Error = Box<dyn std::error::Error + Send + Sync>;
 type Result<T> = std::result::Result<T, Error>;
@@ -83,6 +86,9 @@ pub async fn handle_command(command: Commands) -> Result<()> {
                 }
             }
 
+            // 加载镜像
+            let images_sha256 = load_image(images, None).await?;
+            info!("{images_sha256:?}");
             // 传输文件
 
             // 处理每个节点

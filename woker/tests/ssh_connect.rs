@@ -1,6 +1,6 @@
 use rayon::prelude::*;
 use ssh2::Session;
-use std::{env, fmt::format, path::Path};
+use std::{env, path::Path};
 use tokio::net::TcpStream as AsyncTcpStream;
 
 #[derive(Debug)]

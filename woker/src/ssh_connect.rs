@@ -1,7 +1,7 @@
 use rayon::prelude::*;
 use ssh2::Session;
-use std::path::Path;
-use tokio::net::TcpStream as AsyncTcpStream;
+use std::{path::Path, time::Duration};
+use tokio::{net::TcpStream as AsyncTcpStream, runtime::Runtime, time::timeout};
 
 #[derive(Debug, Clone)]
 pub struct HostConfig {
@@ -45,22 +45,37 @@ impl HostCheckResult {
 
 async fn check_single_host_async(host: &HostConfig) -> HostCheckResult {
     let mut result = HostCheckResult::new(host.ip.clone(), host.username.clone());
+    let connect_timeout = Duration::from_secs(3); // 3秒连接超时
 
-    // Rest of the function remains the same...
-    let conn = match AsyncTcpStream::connect((host.ip.as_str(), host.port)).await {
-        Ok(stream) => stream.into_std().unwrap(),
-        Err(_) => return result,
+    // 1. 带超时的TCP连接
+    let conn = match timeout(
+        connect_timeout,
+        AsyncTcpStream::connect((host.ip.as_str(), host.port)),
+    )
+    .await
+    {
+        Ok(Ok(stream)) => stream.into_std().unwrap(),
+        Ok(Err(_)) | Err(_) => return result, // 连接失败或超时
     };
 
+    // 2. SSH会话设置
     let mut sess = match Session::new() {
         Ok(s) => s,
         Err(_) => return result,
     };
+
     sess.set_tcp_stream(conn);
-    if sess.handshake().is_err() {
+
+    // 3. 带超时的握手
+    let handshake_timeout = Duration::from_secs(3);
+    if timeout(handshake_timeout, async { sess.handshake() })
+        .await
+        .is_err()
+    {
         return result;
     }
 
+    // 剩余认证检查逻辑保持不变...
     let mut authenticated = false;
 
     if let Some(privkey_path) = &host.privkey_path {
@@ -166,10 +181,18 @@ fn check_sudo_with_password(sess: &Session, password: &String) -> bool {
 }
 
 pub fn bulk_check_hosts(hosts: Vec<HostConfig>) -> Vec<HostCheckResult> {
-    let rt = tokio::runtime::Runtime::new().unwrap();
-
     hosts
         .par_iter()
-        .map(|host| rt.block_on(check_single_host_async(host)))
+        .map(|host| {
+            let rt = Runtime::new().unwrap();
+            rt.block_on(async {
+                let timeout_duration = Duration::from_secs(5); // 总超时5秒
+                timeout(timeout_duration, check_single_host_async(host))
+                    .await
+                    .unwrap_or_else(|_| {
+                        HostCheckResult::new(host.ip.clone(), host.username.clone())
+                    })
+            })
+        })
         .collect()
 }

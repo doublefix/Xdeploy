@@ -1,5 +1,9 @@
+use std::env;
+
 use clap::{Parser, Subcommand};
 use log::{info, warn};
+
+use crate::ssh_connect::{HostConfig, bulk_check_hosts};
 
 type Error = Box<dyn std::error::Error + Send + Sync>;
 type Result<T> = std::result::Result<T, Error>;
@@ -46,6 +50,34 @@ pub async fn handle_command(command: Commands) -> Result<()> {
             if let Some(dup) = find_first_duplicate(&all_addresses) {
                 warn!("Duplicate address found: {dup}");
                 return Ok(());
+            }
+
+            // 构建 hosts 配置进行 bulk_check
+            let home = env::var("HOME").unwrap();
+            let hosts: Vec<HostConfig> = all_addresses
+                .into_iter()
+                .map(|addr| HostConfig {
+                    ip: addr.to_string(),
+                    port: 22,
+                    username: "root".to_string(),
+                    privkey_path: Some(format!("{home}/.ssh/id_rsa")),
+                    password: None,
+                })
+                .collect();
+
+            info!("{hosts:?}");
+            // 执行批量检查
+            let results = bulk_check_hosts(hosts);
+
+            // 检查每个结果
+            for result in results {
+                if !result.ssh_accessible || !result.has_root_access {
+                    warn!(
+                        "Host check failed for {}: SSH accessible: {}, Root access: {}",
+                        result.ip, result.ssh_accessible, result.has_root_access
+                    );
+                    return Ok(());
+                }
             }
 
             // 处理每个节点

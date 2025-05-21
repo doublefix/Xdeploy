@@ -52,7 +52,7 @@ pub async fn handle_command(command: Commands) -> Result<()> {
                 return Ok(());
             }
 
-            // 构建 hosts 配置进行 bulk_check
+            // 执行批量检查可达性
             let home = env::var("HOME").unwrap();
             let hosts: Vec<HostConfig> = all_addresses
                 .into_iter()
@@ -66,10 +66,7 @@ pub async fn handle_command(command: Commands) -> Result<()> {
                 .collect();
 
             info!("HOSTS: {hosts:?}");
-            // 执行批量检查
             let results = bulk_check_hosts(hosts).await;
-
-            // 检查每个结果
             for result in results {
                 if !result.ssh_accessible || !result.has_root_access {
                     warn!(
@@ -79,6 +76,8 @@ pub async fn handle_command(command: Commands) -> Result<()> {
                     return Ok(());
                 }
             }
+
+            // 传输文件
 
             // 处理每个节点
             for (i, node_addr) in nodes.iter().enumerate() {

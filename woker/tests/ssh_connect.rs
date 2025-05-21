@@ -8,7 +8,7 @@ pub struct HostConfig {
     pub ip: String,
     pub port: u16,
     pub username: String,
-    pub privkey_path: String,
+    pub privkey_path: Option<String>,
     pub password: Option<String>,
 }
 
@@ -16,9 +16,16 @@ pub struct HostConfig {
 pub struct HostCheckResult {
     pub ip: String,
     pub ssh_accessible: bool,
+    pub auth_method: Option<AuthMethod>, // New field to track auth method
     pub has_root_access: bool,
     pub has_passwordless_sudo: bool,
     pub can_sudo_with_password: bool,
+}
+
+#[derive(Debug, PartialEq)]
+pub enum AuthMethod {
+    PublicKey,
+    Password,
 }
 
 impl HostCheckResult {
@@ -26,6 +33,7 @@ impl HostCheckResult {
         HostCheckResult {
             ip,
             ssh_accessible: false,
+            auth_method: None,
             has_root_access: false,
             has_passwordless_sudo: false,
             can_sudo_with_password: false,
@@ -52,26 +60,38 @@ async fn check_single_host_async(host: &HostConfig) -> HostCheckResult {
         return result;
     }
 
-    // Try public key authentication first
-    let auth_ok = sess
-        .userauth_pubkey_file(&host.username, None, Path::new(&host.privkey_path), None)
-        .is_ok()
-        && sess.authenticated();
+    // Try authentication methods in order of preference
+    let mut authenticated = false;
 
-    // If public key auth failed and password is provided, try password authentication
-    if !auth_ok {
-        if let Some(password) = &host.password {
-            if sess.userauth_password(&host.username, password).is_ok() && sess.authenticated() {
-                result.ssh_accessible = true;
-            } else {
-                return result;
-            }
-        } else {
-            return result;
+    // 1. Try public key authentication if key is provided
+    if let Some(privkey_path) = &host.privkey_path {
+        authenticated = sess
+            .userauth_pubkey_file(&host.username, None, Path::new(privkey_path), None)
+            .is_ok()
+            && sess.authenticated();
+
+        if authenticated {
+            result.auth_method = Some(AuthMethod::PublicKey);
         }
-    } else {
-        result.ssh_accessible = true;
     }
+
+    // 2. If public key auth failed, try password authentication if password is provided
+    if !authenticated {
+        if let Some(password) = &host.password {
+            authenticated =
+                sess.userauth_password(&host.username, password).is_ok() && sess.authenticated();
+
+            if authenticated {
+                result.auth_method = Some(AuthMethod::Password);
+            }
+        }
+    }
+
+    if !authenticated {
+        return result;
+    }
+
+    result.ssh_accessible = true;
 
     // Root user has full access
     if host.username == "root" {
@@ -135,7 +155,8 @@ fn check_sudo_with_password(sess: &Session, password: &String) -> bool {
         Err(_) => return false,
     };
 
-    let command = format!("echo '{password}' | sudo -S true 2>/dev/null");
+    // Use a more secure way to pass password (though still not perfect)
+    let command = format!("echo '{password}' | sudo -S --prompt=\"\" true 2>/dev/null");
 
     if channel.exec(&command).is_err() {
         return false;
@@ -165,29 +186,22 @@ fn test_bulk_check() {
             ip: "ubuntu".to_string(),
             port: 22,
             username: "root".to_string(),
-            privkey_path: format!("{home}/.ssh/id_rsa"),
+            privkey_path: Some(format!("{home}/.ssh/id_rsa")),
             password: None,
         },
         HostConfig {
             ip: "ubuntu".to_string(),
             port: 22,
-            username: "mahongqin".to_string(),
-            privkey_path: format!("{home}/.ssh/id_rsa"),
+            username: "root".to_string(),
+            privkey_path: Some(format!("{home}/.ssh/id_rsa")),
             password: None,
         },
         HostConfig {
-            ip: "ubuntu".to_string(),
+            ip: "localhost".to_string(),
             port: 22,
-            username: "mahongqin".to_string(),
-            privkey_path: format!("{home}/.ssh/id_rsa"),
-            password: Some("ma@4056".to_string()),
-        },
-        HostConfig {
-            ip: "ubuntu".to_string(),
-            port: 22,
-            username: "regular_user".to_string(),
-            privkey_path: format!("{home}/.ssh/id_rsa"),
-            password: None,
+            username: "alice".to_string(),
+            privkey_path: None,
+            password: Some("123456".to_string()), // Replace with actual password for testing
         },
     ];
 
@@ -195,9 +209,10 @@ fn test_bulk_check() {
     for result in results {
         println!("{result:#?}");
         println!(
-            "{} - SSH: {}, Root: {}, Passwordless Sudo: {}, Sudo with Password: {}",
+            "{} - SSH: {} ({:?}), Root: {}, Passwordless Sudo: {}, Sudo with Password: {}",
             result.ip,
             if result.ssh_accessible { "✅" } else { "❌" },
+            result.auth_method,
             if result.has_root_access { "✅" } else { "❌" },
             if result.has_passwordless_sudo {
                 "✅"

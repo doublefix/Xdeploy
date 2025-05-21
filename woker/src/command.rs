@@ -18,6 +18,8 @@ pub struct Cli {
 #[derive(Subcommand)]
 pub enum Commands {
     Init {
+        #[arg(required = true)]
+        images: Vec<String>,
         #[arg(long)]
         master: Vec<String>,
         #[arg(long, action = clap::ArgAction::Append)]
@@ -27,7 +29,11 @@ pub enum Commands {
 
 pub async fn handle_command(command: Commands) -> Result<()> {
     match command {
-        Commands::Init { master, node } => {
+        Commands::Init {
+            images,
+            master,
+            node,
+        } => {
             let masters: Vec<String> = master
                 .iter()
                 .flat_map(|s| s.split(','))

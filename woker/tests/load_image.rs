@@ -1,20 +1,22 @@
 use clap::{Arg, ArgMatches, Command};
-use std::fs;
 use std::path::PathBuf;
-use std::process::{Command as ProcessCommand, Output};
+use tokio::fs;
+use tokio::process::Command as ProcessCommand;
 
 pub fn build_cli() -> Command {
     Command::new("Docker Image Content Extractor")
         .version("1.0")
         .author("Your Name")
-        .about("Extracts content from a Docker image using nerdctl")
+        .about("Extracts content from Docker images using nerdctl")
         .arg(
-            Arg::new("image")
+            Arg::new("images")
                 .short('i')
                 .long("image")
                 .value_name("IMAGE")
-                .help("Docker image to extract content from")
-                .default_value("harbor.openpaper.co/chess/kubernetes:v1.31.0"),
+                .help("Docker images to extract content from (comma-separated or multiple flags)")
+                .default_value("harbor.openpaper.co/chess/kubernetes:v1.31.0")
+                .value_delimiter(',')
+                .num_args(1..),
         )
         .arg(
             Arg::new("output")
@@ -25,25 +27,54 @@ pub fn build_cli() -> Command {
         )
 }
 
-pub fn run(matches: &ArgMatches) -> Result<(), Box<dyn std::error::Error>> {
-    let image = matches.get_one::<String>("image").unwrap();
+pub async fn run(matches: &ArgMatches) -> Result<(), Box<dyn std::error::Error>> {
+    let images = matches
+        .get_many::<String>("images")
+        .unwrap()
+        .map(|s| s.to_string())
+        .collect::<Vec<_>>();
 
-    println!("Pulling image: {image}");
-    let pull_output = run_command("nerdctl", &["pull", image])?;
-    if !pull_output.status.success() {
-        return Err(format!(
-            "Failed to pull image: {}\n{}",
-            image,
-            String::from_utf8_lossy(&pull_output.stderr)
-        )
-        .into());
+    // Determine output directory
+    let base_output_dir = if let Some(output) = matches.get_one::<String>("output") {
+        PathBuf::from(output)
+    } else {
+        PathBuf::from("/var/tmp/chess")
+    };
+
+    // Process images concurrently
+    let mut handles = vec![];
+    for image in images {
+        let base_output_dir = base_output_dir.clone();
+        let handle = tokio::spawn(async move {
+            if let Err(e) = process_image(&image, base_output_dir.as_path()).await {
+                eprintln!("Error processing image {image}: {e}");
+            }
+        });
+        handles.push(handle);
     }
 
-    println!("Getting image ID...");
+    // Wait for all tasks to complete
+    for handle in handles {
+        handle.await?;
+    }
+
+    Ok(())
+}
+
+async fn process_image(
+    image: &str,
+    base_output_dir: &std::path::Path,
+) -> Result<(), Box<dyn std::error::Error>> {
+    println!("Processing image: {image}");
+
+    // Get image ID first to check if content already exists
+    println!("Getting image ID for {image}...");
     let inspect_output = run_command(
         "nerdctl",
         &["image", "inspect", "--format", "{{.ID}}", image],
-    )?;
+    )
+    .await?;
+
     if !inspect_output.status.success() {
         return Err(format!(
             "Failed to inspect image: {}\n{}",
@@ -61,15 +92,28 @@ pub fn run(matches: &ArgMatches) -> Result<(), Box<dyn std::error::Error>> {
 
     println!("Image ID: {image_id}");
 
-    let base_output_dir = if let Some(output) = matches.get_one::<String>("output") {
-        PathBuf::from(output)
-    } else {
-        PathBuf::from("/var/tmp/chess")
-    };
-
     let output_dir = base_output_dir.join(&image_id);
+
+    // Check if content already exists
+    if fs::metadata(&output_dir).await.is_ok() {
+        println!("Content already exists at: {}", output_dir.display());
+        return Ok(());
+    }
+
+    // If content doesn't exist, proceed with pulling and extracting
+    println!("Pulling image: {image}");
+    let pull_output = run_command("nerdctl", &["pull", image]).await?;
+    if !pull_output.status.success() {
+        return Err(format!(
+            "Failed to pull image: {}\n{}",
+            image,
+            String::from_utf8_lossy(&pull_output.stderr)
+        )
+        .into());
+    }
+
     println!("Creating output directory: {}", output_dir.display());
-    fs::create_dir_all(&output_dir)?;
+    fs::create_dir_all(&output_dir).await?;
 
     println!("Extracting content from image...");
     let extract_output = run_command(
@@ -84,7 +128,8 @@ pub fn run(matches: &ArgMatches) -> Result<(), Box<dyn std::error::Error>> {
             "-c",
             "cp -r /archive/. /extract/",
         ],
-    )?;
+    )
+    .await?;
 
     if !extract_output.status.success() {
         return Err(format!(
@@ -94,19 +139,6 @@ pub fn run(matches: &ArgMatches) -> Result<(), Box<dyn std::error::Error>> {
         )
         .into());
     }
-
-    println!("Listing extracted files:");
-    let ls_output = run_command("ls", &["-l", &output_dir.to_string_lossy()])?;
-    if !ls_output.status.success() {
-        return Err(format!(
-            "Failed to list files: {}\n{}",
-            output_dir.display(),
-            String::from_utf8_lossy(&ls_output.stderr)
-        )
-        .into());
-    }
-
-    println!("{}", String::from_utf8_lossy(&ls_output.stdout));
     println!(
         "Content extracted successfully to: {}",
         output_dir.display()
@@ -115,8 +147,11 @@ pub fn run(matches: &ArgMatches) -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
-fn run_command(program: &str, args: &[&str]) -> Result<Output, Box<dyn std::error::Error>> {
-    let output = ProcessCommand::new(program).args(args).output()?;
+async fn run_command(
+    program: &str,
+    args: &[&str],
+) -> Result<std::process::Output, Box<dyn std::error::Error>> {
+    let output = ProcessCommand::new(program).args(args).output().await?;
 
     if !output.stdout.is_empty() {
         print!("{}", String::from_utf8_lossy(&output.stdout));
@@ -129,16 +164,19 @@ fn run_command(program: &str, args: &[&str]) -> Result<Output, Box<dyn std::erro
     Ok(output)
 }
 
-#[test]
-fn test_load_image() -> Result<(), Box<dyn std::error::Error>> {
+#[tokio::test]
+async fn test_load_images() -> Result<(), Box<dyn std::error::Error>> {
+    // Test with multiple images
     let args = vec![
-        "extractor", // argv[0]
+        "extractor",
         "-i",
-        "harbor.openpaper.co/chess/kubernetes:v1.31.0",
-        // "-o",
-        // "$HOME/code/Xdeploy/tmp",
+        "harbor.openpaper.co/chess/kubernetes:v1.31.0,harbor.openpaper.co/chess/kubernetes:v1.31.0",
     ];
     let matches = build_cli().try_get_matches_from(args)?;
-    run(&matches)?;
+    run(&matches).await?;
+
     Ok(())
 }
+
+// "-o",
+// "$HOME/code/Xdeploy/tmp",

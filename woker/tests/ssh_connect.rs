@@ -15,8 +15,9 @@ pub struct HostConfig {
 #[derive(Debug)]
 pub struct HostCheckResult {
     pub ip: String,
+    pub username: String, // Added username field
     pub ssh_accessible: bool,
-    pub auth_method: Option<AuthMethod>, // New field to track auth method
+    pub auth_method: Option<AuthMethod>,
     pub has_root_access: bool,
     pub has_passwordless_sudo: bool,
     pub can_sudo_with_password: bool,
@@ -29,9 +30,10 @@ pub enum AuthMethod {
 }
 
 impl HostCheckResult {
-    pub fn new(ip: String) -> Self {
+    pub fn new(ip: String, username: String) -> Self {
         HostCheckResult {
             ip,
+            username,
             ssh_accessible: false,
             auth_method: None,
             has_root_access: false,
@@ -42,15 +44,14 @@ impl HostCheckResult {
 }
 
 async fn check_single_host_async(host: &HostConfig) -> HostCheckResult {
-    let mut result = HostCheckResult::new(host.ip.clone());
+    let mut result = HostCheckResult::new(host.ip.clone(), host.username.clone()); // Pass username
 
-    // Check SSH connection
+    // Rest of the function remains the same...
     let conn = match AsyncTcpStream::connect((host.ip.as_str(), host.port)).await {
         Ok(stream) => stream.into_std().unwrap(),
         Err(_) => return result,
     };
 
-    // SSH session setup
     let mut sess = match Session::new() {
         Ok(s) => s,
         Err(_) => return result,
@@ -60,10 +61,8 @@ async fn check_single_host_async(host: &HostConfig) -> HostCheckResult {
         return result;
     }
 
-    // Try authentication methods in order of preference
     let mut authenticated = false;
 
-    // 1. Try public key authentication if key is provided
     if let Some(privkey_path) = &host.privkey_path {
         authenticated = sess
             .userauth_pubkey_file(&host.username, None, Path::new(privkey_path), None)
@@ -75,7 +74,6 @@ async fn check_single_host_async(host: &HostConfig) -> HostCheckResult {
         }
     }
 
-    // 2. If public key auth failed, try password authentication if password is provided
     if !authenticated {
         if let Some(password) = &host.password {
             authenticated =
@@ -93,14 +91,12 @@ async fn check_single_host_async(host: &HostConfig) -> HostCheckResult {
 
     result.ssh_accessible = true;
 
-    // Root user has full access
     if host.username == "root" {
         result.has_root_access = true;
         result.has_passwordless_sudo = true;
         return result;
     }
 
-    // Check sudo privileges
     let (passwordless_sudo, password_sudo) = check_sudo_privileges(&sess, host.password.as_ref());
     result.has_passwordless_sudo = passwordless_sudo;
     result.can_sudo_with_password = password_sudo;
@@ -192,16 +188,16 @@ fn test_bulk_check() {
         HostConfig {
             ip: "ubuntu".to_string(),
             port: 22,
-            username: "root".to_string(),
+            username: "mahongqin".to_string(),
             privkey_path: Some(format!("{home}/.ssh/id_rsa")),
-            password: None,
+            password: Some("ma@4056".to_string()),
         },
         HostConfig {
             ip: "localhost".to_string(),
             port: 22,
             username: "alice".to_string(),
             privkey_path: None,
-            password: Some("123456".to_string()), // Replace with actual password for testing
+            password: Some("123456".to_string()),
         },
     ];
 
@@ -209,8 +205,9 @@ fn test_bulk_check() {
     for result in results {
         println!("{result:#?}");
         println!(
-            "{} - SSH: {} ({:?}), Root: {}, Passwordless Sudo: {}, Sudo with Password: {}",
+            "{} (user: {}) - SSH: {} ({:?}), Root: {}, Passwordless Sudo: {}, Sudo with Password: {}",
             result.ip,
+            result.username, // Added username to output
             if result.ssh_accessible { "✅" } else { "❌" },
             result.auth_method,
             if result.has_root_access { "✅" } else { "❌" },

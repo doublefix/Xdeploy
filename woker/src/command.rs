@@ -22,7 +22,7 @@ pub struct Cli {
 
 #[derive(Subcommand)]
 pub enum Commands {
-    Init {
+    Run {
         #[arg(required = true)]
         images: Vec<String>,
         #[arg(long)]
@@ -34,7 +34,7 @@ pub enum Commands {
 
 pub async fn handle_command(command: Commands) -> Result<()> {
     match command {
-        Commands::Init {
+        Commands::Run {
             images,
             master,
             node,
@@ -118,9 +118,6 @@ pub async fn handle_command(command: Commands) -> Result<()> {
             .await;
 
             // 所有节点
-            for (i, all_addr) in all_addresses.iter().enumerate() {
-                info!("Configuring all {}: {}", i + 1, all_addr);
-            }
             let commands = build_std_linux_tarzxvf_filetoroot_commands(&images_sha256);
             let run_cmd_configs: Vec<ssh_cmd::SshConfig> = all_addresses
                 .into_iter()

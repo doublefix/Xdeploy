@@ -1,4 +1,5 @@
 use clap::{Arg, ArgMatches, Command};
+use log::{info, warn};
 use std::path::PathBuf;
 use tokio::fs;
 use tokio::process::Command as ProcessCommand;
@@ -51,7 +52,7 @@ pub async fn run(
             match process_image(&image, base_output_dir.as_path()).await {
                 Ok(sha256) => Ok(sha256),
                 Err(e) => {
-                    eprintln!("Error processing image {image}: {e}");
+                    warn!("Error processing image {image}: {e}");
                     Err(e)
                 }
             }
@@ -80,10 +81,10 @@ async fn process_image(
     image: &str,
     base_output_dir: &std::path::Path,
 ) -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
-    println!("Processing image: {image}");
+    info!("Processing image: {image}");
 
     // Get image ID first to check if content already exists
-    println!("Getting image ID for {image}...");
+    info!("Getting image ID for {image}...");
     let inspect_output = run_command(
         "nerdctl",
         &["image", "inspect", "--format", "{{.ID}}", image],
@@ -105,18 +106,18 @@ async fn process_image(
         .ok_or("Unexpected image ID format")?
         .to_string();
 
-    println!("Image ID: {image_id}");
+    info!("Image ID: {image_id}");
 
     let output_dir = base_output_dir.join(&image_id);
 
     // Check if content already exists
     if fs::metadata(&output_dir).await.is_ok() {
-        println!("Content already exists at: {}", output_dir.display());
+        info!("Content already exists at: {}", output_dir.display());
         return Ok(image_id);
     }
 
     // If content doesn't exist, proceed with pulling and extracting
-    println!("Pulling image: {image}");
+    info!("Pulling image: {image}");
     let pull_output = run_command("nerdctl", &["pull", image]).await?;
     if !pull_output.status.success() {
         return Err(format!(
@@ -127,10 +128,10 @@ async fn process_image(
         .into());
     }
 
-    println!("Creating output directory: {}", output_dir.display());
+    info!("Creating output directory: {}", output_dir.display());
     fs::create_dir_all(&output_dir).await?;
 
-    println!("Extracting content from image...");
+    info!("Extracting content from image...");
     let extract_output = run_command(
         "nerdctl",
         &[
@@ -154,7 +155,7 @@ async fn process_image(
         )
         .into());
     }
-    println!(
+    info!(
         "Content extracted successfully to: {}",
         output_dir.display()
     );

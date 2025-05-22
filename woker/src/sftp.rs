@@ -1,4 +1,5 @@
 use futures::stream::{FuturesUnordered, StreamExt};
+use log::{info, warn};
 use ssh2::Session;
 use std::{
     fs,
@@ -112,10 +113,10 @@ async fn upload_task(config: SshConfig, local_path: PathBuf, remote_path: PathBu
 
     match result {
         Ok(Ok(())) => {
-            println!("Upload success to {config_host}: {local_path_disp} -> {remote_path_disp}")
+            info!("Upload success to {config_host}: {local_path_disp} -> {remote_path_disp}")
         }
-        Ok(Err(e)) => eprintln!("Upload failed to {config_host}: {e}"),
-        Err(e) => eprintln!("Upload failed to {config_host}: JoinError: {e}"),
+        Ok(Err(e)) => warn!("Upload failed to {config_host}: {e}"),
+        Err(e) => warn!("Upload failed to {config_host}: JoinError: {e}"),
     }
 }
 

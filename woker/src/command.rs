@@ -1,10 +1,11 @@
-use std::env;
+use std::{env, path::Path};
 
 use clap::{Parser, Subcommand};
 use log::{info, warn};
 
 use crate::{
     load_image::load_image,
+    sftp::{AuthMethod, SshConfig, concurrent_upload_folders},
     ssh_connect::{HostConfig, bulk_check_hosts},
 };
 
@@ -64,6 +65,7 @@ pub async fn handle_command(command: Commands) -> Result<()> {
             // 执行批量检查可达性
             let home = env::var("HOME").unwrap();
             let hosts: Vec<HostConfig> = all_addresses
+                .clone()
                 .into_iter()
                 .map(|addr| HostConfig {
                     ip: addr.to_string(),
@@ -90,11 +92,36 @@ pub async fn handle_command(command: Commands) -> Result<()> {
             let images_sha256 = load_image(images, None).await?;
             info!("{images_sha256:?}");
             // 传输文件
+            let sftp_configs: Vec<SshConfig> = all_addresses
+                .clone()
+                .into_iter()
+                .map(|addr| SshConfig {
+                    host: addr.to_string(),
+                    port: 22,
+                    username: "root".to_string(),
+                    auth: AuthMethod::Key {
+                        pubkey: format!("{home}/.ssh/id_rsa.pub"),
+                        privkey: format!("{home}/.ssh/id_rsa"),
+                        passphrase: None,
+                    },
+                })
+                .collect();
+            let local_base = Path::new("/var/tmp/chess");
+            let remote_base = Path::new("/tmp/.chess");
+            let _ = concurrent_upload_folders(sftp_configs, images_sha256, local_base, remote_base)
+                .await;
 
-            // 处理每个节点
+            // 所有节点
+            for (i, all_addr) in all_addresses.iter().enumerate() {
+                info!("Configuring all {}: {}", i + 1, all_addr);
+            }
+            // 主节点
+            for (i, master_addr) in master.iter().enumerate() {
+                info!("Configuring master {}: {}", i + 1, master_addr);
+            }
+            // 工作节点
             for (i, node_addr) in nodes.iter().enumerate() {
                 info!("Configuring node {}: {}", i + 1, node_addr);
-                // 实际的节点配置逻辑
             }
 
             info!("Initialization completed successfully");

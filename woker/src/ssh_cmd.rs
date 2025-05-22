@@ -173,6 +173,9 @@ pub fn build_std_linux_tarzxvf_filetoroot_commands(image_ids: &[String]) -> Vec<
             vec![
                 // format!("mkdir -p /tmp/.chess/{}", image_id),
                 format!("tar -zxvf {} -C {}", source_path, target_path),
+                // TODO
+                "sudo systemctl enable --now containerd".to_owned(),
+                "sudo systemctl enable --now stargz-snapshotter".to_owned(),
             ]
         })
         .collect()

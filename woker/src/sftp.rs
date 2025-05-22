@@ -1,10 +1,14 @@
+use futures::stream::{FuturesUnordered, StreamExt};
 use ssh2::Session;
-use std::fs;
-use std::io::Read;
-use std::io::Write;
-use std::net::TcpStream;
-use std::path::Path;
+use std::{
+    fs,
+    io::{Read, Write},
+    net::TcpStream,
+    path::{Path, PathBuf},
+};
+use tokio::task;
 
+#[derive(Clone)]
 pub enum AuthMethod {
     Key {
         pubkey: String,
@@ -13,6 +17,7 @@ pub enum AuthMethod {
     },
 }
 
+#[derive(Clone)]
 pub struct SshConfig {
     pub host: String,
     pub port: u16,
@@ -20,7 +25,7 @@ pub struct SshConfig {
     pub auth: AuthMethod,
 }
 
-pub fn connect_ssh(config: &SshConfig) -> Result<Session, Box<dyn std::error::Error>> {
+fn connect_ssh(config: &SshConfig) -> Result<Session, Box<dyn std::error::Error + Send + Sync>> {
     let tcp = TcpStream::connect(format!("{}:{}", config.host, config.port))?;
     let mut sess = Session::new()?;
     sess.set_tcp_stream(tcp);
@@ -48,23 +53,15 @@ pub fn connect_ssh(config: &SshConfig) -> Result<Session, Box<dyn std::error::Er
     Ok(sess)
 }
 
-pub fn upload_folder(
+fn upload_folder_sync(
     sess: &Session,
     local_folder: &Path,
     remote_folder: &Path,
-) -> Result<(), Box<dyn std::error::Error>> {
+) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     let sftp = sess.sftp()?;
-
-    // Check if remote folder exists first
-    if remote_folder_exists(&sftp, remote_folder)? {
-        println!(
-            "Remote folder already exists: {}, skipping upload",
-            remote_folder.display()
-        );
-        return Ok(());
+    if sftp.stat(remote_folder).is_err() {
+        ensure_remote_dir(&sftp, remote_folder)?;
     }
-
-    ensure_remote_dir(&sftp, remote_folder)?;
 
     for entry in fs::read_dir(local_folder)? {
         let entry = entry?;
@@ -72,56 +69,72 @@ pub fn upload_folder(
         let remote_path = remote_folder.join(entry.file_name());
 
         if path.is_dir() {
-            upload_folder(sess, &path, &remote_path)?;
-        } else {
+            upload_folder_sync(sess, &path, &remote_path)?;
+        } else if sftp.stat(&remote_path).is_err() {
             let mut local_file = fs::File::open(&path)?;
             let mut remote_file = sftp.create(&remote_path)?;
 
             let mut buffer = Vec::new();
             local_file.read_to_end(&mut buffer)?;
             remote_file.write_all(&buffer)?;
-
-            println!("Uploaded: {} -> {}", path.display(), remote_path.display());
         }
     }
 
     Ok(())
 }
 
-fn remote_folder_exists(
-    sftp: &ssh2::Sftp,
-    remote_folder: &Path,
-) -> Result<bool, Box<dyn std::error::Error>> {
-    match sftp.stat(remote_folder) {
-        Ok(_) => Ok(true),
-        Err(e) => {
-            if e.code() == ssh2::ErrorCode::Session(-31) {
-                // SSH_FX_NO_SUCH_FILE
-                Ok(false)
-            } else {
-                Err(Box::new(e))
-            }
-        }
-    }
-}
-
-pub fn ensure_remote_dir(
+fn ensure_remote_dir(
     sftp: &ssh2::Sftp,
     remote_dir: &Path,
-) -> Result<(), Box<dyn std::error::Error>> {
-    let mut current = std::path::PathBuf::from("/");
+) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    let mut current = PathBuf::from("/");
     for part in remote_dir.components() {
         current = current.join(part);
         if sftp.stat(&current).is_err() {
-            match sftp.mkdir(&current, 0o755) {
-                Ok(_) => {}
-                Err(e) => {
-                    if e.code() != ssh2::ErrorCode::Session(-31) {
-                        return Err(Box::new(e));
-                    }
-                }
-            }
+            sftp.mkdir(&current, 0o755).ok();
         }
     }
+    Ok(())
+}
+
+async fn upload_task(config: SshConfig, local_path: PathBuf, remote_path: PathBuf) {
+    // Clone for use after move into closure
+    let config_host = config.host.clone();
+    let local_path_disp = local_path.display().to_string();
+    let remote_path_disp = remote_path.display().to_string();
+
+    let result = task::spawn_blocking(move || {
+        let sess = connect_ssh(&config)?;
+        upload_folder_sync(&sess, &local_path, &remote_path)?;
+        Ok::<_, Box<dyn std::error::Error + Send + Sync>>(())
+    })
+    .await;
+
+    match result {
+        Ok(Ok(())) => {
+            println!("Upload success to {config_host}: {local_path_disp} -> {remote_path_disp}")
+        }
+        Ok(Err(e)) => eprintln!("Upload failed to {config_host}: {e}"),
+        Err(e) => eprintln!("Upload failed to {config_host}: JoinError: {e}"),
+    }
+}
+
+pub async fn concurrent_upload_folders(
+    configs: Vec<SshConfig>,
+    folders: Vec<String>,
+    local_base: &Path,
+    remote_base: &Path,
+) -> Result<(), Box<dyn std::error::Error>> {
+    let mut tasks = FuturesUnordered::new();
+
+    for config in configs.into_iter() {
+        for folder in folders.iter() {
+            let local_path = local_base.join(folder);
+            let remote_path = remote_base.join(folder);
+            tasks.push(upload_task(config.clone(), local_path, remote_path));
+        }
+    }
+    while (tasks.next().await).is_some() {}
+
     Ok(())
 }

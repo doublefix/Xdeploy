@@ -1,23 +1,19 @@
+use futures::future::join_all;
 use ssh2::Session;
-use std::env;
-use std::error::Error;
-use std::io::{Read, Write};
-use std::net::TcpStream;
-use std::path::Path;
+use std::time::Duration;
+use std::{error::Error, io::Read, net::TcpStream, path::Path, sync::Arc};
+use tokio::task;
 
-// 认证方式枚举
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum AuthMethod {
     Key {
         pubkey_path: String,
         privkey_path: String,
         passphrase: Option<String>,
     },
-    // 可扩展：Password(String)
 }
 
-// SSH 配置
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct SshConfig {
     pub host: String,
     pub port: u16,
@@ -25,107 +21,129 @@ pub struct SshConfig {
     pub auth: AuthMethod,
 }
 
-// SSH 客户端结构体
+#[derive(Clone)]
 pub struct SshClient {
-    session: Session,
+    config: Arc<SshConfig>,
 }
 
 impl SshClient {
-    /// 连接到远程主机
-    pub fn connect(config: &SshConfig) -> Result<Self, Box<dyn Error>> {
-        let tcp = TcpStream::connect(format!("{}:{}", config.host, config.port))?;
-        let mut session = Session::new()?;
-        session.set_tcp_stream(tcp);
-        session.handshake()?;
+    pub fn new(config: SshConfig) -> Self {
+        SshClient {
+            config: Arc::new(config),
+        }
+    }
 
-        match &config.auth {
-            AuthMethod::Key {
-                pubkey_path,
-                privkey_path,
-                passphrase,
-            } => {
-                session.userauth_pubkey_file(
-                    &config.username,
-                    Some(Path::new(pubkey_path)),
-                    Path::new(privkey_path),
-                    passphrase.as_deref(),
-                )?;
+    /// 使用 spawn_blocking 包装阻塞 SSH 连接与命令执行
+    pub async fn exec_command(
+        &self,
+        command: String,
+    ) -> Result<String, Box<dyn Error + Send + Sync>> {
+        let config = self.config.clone();
+        task::spawn_blocking(move || {
+            let tcp = TcpStream::connect(format!("{}:{}", config.host, config.port))?;
+            tcp.set_read_timeout(Some(Duration::from_secs(30)))?;
+            tcp.set_write_timeout(Some(Duration::from_secs(30)))?;
+
+            let mut session = Session::new()?;
+            session.set_tcp_stream(tcp);
+            session.handshake()?;
+
+            match &config.auth {
+                AuthMethod::Key {
+                    pubkey_path,
+                    privkey_path,
+                    passphrase,
+                } => {
+                    session.userauth_pubkey_file(
+                        &config.username,
+                        Some(Path::new(pubkey_path)),
+                        Path::new(privkey_path),
+                        passphrase.as_deref(),
+                    )?;
+                }
             }
-        }
 
-        if !session.authenticated() {
-            return Err("SSH authentication failed".into());
-        }
+            if !session.authenticated() {
+                return Err("SSH authentication failed".into());
+            }
 
-        Ok(SshClient { session })
-    }
+            let mut channel = session.channel_session()?;
+            channel.exec(&command)?;
 
-    /// 执行单条命令并返回输出
-    pub fn exec_command(&self, command: &str) -> Result<String, Box<dyn Error>> {
-        let mut channel = self.session.channel_session()?;
-        channel.exec(command)?;
+            let mut output = String::new();
+            channel.read_to_string(&mut output)?;
+            channel.wait_close()?;
 
-        let mut output = String::new();
-        channel.read_to_string(&mut output)?;
-        channel.wait_close()?;
-
-        Ok(output)
-    }
-
-    /// 执行多行脚本（如 Shell 脚本）并返回输出
-    pub fn exec_script(&self, script: &str) -> Result<String, Box<dyn Error>> {
-        let mut channel = self.session.channel_session()?;
-        channel.shell()?;
-
-        // 发送脚本内容
-        channel.write_all(script.as_bytes())?;
-        channel.write_all(b"exit\n")?; // 确保脚本执行后退出
-
-        // 读取输出
-        let mut output = String::new();
-        channel.read_to_string(&mut output)?;
-        channel.wait_close()?;
-
-        Ok(output)
+            Ok(output)
+        })
+        .await?
     }
 }
 
-#[test]
-fn test_run_cmd_on_server() -> Result<(), Box<dyn Error>> {
-    let home = env::var("HOME")?;
-    let config = SshConfig {
-        host: "ubuntu".to_string(),
-        port: 22,
-        username: "root".to_string(),
-        auth: AuthMethod::Key {
-            pubkey_path: format!("{home}/.ssh/id_rsa.pub"),
-            privkey_path: format!("{home}/.ssh/id_rsa"),
-            passphrase: None,
-        },
-    };
+pub async fn run_command_on_multiple_hosts(
+    configs: Vec<SshConfig>,
+    command: String,
+) -> Vec<(String, Result<String, Box<dyn Error + Send + Sync>>)> {
+    let mut tasks = Vec::new();
 
-    // 连接到远程主机
-    let client = SshClient::connect(&config)?;
+    for config in configs {
+        let host = config.host.clone();
+        let client = SshClient::new(config);
+        let cmd = command.clone();
 
-    // 示例 1：执行单条命令
+        let task = tokio::spawn(async move {
+            let result = client.exec_command(cmd).await;
+            (host, result)
+        });
+
+        tasks.push(task);
+    }
+
+    join_all(tasks)
+        .await
+        .into_iter()
+        .map(|res| match res {
+            Ok(pair) => pair,
+            Err(e) => (
+                "unknown".to_string(),
+                Err(format!("Join error: {e}").into()),
+            ),
+        })
+        .collect()
+}
+
+#[tokio::test]
+async fn test_main() -> Result<(), Box<dyn Error>> {
+    let home = std::env::var("HOME")?;
     let image_id = "ee65adc925d6d5acd33beeba4747f90fda68bec1dbea6a1dea16691fe9fdfeb8";
     let package = "chess-kubernetes-v1.31.0.tar.gz";
     let source_path = format!("/tmp/.chess/{image_id}/{package}");
     let target_path = format!("/tmp/.chess/{image_id}/test");
-    let cmd = format!("tar -zxvf {source_path} -C {target_path}");
-    println!("{cmd}");
-    let output = client.exec_command(&cmd)?;
-    println!("Command output:\n{output}");
-    //
+    let command = format!("tar -zxvf {source_path} -C {target_path}");
 
-    // // 示例 2：执行多行脚本
-    // let script = r#"
-    //     echo "Start at $(date)"
-    //     df -h
-    //     echo "Done!"
-    // "#;
-    // let output = client.exec_script(script)?;
-    // println!("Script output:\n{output}");
+    let hosts = vec!["ubuntu"];
+    let configs: Vec<SshConfig> = hosts
+        .into_iter()
+        .map(|host| SshConfig {
+            host: host.to_string(),
+            port: 22,
+            username: "root".to_string(),
+            auth: AuthMethod::Key {
+                pubkey_path: format!("{home}/.ssh/id_rsa.pub"),
+                privkey_path: format!("{home}/.ssh/id_rsa"),
+                passphrase: None,
+            },
+        })
+        .collect();
+
+    let results = run_command_on_multiple_hosts(configs, command).await;
+
+    for (host, result) in results {
+        match result {
+            Ok(output) => println!("✅ [{host}] Output:\n{output}"),
+            Err(e) => eprintln!("❌ [{host}] Error: {e}"),
+        }
+    }
 
     Ok(())
 }

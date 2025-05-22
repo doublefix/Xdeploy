@@ -83,6 +83,18 @@ async fn process_image(
 ) -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
     info!("Processing image: {image}");
 
+    // If content doesn't exist, proceed with pulling and extracting
+    info!("Pulling image: {image}");
+    let pull_output = run_command("nerdctl", &["pull", image]).await?;
+    if !pull_output.status.success() {
+        return Err(format!(
+            "Failed to pull image: {}\n{}",
+            image,
+            String::from_utf8_lossy(&pull_output.stderr)
+        )
+        .into());
+    }
+
     // Get image ID first to check if content already exists
     info!("Getting image ID for {image}...");
     let inspect_output = run_command(
@@ -114,18 +126,6 @@ async fn process_image(
     if fs::metadata(&output_dir).await.is_ok() {
         info!("Content already exists at: {}", output_dir.display());
         return Ok(image_id);
-    }
-
-    // If content doesn't exist, proceed with pulling and extracting
-    info!("Pulling image: {image}");
-    let pull_output = run_command("nerdctl", &["pull", image]).await?;
-    if !pull_output.status.success() {
-        return Err(format!(
-            "Failed to pull image: {}\n{}",
-            image,
-            String::from_utf8_lossy(&pull_output.stderr)
-        )
-        .into());
     }
 
     info!("Creating output directory: {}", output_dir.display());

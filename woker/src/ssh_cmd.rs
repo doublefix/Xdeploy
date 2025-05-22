@@ -162,7 +162,7 @@ pub async fn run_commands_on_multiple_hosts(
         .collect()
 }
 
-pub fn build_std_linux_tar_zxvf_commands(image_ids: &[String]) -> Vec<String> {
+pub fn build_std_linux_tarzxvf_filetoroot_commands(image_ids: &[String]) -> Vec<String> {
     image_ids
         .iter()
         .flat_map(|image_id| {

@@ -6,7 +6,7 @@ use log::{info, warn};
 use crate::{
     load_image::load_image,
     sftp::{AuthMethod, SshConfig, concurrent_upload_folders},
-    ssh_cmd::{self, build_std_linux_tar_zxvf_commands, run_commands_on_multiple_hosts},
+    ssh_cmd::{self, build_std_linux_tarzxvf_filetoroot_commands, run_commands_on_multiple_hosts},
     ssh_connect::{HostConfig, bulk_check_hosts},
 };
 
@@ -121,7 +121,7 @@ pub async fn handle_command(command: Commands) -> Result<()> {
             for (i, all_addr) in all_addresses.iter().enumerate() {
                 info!("Configuring all {}: {}", i + 1, all_addr);
             }
-            let commands = build_std_linux_tar_zxvf_commands(&images_sha256);
+            let commands = build_std_linux_tarzxvf_filetoroot_commands(&images_sha256);
             let run_cmd_configs: Vec<ssh_cmd::SshConfig> = all_addresses
                 .into_iter()
                 .map(|host| ssh_cmd::SshConfig {

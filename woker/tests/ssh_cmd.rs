@@ -6,7 +6,7 @@ use woker::ssh_cmd::{
 #[tokio::test]
 async fn test_main() -> Result<(), Box<dyn Error>> {
     let home = std::env::var("HOME")?;
-    let images = &["ee65adc925d6d5acd33beeba4747f90fda68bec1dbea6a1dea16691fe9fdfeb8"];
+    let images = &["ee65adc925d6d5acd33beeba4747f90fda68bec1dbea6a1dea16691fe9fdfeb8".to_string()];
     let commands = build_std_linux_tar_zxvf_commands(images);
 
     let hosts = vec!["47.76.42.207"];

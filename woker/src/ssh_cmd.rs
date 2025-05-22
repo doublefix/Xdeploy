@@ -162,10 +162,10 @@ pub async fn run_commands_on_multiple_hosts(
         .collect()
 }
 
-pub fn build_std_linux_tar_zxvf_commands(image_ids: &[&str]) -> Vec<String> {
+pub fn build_std_linux_tar_zxvf_commands(image_ids: &[String]) -> Vec<String> {
     image_ids
         .iter()
-        .flat_map(|&image_id| {
+        .flat_map(|image_id| {
             let package = "chess*.gz";
             let source_path = format!("/tmp/.chess/{image_id}/{package}");
             let target_path = "/".to_string();

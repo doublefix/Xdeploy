@@ -6,6 +6,7 @@ use log::{info, warn};
 use crate::{
     load_image::load_image,
     sftp::{AuthMethod, SshConfig, concurrent_upload_folders},
+    ssh_cmd::{self, build_std_linux_tar_zxvf_commands, run_commands_on_multiple_hosts},
     ssh_connect::{HostConfig, bulk_check_hosts},
 };
 
@@ -108,13 +109,34 @@ pub async fn handle_command(command: Commands) -> Result<()> {
                 .collect();
             let local_base = Path::new("/var/tmp/chess");
             let remote_base = Path::new("/tmp/.chess");
-            let _ = concurrent_upload_folders(sftp_configs, images_sha256, local_base, remote_base)
-                .await;
+            let _ = concurrent_upload_folders(
+                sftp_configs,
+                images_sha256.clone(),
+                local_base,
+                remote_base,
+            )
+            .await;
 
             // 所有节点
             for (i, all_addr) in all_addresses.iter().enumerate() {
                 info!("Configuring all {}: {}", i + 1, all_addr);
             }
+            let commands = build_std_linux_tar_zxvf_commands(&images_sha256);
+            let run_cmd_configs: Vec<ssh_cmd::SshConfig> = all_addresses
+                .into_iter()
+                .map(|host| ssh_cmd::SshConfig {
+                    host: host.to_string(),
+                    port: 22,
+                    username: "root".to_string(),
+                    auth: ssh_cmd::AuthMethod::Key {
+                        pubkey_path: format!("{home}/.ssh/id_rsa.pub"),
+                        privkey_path: format!("{home}/.ssh/id_rsa"),
+                        passphrase: None,
+                    },
+                })
+                .collect();
+            let _ = run_commands_on_multiple_hosts(run_cmd_configs, commands).await;
+
             // 主节点
             for (i, master_addr) in master.iter().enumerate() {
                 info!("Configuring master {}: {}", i + 1, master_addr);

@@ -1,15 +1,13 @@
 use std::error::Error;
-use woker::ssh_cmd::{AuthMethod, SshConfig, run_commands_on_multiple_hosts};
+use woker::ssh_cmd::{
+    AuthMethod, SshConfig, build_std_linux_tar_zxvf_commands, run_commands_on_multiple_hosts,
+};
 
 #[tokio::test]
 async fn test_main() -> Result<(), Box<dyn Error>> {
     let home = std::env::var("HOME")?;
-    let image_id = "ee65adc925d6d5acd33beeba4747f90fda68bec1dbea6a1dea16691fe9fdfeb8";
-    let package = "chess*.gz";
-    let source_path = format!("/tmp/.chess/{image_id}/{package}");
-    let target_path = "/".to_string();
-    let command = format!("tar -zxvf {source_path} -C {target_path}");
-    let commands = vec![command];
+    let images = &["ee65adc925d6d5acd33beeba4747f90fda68bec1dbea6a1dea16691fe9fdfeb8"];
+    let commands = build_std_linux_tar_zxvf_commands(images);
 
     let hosts = vec!["47.76.42.207"];
     let configs: Vec<SshConfig> = hosts

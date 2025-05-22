@@ -55,6 +55,15 @@ pub fn upload_folder(
 ) -> Result<(), Box<dyn std::error::Error>> {
     let sftp = sess.sftp()?;
 
+    // Check if remote folder exists first
+    if remote_folder_exists(&sftp, remote_folder)? {
+        println!(
+            "Remote folder already exists: {}, skipping upload",
+            remote_folder.display()
+        );
+        return Ok(());
+    }
+
     ensure_remote_dir(&sftp, remote_folder)?;
 
     for entry in fs::read_dir(local_folder)? {
@@ -77,6 +86,23 @@ pub fn upload_folder(
     }
 
     Ok(())
+}
+
+fn remote_folder_exists(
+    sftp: &ssh2::Sftp,
+    remote_folder: &Path,
+) -> Result<bool, Box<dyn std::error::Error>> {
+    match sftp.stat(remote_folder) {
+        Ok(_) => Ok(true),
+        Err(e) => {
+            if e.code() == ssh2::ErrorCode::Session(-31) {
+                // SSH_FX_NO_SUCH_FILE
+                Ok(false)
+            } else {
+                Err(Box::new(e))
+            }
+        }
+    }
 }
 
 pub fn ensure_remote_dir(

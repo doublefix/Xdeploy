@@ -1,116 +1,5 @@
-use futures::future::join_all;
-use ssh2::Session;
-use std::time::Duration;
-use std::{error::Error, io::Read, net::TcpStream, path::Path, sync::Arc};
-use tokio::task;
-
-#[derive(Debug, Clone)]
-pub enum AuthMethod {
-    Key {
-        pubkey_path: String,
-        privkey_path: String,
-        passphrase: Option<String>,
-    },
-}
-
-#[derive(Debug, Clone)]
-pub struct SshConfig {
-    pub host: String,
-    pub port: u16,
-    pub username: String,
-    pub auth: AuthMethod,
-}
-
-#[derive(Clone)]
-pub struct SshClient {
-    config: Arc<SshConfig>,
-}
-
-impl SshClient {
-    pub fn new(config: SshConfig) -> Self {
-        SshClient {
-            config: Arc::new(config),
-        }
-    }
-
-    /// 使用 spawn_blocking 包装阻塞 SSH 连接与命令执行
-    pub async fn exec_command(
-        &self,
-        command: String,
-    ) -> Result<String, Box<dyn Error + Send + Sync>> {
-        let config = self.config.clone();
-        task::spawn_blocking(move || {
-            let tcp = TcpStream::connect(format!("{}:{}", config.host, config.port))?;
-            tcp.set_read_timeout(Some(Duration::from_secs(30)))?;
-            tcp.set_write_timeout(Some(Duration::from_secs(30)))?;
-
-            let mut session = Session::new()?;
-            session.set_tcp_stream(tcp);
-            session.handshake()?;
-
-            match &config.auth {
-                AuthMethod::Key {
-                    pubkey_path,
-                    privkey_path,
-                    passphrase,
-                } => {
-                    session.userauth_pubkey_file(
-                        &config.username,
-                        Some(Path::new(pubkey_path)),
-                        Path::new(privkey_path),
-                        passphrase.as_deref(),
-                    )?;
-                }
-            }
-
-            if !session.authenticated() {
-                return Err("SSH authentication failed".into());
-            }
-
-            let mut channel = session.channel_session()?;
-            channel.exec(&command)?;
-
-            let mut output = String::new();
-            channel.read_to_string(&mut output)?;
-            channel.wait_close()?;
-
-            Ok(output)
-        })
-        .await?
-    }
-}
-
-pub async fn run_command_on_multiple_hosts(
-    configs: Vec<SshConfig>,
-    command: String,
-) -> Vec<(String, Result<String, Box<dyn Error + Send + Sync>>)> {
-    let mut tasks = Vec::new();
-
-    for config in configs {
-        let host = config.host.clone();
-        let client = SshClient::new(config);
-        let cmd = command.clone();
-
-        let task = tokio::spawn(async move {
-            let result = client.exec_command(cmd).await;
-            (host, result)
-        });
-
-        tasks.push(task);
-    }
-
-    join_all(tasks)
-        .await
-        .into_iter()
-        .map(|res| match res {
-            Ok(pair) => pair,
-            Err(e) => (
-                "unknown".to_string(),
-                Err(format!("Join error: {e}").into()),
-            ),
-        })
-        .collect()
-}
+use std::error::Error;
+use woker::ssh_cmd::{AuthMethod, SshConfig, run_commands_on_multiple_hosts};
 
 #[tokio::test]
 async fn test_main() -> Result<(), Box<dyn Error>> {
@@ -120,6 +9,58 @@ async fn test_main() -> Result<(), Box<dyn Error>> {
     let source_path = format!("/tmp/.chess/{image_id}/{package}");
     let target_path = "/".to_string();
     let command = format!("tar -zxvf {source_path} -C {target_path}");
+    let commands = vec![command];
+
+    let hosts = vec!["47.76.42.207"];
+    let configs: Vec<SshConfig> = hosts
+        .into_iter()
+        .map(|host| SshConfig {
+            host: host.to_string(),
+            port: 22,
+            username: "root".to_string(),
+            auth: AuthMethod::Key {
+                pubkey_path: format!("{home}/.ssh/id_rsa.pub"),
+                privkey_path: format!("{home}/.ssh/id_rsa"),
+                passphrase: None,
+            },
+        })
+        .collect();
+
+    let results = run_commands_on_multiple_hosts(configs, commands).await;
+
+    for (host, result) in results {
+        match result {
+            Ok(outputs) => {
+                println!("✅ [{host}] File operations completed:");
+                for output in outputs {
+                    println!("{output}");
+                }
+            }
+            Err(e) => eprintln!("❌ [{host}] Error: {e}"),
+        }
+    }
+
+    Ok(())
+}
+
+#[tokio::test]
+async fn test_file_operations() -> Result<(), Box<dyn Error>> {
+    let home = std::env::var("HOME")?;
+
+    // Define file operations to execute
+    let image_id = "ee65adc925d6d5acd33beeba4747f90fda68bec1dbea6a1dea16691fe9fdfeb8";
+    let commands = vec![
+        format!("mkdir -p /tmp/.chess/{image_id}/test1"),
+        format!("mkdir -p /tmp/.chess/{image_id}/test2"),
+        format!(
+            "tar -zxvf /tmp/.chess/{image_id}/chess-package1.tar.gz -C /tmp/.chess/{image_id}/test1"
+        ),
+        format!(
+            "tar -zxvf /tmp/.chess/{image_id}/chess-package2.tar.gz -C /tmp/.chess/{image_id}/test2"
+        ),
+        format!("ls -l /tmp/.chess/{image_id}/test1"),
+        format!("ls -l /tmp/.chess/{image_id}/test2"),
+    ];
 
     let hosts = vec!["ubuntu"];
     let configs: Vec<SshConfig> = hosts
@@ -136,11 +77,61 @@ async fn test_main() -> Result<(), Box<dyn Error>> {
         })
         .collect();
 
-    let results = run_command_on_multiple_hosts(configs, command).await;
+    let results = run_commands_on_multiple_hosts(configs, commands).await;
 
     for (host, result) in results {
         match result {
-            Ok(output) => println!("✅ [{host}] Output:\n{output}"),
+            Ok(outputs) => {
+                println!("✅ [{host}] File operations completed:");
+                for output in outputs {
+                    println!("{output}");
+                }
+            }
+            Err(e) => eprintln!("❌ [{host}] Error: {e}"),
+        }
+    }
+
+    Ok(())
+}
+
+#[tokio::test]
+async fn test_multi_command_execution() -> Result<(), Box<dyn Error>> {
+    let home = std::env::var("HOME")?;
+
+    // Define multiple commands to execute
+    let commands = vec![
+        "echo 'Starting operations...'".to_string(),
+        "df -h".to_string(),
+        "uname -a".to_string(),
+    ];
+
+    // Define multiple hosts
+    let hosts = vec!["ubuntu"];
+    let configs: Vec<SshConfig> = hosts
+        .into_iter()
+        .map(|host| SshConfig {
+            host: host.to_string(),
+            port: 22,
+            username: "root".to_string(),
+            auth: AuthMethod::Key {
+                pubkey_path: format!("{home}/.ssh/id_rsa.pub"),
+                privkey_path: format!("{home}/.ssh/id_rsa"),
+                passphrase: None,
+            },
+        })
+        .collect();
+
+    // Execute multiple commands on multiple hosts
+    let results = run_commands_on_multiple_hosts(configs, commands).await;
+
+    for (host, result) in results {
+        match result {
+            Ok(outputs) => {
+                println!("✅ [{host}] Success:");
+                for (i, output) in outputs.iter().enumerate() {
+                    println!("Command {} output:\n{}", i + 1, output);
+                }
+            }
             Err(e) => eprintln!("❌ [{host}] Error: {e}"),
         }
     }

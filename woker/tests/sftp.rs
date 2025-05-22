@@ -56,7 +56,16 @@ fn upload_folder(
 ) -> Result<(), Box<dyn std::error::Error>> {
     let sftp = sess.sftp()?;
 
-    ensure_remote_dir(&sftp, remote_folder)?;
+    // Check if remote folder exists first
+    if sftp.stat(remote_folder).is_err() {
+        println!("Creating remote directory: {}", remote_folder.display());
+        ensure_remote_dir(&sftp, remote_folder)?;
+    } else {
+        println!(
+            "Remote directory already exists: {}",
+            remote_folder.display()
+        );
+    }
 
     for entry in fs::read_dir(local_folder)? {
         let entry = entry?;
@@ -66,14 +75,19 @@ fn upload_folder(
         if path.is_dir() {
             upload_folder(sess, &path, &remote_path)?;
         } else {
-            let mut local_file = fs::File::open(&path)?;
-            let mut remote_file = sftp.create(&remote_path)?;
+            // Check if file already exists
+            if sftp.stat(&remote_path).is_err() {
+                let mut local_file = fs::File::open(&path)?;
+                let mut remote_file = sftp.create(&remote_path)?;
 
-            let mut buffer = Vec::new();
-            local_file.read_to_end(&mut buffer)?;
-            remote_file.write_all(&buffer)?;
+                let mut buffer = Vec::new();
+                local_file.read_to_end(&mut buffer)?;
+                remote_file.write_all(&buffer)?;
 
-            println!("Uploaded: {} -> {}", path.display(), remote_path.display());
+                println!("Uploaded: {} -> {}", path.display(), remote_path.display());
+            } else {
+                println!("File already exists, skipping: {}", remote_path.display());
+            }
         }
     }
 
@@ -126,7 +140,7 @@ fn test_sftp() -> Result<(), Box<dyn std::error::Error>> {
     let local_path = Path::new(&source_path_with_folder_name);
     let remote_path = Path::new(&target_path_with_folder_name);
 
-    println!("Starting folder upload...");
+    println!("Checking if remote folder exists...");
     upload_folder(&sess, local_path, remote_path)?;
     println!("Folder upload completed!");
 

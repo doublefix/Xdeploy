@@ -116,9 +116,9 @@ pub async fn run_command_on_multiple_hosts(
 async fn test_main() -> Result<(), Box<dyn Error>> {
     let home = std::env::var("HOME")?;
     let image_id = "ee65adc925d6d5acd33beeba4747f90fda68bec1dbea6a1dea16691fe9fdfeb8";
-    let package = "chess-kubernetes-v1.31.0.tar.gz";
+    let package = "chess*.gz";
     let source_path = format!("/tmp/.chess/{image_id}/{package}");
-    let target_path = format!("/tmp/.chess/{image_id}/test");
+    let target_path = "/".to_string();
     let command = format!("tar -zxvf {source_path} -C {target_path}");
 
     let hosts = vec!["ubuntu"];

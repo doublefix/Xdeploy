@@ -195,8 +195,15 @@ pub fn build_std_linux_tarzxvf_filetoroot_commands(image_ids: &[String]) -> Vec<
         .collect()
 }
 
-pub fn build_std_linux_init_node_commands(env: &HashMap<&str, &str>) -> Vec<String> {
+pub fn build_std_linux_init_node_commands(
+    env: &HashMap<&str, &str>,
+    image_ids: &[String],
+) -> Vec<String> {
     let env_vars: Vec<String> = env.iter().map(|(k, v)| format!("{k}={v}")).collect();
     let env_part = env_vars.join(" ");
-    vec![format!("{env_part} bash /tmp/.chess/run.sh")]
+
+    image_ids
+        .iter()
+        .map(|image_id| format!("{env_part} bash /tmp/.chess/{image_id}/run.sh"))
+        .collect()
 }

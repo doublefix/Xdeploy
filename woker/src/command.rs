@@ -157,7 +157,7 @@ pub async fn handle_command(command: Commands) -> Result<()> {
                 .collect();
             let mut mater_env_vars = HashMap::new();
             mater_env_vars.insert("NODE_ROLE", "master");
-            let commands = build_std_linux_init_node_commands(&mater_env_vars);
+            let commands = build_std_linux_init_node_commands(&mater_env_vars, &images_sha256);
             let _ = run_commands_on_multiple_hosts(run_master_cmd_configs, commands, true).await;
 
             // 工作节点
@@ -180,7 +180,7 @@ pub async fn handle_command(command: Commands) -> Result<()> {
                     },
                 })
                 .collect();
-            let commands = build_std_linux_init_node_commands(&node_env_vars);
+            let commands = build_std_linux_init_node_commands(&node_env_vars, &images_sha256);
             let _ = run_commands_on_multiple_hosts(run_node_cmd_configs, commands, true).await;
 
             info!("Initialization completed successfully");

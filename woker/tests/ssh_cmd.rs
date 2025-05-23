@@ -25,7 +25,7 @@ async fn test_main() -> Result<(), Box<dyn Error>> {
         })
         .collect();
 
-    let results = run_commands_on_multiple_hosts(configs, commands).await;
+    let results = run_commands_on_multiple_hosts(configs, commands, true).await;
 
     for (host, result) in results {
         match result {
@@ -76,7 +76,7 @@ async fn test_file_operations() -> Result<(), Box<dyn Error>> {
         })
         .collect();
 
-    let results = run_commands_on_multiple_hosts(configs, commands).await;
+    let results = run_commands_on_multiple_hosts(configs, commands, true).await;
 
     for (host, result) in results {
         match result {
@@ -121,7 +121,7 @@ async fn test_multi_command_execution() -> Result<(), Box<dyn Error>> {
         .collect();
 
     // Execute multiple commands on multiple hosts
-    let results = run_commands_on_multiple_hosts(configs, commands).await;
+    let results = run_commands_on_multiple_hosts(configs, commands, true).await;
 
     for (host, result) in results {
         match result {

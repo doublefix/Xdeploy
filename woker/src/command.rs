@@ -1,4 +1,4 @@
-use std::{env, path::Path};
+use std::{collections::HashMap, env, path::Path};
 
 use clap::{Parser, Subcommand};
 use log::{info, warn};
@@ -6,7 +6,10 @@ use log::{info, warn};
 use crate::{
     load_image::load_image,
     sftp::{AuthMethod, SshConfig, concurrent_upload_folders},
-    ssh_cmd::{self, build_std_linux_tarzxvf_filetoroot_commands, run_commands_on_multiple_hosts},
+    ssh_cmd::{
+        self, build_std_linux_init_node_commands, build_std_linux_tarzxvf_filetoroot_commands,
+        run_commands_on_multiple_hosts,
+    },
     ssh_connect::{HostConfig, bulk_check_hosts},
 };
 
@@ -132,16 +135,53 @@ pub async fn handle_command(command: Commands) -> Result<()> {
                     },
                 })
                 .collect();
-            let _ = run_commands_on_multiple_hosts(run_cmd_configs, commands).await;
+            let _ = run_commands_on_multiple_hosts(run_cmd_configs, commands, false).await;
 
             // 主节点
-            for (i, master_addr) in master.iter().enumerate() {
+            for (i, master_addr) in masters.iter().enumerate() {
                 info!("Configuring master {}: {}", i + 1, master_addr);
             }
+            let run_master_cmd_configs: Vec<ssh_cmd::SshConfig> = masters
+                .clone()
+                .into_iter()
+                .map(|host| ssh_cmd::SshConfig {
+                    host: host.to_string(),
+                    port: 22,
+                    username: "root".to_string(),
+                    auth: ssh_cmd::AuthMethod::Key {
+                        pubkey_path: format!("{home}/.ssh/id_rsa.pub"),
+                        privkey_path: format!("{home}/.ssh/id_rsa"),
+                        passphrase: None,
+                    },
+                })
+                .collect();
+            let mut mater_env_vars = HashMap::new();
+            mater_env_vars.insert("NODE_ROLE", "master");
+            let commands = build_std_linux_init_node_commands(&mater_env_vars);
+            let _ = run_commands_on_multiple_hosts(run_master_cmd_configs, commands, true).await;
+
             // 工作节点
             for (i, node_addr) in nodes.iter().enumerate() {
                 info!("Configuring node {}: {}", i + 1, node_addr);
             }
+            let mut node_env_vars = HashMap::new();
+            node_env_vars.insert("NODE_ROLE", "node");
+            let run_node_cmd_configs: Vec<ssh_cmd::SshConfig> = nodes
+                .clone()
+                .into_iter()
+                .map(|host| ssh_cmd::SshConfig {
+                    host: host.to_string(),
+                    port: 22,
+                    username: "root".to_string(),
+                    auth: ssh_cmd::AuthMethod::Key {
+                        pubkey_path: format!("{home}/.ssh/id_rsa.pub"),
+                        privkey_path: format!("{home}/.ssh/id_rsa"),
+                        passphrase: None,
+                    },
+                })
+                .collect();
+            let commands = build_std_linux_init_node_commands(&node_env_vars);
+            let _ = run_commands_on_multiple_hosts(run_node_cmd_configs, commands, true).await;
 
             info!("Initialization completed successfully");
             Ok(())

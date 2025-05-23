@@ -1,5 +1,7 @@
 use futures::future::join_all;
+use log::info;
 use ssh2::Session;
+use std::collections::HashMap;
 use std::time::Duration;
 use std::{error::Error, io::Read, net::TcpStream, path::Path, sync::Arc};
 use tokio::task;
@@ -133,6 +135,7 @@ impl SshClient {
 pub async fn run_commands_on_multiple_hosts(
     configs: Vec<SshConfig>,
     commands: Vec<String>,
+    verbose: bool,
 ) -> Vec<(String, Result<Vec<String>, Box<dyn Error + Send + Sync>>)> {
     let mut tasks = Vec::new();
 
@@ -143,6 +146,20 @@ pub async fn run_commands_on_multiple_hosts(
 
         let task = tokio::spawn(async move {
             let result = client.exec_commands(cmds).await;
+
+            // 根据 verbose 决定是否打印
+            if verbose {
+                match &result {
+                    Ok(outputs) => {
+                        info!("[{host}] Command outputs:");
+                        for (i, output) in outputs.iter().enumerate() {
+                            println!("  Command {}: {}", i + 1, output);
+                        }
+                    }
+                    Err(e) => info!("[{host}] Error: {e}"),
+                }
+            }
+
             (host, result)
         });
 
@@ -173,10 +190,13 @@ pub fn build_std_linux_tarzxvf_filetoroot_commands(image_ids: &[String]) -> Vec<
             vec![
                 // format!("mkdir -p /tmp/.chess/{}", image_id),
                 format!("tar -zxvf {} -C {}", source_path, target_path),
-                // TODO
-                "sudo systemctl enable --now containerd".to_owned(),
-                "sudo systemctl enable --now stargz-snapshotter".to_owned(),
             ]
         })
         .collect()
+}
+
+pub fn build_std_linux_init_node_commands(env: &HashMap<&str, &str>) -> Vec<String> {
+    let env_vars: Vec<String> = env.iter().map(|(k, v)| format!("{k}={v}")).collect();
+    let env_part = env_vars.join(" ");
+    vec![format!("{env_part} bash /tmp/.chess/run.sh")]
 }

@@ -1,8 +1,7 @@
 use clap::{Arg, ArgMatches, Command};
 use log::{info, warn};
-use std::error::Error;
-use std::path::{Path, PathBuf};
-use tokio::fs as async_fs;
+use std::path::PathBuf;
+use tokio::fs;
 use tokio::process::Command as ProcessCommand;
 
 pub fn build_cli() -> Command {
@@ -78,13 +77,13 @@ pub async fn run(
     Ok(sha256_values)
 }
 
-pub async fn process_image(
+async fn process_image(
     image: &str,
-    base_output_dir: &Path,
-) -> Result<String, Box<dyn Error + Send + Sync>> {
+    base_output_dir: &std::path::Path,
+) -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
     info!("Processing image: {image}");
 
-    // Pull image
+    // If content doesn't exist, proceed with pulling and extracting
     info!("Pulling image: {image}");
     let pull_output = run_command("nerdctl", &["pull", image]).await?;
     if !pull_output.status.success() {
@@ -96,13 +95,14 @@ pub async fn process_image(
         .into());
     }
 
-    // Inspect image to get ID
+    // Get image ID first to check if content already exists
     info!("Getting image ID for {image}...");
     let inspect_output = run_command(
         "nerdctl",
         &["image", "inspect", "--format", "{{.ID}}", image],
     )
     .await?;
+
     if !inspect_output.status.success() {
         return Err(format!(
             "Failed to inspect image: {}\n{}",
@@ -122,77 +122,39 @@ pub async fn process_image(
 
     let output_dir = base_output_dir.join(&image_id);
 
-    // Skip if already exists
-    if async_fs::metadata(&output_dir).await.is_ok() {
+    // Check if content already exists
+    if fs::metadata(&output_dir).await.is_ok() {
         info!("Content already exists at: {}", output_dir.display());
         return Ok(image_id);
     }
 
-    // Create output dir
     info!("Creating output directory: {}", output_dir.display());
-    async_fs::create_dir_all(&output_dir).await?;
+    fs::create_dir_all(&output_dir).await?;
 
-    // Step 1: Start container that stays alive
-    let container_name = format!("extract-{}", uuid::Uuid::new_v4());
-    info!("Starting container: {container_name}");
-
-    let create_output = run_command(
+    info!("Extracting content from image...");
+    let extract_output = run_command(
         "nerdctl",
         &[
             "run",
-            "-d",
-            "--name",
-            &container_name,
+            "--rm",
+            "-v",
+            &format!("{}:/extract", output_dir.display()),
             image,
-            "tail",
-            "-f",
-            "/dev/null",
-        ],
-    )
-    .await?;
-    if !create_output.status.success() {
-        return Err(format!(
-            "Failed to start container: {}\n{}",
-            image,
-            String::from_utf8_lossy(&create_output.stderr)
-        )
-        .into());
-    }
-
-    // Step 2: Copy /archive from container to output_dir
-    info!("Copying files from container...");
-    let copy_output = run_command(
-        "nerdctl",
-        &[
-            "cp",
-            &format!("{container_name}:/archive/."),
-            output_dir.to_str().ok_or("Invalid output_dir")?,
+            "sh",
+            "-c",
+            "cp -r /archive/. /extract/",
         ],
     )
     .await?;
 
-    if !copy_output.status.success() {
-        // Consider leaving container for debug?
+    if !extract_output.status.success() {
         return Err(format!(
-            "Failed to copy content from container: {}\n{}",
-            container_name,
-            String::from_utf8_lossy(&copy_output.stderr)
+            "Failed to extract content: {}\n{}",
+            image,
+            String::from_utf8_lossy(&extract_output.stderr)
         )
         .into());
     }
-
-    // Step 3: Remove container
-    info!("Removing container: {container_name}");
-    let rm_output = run_command("nerdctl", &["rm", "-f", &container_name]).await?;
-    if !rm_output.status.success() {
-        return Err(format!(
-            "Failed to remove container: {}\n{}",
-            container_name,
-            String::from_utf8_lossy(&rm_output.stderr)
-        )
-        .into());
-    }
-
     info!(
         "Content extracted successfully to: {}",
         output_dir.display()

@@ -19,6 +19,8 @@ sudo systemctl status kubelet
 sudo kubeadm reset
 rm -rf $HOME/.kube
 kubeadm init --config=/etc/kubernetes/init-control-plane.yml
+# 获取默认网卡ip
+ip route get 1.2.3.4 | awk '{print $7}' | head -1
 sudo kubeadm init \
     --apiserver-advertise-address=10.187.6.4 \
     --control-plane-endpoint=ubuntu \

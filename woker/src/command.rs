@@ -120,6 +120,17 @@ pub async fn handle_command(command: Commands) -> Result<()> {
             )
             .await;
 
+            // NODE_ROLE root mater node
+            // KUBE_API_SERVER
+            // KUBE_JOIN_TOKEN
+            // KUBE_CA_CERT_HASH
+            // kubeadm token create --print-join-command
+            // kubeadm join izj6c4p0asia46e4xrws8wz:6443 --token nd1w7o.50j1kpfx9uu20rft \
+            //     --discovery-token-ca-cert-hash sha256:17fd5a381410e325ba9d28a09b520c4d49e5e395c59cbc4cbfaf3b1d4c3cf63c
+            // kubeadm join izj6c4p0asia46e4xrws8wz:6443 --token nd1w7o.50j1kpfx9uu20rft \
+            //     --discovery-token-ca-cert-hash sha256:17fd5a381410e325ba9d28a09b520c4d49e5e395c59cbc4cbfaf3b1d4c3cf63c \
+            //     --control-plane --certificate-key 4c3d2e1f0b9a8c7d6e5f4b3a2c1b0a9d8e7f6c5b4a3d2e1f0b9a8c7d6e5f4b3a
+
             // 所有节点
             let commands = build_std_linux_tarzxvf_filetoroot_commands(&images_sha256);
             let run_cmd_configs: Vec<ssh_cmd::SshConfig> = all_addresses
@@ -137,7 +148,7 @@ pub async fn handle_command(command: Commands) -> Result<()> {
                 .collect();
             let _ = run_commands_on_multiple_hosts(run_cmd_configs, commands, false).await;
 
-            // 主节点
+            // root节点
             for (i, master_addr) in masters.iter().enumerate() {
                 info!("Configuring master {}: {}", i + 1, master_addr);
             }
@@ -159,6 +170,7 @@ pub async fn handle_command(command: Commands) -> Result<()> {
             mater_env_vars.insert("NODE_ROLE", "master");
             let commands = build_std_linux_init_node_commands(&mater_env_vars, &images_sha256);
             let _ = run_commands_on_multiple_hosts(run_master_cmd_configs, commands, true).await;
+            // 主节点
 
             // 工作节点
             for (i, node_addr) in nodes.iter().enumerate() {

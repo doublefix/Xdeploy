@@ -1,6 +1,6 @@
 use std::error::Error;
 use woker::ssh_cmd::{
-    AuthMethod, SshConfig, build_std_linux_tarzxvf_filetoroot_commands,
+    AuthMethod, SshClient, SshConfig, build_std_linux_tarzxvf_filetoroot_commands,
     run_commands_on_multiple_hosts,
 };
 
@@ -133,6 +133,34 @@ async fn test_multi_command_execution() -> Result<(), Box<dyn Error>> {
             }
             Err(e) => eprintln!("❌ [{host}] Error: {e}"),
         }
+    }
+
+    Ok(())
+}
+
+#[tokio::test]
+async fn test_get_join_info() -> Result<(), Box<dyn Error>> {
+    let home = std::env::var("HOME")?;
+
+    let config = SshConfig {
+        host: "47.76.42.207".to_string(),
+        port: 22,
+        username: "root".to_string(),
+        auth: AuthMethod::Key {
+            pubkey_path: format!("{home}/.ssh/id_rsa.pub"),
+            privkey_path: format!("{home}/.ssh/id_rsa"),
+            passphrase: None,
+        },
+    };
+    let ssh_client = SshClient::new(config);
+    match ssh_client.get_kube_join_info().await {
+        Ok(info) => {
+            println!("Kubernetes join information:");
+            println!("API Server: {:?}", info.kube_api_server);
+            println!("Token: {:?}", info.kube_join_token);
+            println!("CA Cert Hash: {:?}", info.kube_ca_cert_hash);
+        }
+        Err(e) => eprintln!("Failed to get join info: {e}"),
     }
 
     Ok(())

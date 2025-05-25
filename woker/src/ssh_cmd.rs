@@ -2,6 +2,7 @@ use futures::future::join_all;
 use log::info;
 use ssh2::Session;
 use std::collections::HashMap;
+use std::fmt;
 use std::time::Duration;
 use std::{error::Error, io::Read, net::TcpStream, path::Path, sync::Arc};
 use tokio::task;
@@ -206,4 +207,50 @@ pub fn build_std_linux_init_node_commands(
         .iter()
         .map(|image_id| format!("{env_part} bash /tmp/.chess/{image_id}/run.sh"))
         .collect()
+}
+
+#[derive(Debug, Clone, Default)]
+pub struct KubeJoinInfo {
+    pub kube_api_server: Option<String>,
+    pub kube_join_token: Option<String>,
+    pub kube_ca_cert_hash: Option<String>,
+}
+
+impl fmt::Display for KubeJoinInfo {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "KubeJoinInfo {{\n  kube_api_server: {:?},\n  kube_join_token: {:?},\n  kube_ca_cert_hash: {:?}\n}}",
+            self.kube_api_server, self.kube_join_token, self.kube_ca_cert_hash
+        )
+    }
+}
+
+impl SshClient {
+    pub async fn get_kube_join_info(&self) -> Result<KubeJoinInfo, Box<dyn Error + Send + Sync>> {
+        let output = self
+            .exec_command("kubeadm token create --print-join-command".to_string())
+            .await?;
+
+        Self::parse_kubeadm_output(&output)
+    }
+
+    fn parse_kubeadm_output(output: &str) -> Result<KubeJoinInfo, Box<dyn Error + Send + Sync>> {
+        let mut info = KubeJoinInfo::default();
+        let parts: Vec<&str> = output.split_whitespace().collect();
+
+        if parts.len() >= 6 {
+            if let Some(api_server) = parts.get(2) {
+                info.kube_api_server = Some(api_server.to_string());
+            }
+            if let Some(token) = parts.get(4) {
+                info.kube_join_token = Some(token.to_string());
+            }
+            if let Some(hash_part) = parts.last() {
+                info.kube_ca_cert_hash = Some(hash_part.to_string());
+            }
+        }
+
+        Ok(info)
+    }
 }

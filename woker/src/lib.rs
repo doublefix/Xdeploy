@@ -1,4 +1,5 @@
 pub mod client;
+pub mod cluster_init;
 pub mod command;
 pub mod deploy;
 pub mod load_image;

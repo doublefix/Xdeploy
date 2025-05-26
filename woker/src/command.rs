@@ -1,15 +1,13 @@
-use std::{collections::HashMap, env, path::Path};
+use std::{env, path::Path};
 
 use clap::{Parser, Subcommand};
 use log::{info, warn};
 
 use crate::{
+    cluster_init::{init_master_node, init_root_node, init_woker_node},
     load_image::load_image,
     sftp::{AuthMethod, SshConfig, concurrent_upload_folders},
-    ssh_cmd::{
-        self, KubeJoinInfo, build_std_linux_init_node_commands,
-        build_std_linux_tarzxvf_filetoroot_commands, run_commands_on_multiple_hosts,
-    },
+    ssh_cmd::{self, build_std_linux_tarzxvf_filetoroot_commands, run_commands_on_multiple_hosts},
     ssh_connect::{HostConfig, bulk_check_hosts},
 };
 
@@ -189,94 +187,4 @@ async fn tarzxf_remote_server_package(images_sha256: Vec<String>, all_addresses:
         })
         .collect();
     let _ = run_commands_on_multiple_hosts(run_cmd_configs, commands, false).await;
-}
-
-async fn init_root_node(root: Vec<String>, images_sha256: Vec<String>) -> Result<KubeJoinInfo> {
-    let home = env::var("HOME").unwrap();
-    let run_root_cmd_configs: Vec<ssh_cmd::SshConfig> = root
-        .clone()
-        .into_iter()
-        .map(|host| ssh_cmd::SshConfig {
-            host: host.to_string(),
-            port: 22,
-            username: "root".to_string(),
-            auth: ssh_cmd::AuthMethod::Key {
-                pubkey_path: format!("{home}/.ssh/id_rsa.pub"),
-                privkey_path: format!("{home}/.ssh/id_rsa"),
-                passphrase: None,
-            },
-        })
-        .collect();
-    let mut root_env_vars = HashMap::new();
-    root_env_vars.insert("NODE_ROLE", "root");
-    let commands = build_std_linux_init_node_commands(&root_env_vars, &images_sha256);
-    let _ = run_commands_on_multiple_hosts(run_root_cmd_configs.clone(), commands, true).await;
-
-    // Get join key information
-    let ssh_client = ssh_cmd::SshClient::new(run_root_cmd_configs[0].clone());
-    let join_key = ssh_client.get_kube_join_info().await?;
-
-    Ok(join_key)
-}
-
-async fn init_master_node(
-    plane: Vec<String>,
-    images_sha256: Vec<String>,
-    api: &str,
-    token: &str,
-    hash: &str,
-) {
-    let home = env::var("HOME").unwrap();
-    let mut mater_env_vars = HashMap::new();
-    mater_env_vars.insert("NODE_ROLE", "master");
-    mater_env_vars.insert("KUBE_API_SERVER", api);
-    mater_env_vars.insert("KUBE_JOIN_TOKEN", token);
-    mater_env_vars.insert("KUBE_CA_CERT_HASH", hash);
-    let run_master_cmd_configs: Vec<ssh_cmd::SshConfig> = plane
-        .clone()
-        .into_iter()
-        .map(|host| ssh_cmd::SshConfig {
-            host: host.to_string(),
-            port: 22,
-            username: "root".to_string(),
-            auth: ssh_cmd::AuthMethod::Key {
-                pubkey_path: format!("{home}/.ssh/id_rsa.pub"),
-                privkey_path: format!("{home}/.ssh/id_rsa"),
-                passphrase: None,
-            },
-        })
-        .collect();
-    let commands = build_std_linux_init_node_commands(&mater_env_vars, &images_sha256);
-    let _ = run_commands_on_multiple_hosts(run_master_cmd_configs, commands, true).await;
-}
-
-async fn init_woker_node(
-    nodes: Vec<String>,
-    images_sha256: Vec<String>,
-    api: &str,
-    token: &str,
-    hash: &str,
-) {
-    let home = env::var("HOME").unwrap();
-    let mut node_env_vars = HashMap::new();
-    node_env_vars.insert("NODE_ROLE", "node");
-    node_env_vars.insert("KUBE_API_SERVER", api);
-    node_env_vars.insert("KUBE_JOIN_TOKEN", token);
-    node_env_vars.insert("KUBE_CA_CERT_HASH", hash);
-    let run_node_cmd_configs: Vec<ssh_cmd::SshConfig> = nodes
-        .clone()
-        .into_iter()
-        .map(|host| ssh_cmd::SshConfig {
-            host: host.to_string(),
-            port: 22,
-            username: "root".to_string(),
-            auth: ssh_cmd::AuthMethod::Key {
-                pubkey_path: format!("{home}/.ssh/id_rsa.pub"),
-                privkey_path: format!("{home}/.ssh/id_rsa"),
-                passphrase: None,
-            },
-        })
-        .collect();
-    let commands = build_std_linux_init_node_commands(&node_env_vars, &images_sha256);
-    let _ = run_commands_on_multiple_hosts(run_node_cmd_configs, commands, true).await;
 }

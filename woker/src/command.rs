@@ -113,28 +113,9 @@ async fn init_cluster(images: Vec<String>, master: Vec<String>, node: Vec<String
         }
     }
 
-    let images_sha256 = load_image_to_server(
-        images.clone(),
-        all_addresses.iter().cloned().cloned().collect(),
-    )
-    .await?;
-
-    // 所有节点
-    let commands = build_std_linux_tarzxvf_filetoroot_commands(&images_sha256);
-    let run_cmd_configs: Vec<ssh_cmd::SshConfig> = all_addresses
-        .into_iter()
-        .map(|host| ssh_cmd::SshConfig {
-            host: host.to_string(),
-            port: 22,
-            username: "root".to_string(),
-            auth: ssh_cmd::AuthMethod::Key {
-                pubkey_path: format!("{home}/.ssh/id_rsa.pub"),
-                privkey_path: format!("{home}/.ssh/id_rsa"),
-                passphrase: None,
-            },
-        })
-        .collect();
-    let _ = run_commands_on_multiple_hosts(run_cmd_configs, commands, false).await;
+    let servers: Vec<String> = all_addresses.iter().cloned().cloned().collect();
+    let images_sha256 = load_image_to_server(images.clone(), servers.clone()).await?;
+    tarzxf_remote_server_package(images_sha256.clone(), servers).await;
 
     // 主节点分组
     let (root, plane) = if !masters.is_empty() {
@@ -254,4 +235,23 @@ async fn load_image_to_server(images: Vec<String>, servers: Vec<String>) -> Resu
         .await;
 
     Ok(images_sha256)
+}
+
+async fn tarzxf_remote_server_package(images_sha256: Vec<String>, all_addresses: Vec<String>) {
+    let home = env::var("HOME").unwrap();
+    let commands = build_std_linux_tarzxvf_filetoroot_commands(&images_sha256);
+    let run_cmd_configs: Vec<ssh_cmd::SshConfig> = all_addresses
+        .into_iter()
+        .map(|host| ssh_cmd::SshConfig {
+            host: host.to_string(),
+            port: 22,
+            username: "root".to_string(),
+            auth: ssh_cmd::AuthMethod::Key {
+                pubkey_path: format!("{home}/.ssh/id_rsa.pub"),
+                privkey_path: format!("{home}/.ssh/id_rsa"),
+                passphrase: None,
+            },
+        })
+        .collect();
+    let _ = run_commands_on_multiple_hosts(run_cmd_configs, commands, false).await;
 }

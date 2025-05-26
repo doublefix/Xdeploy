@@ -3,7 +3,7 @@ kind: Cluster
 metadata:
   name: default
 spec:
-  hosts:
+  servers:
     - roles:
         - master
         - amd64

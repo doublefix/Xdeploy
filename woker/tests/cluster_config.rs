@@ -19,12 +19,12 @@ pub struct Metadata {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Spec {
-    pub hosts: Vec<Host>,
+    pub servers: Vec<Servers>,
     pub image: Vec<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct Host {
+pub struct Servers {
     pub roles: Vec<String>,
     pub ips: Vec<String>,
 }
@@ -33,7 +33,7 @@ impl Cluster {
     /// Get the file path for this cluster's YAML file
     fn get_file_path(&self) -> PathBuf {
         let home_dir = dirs::home_dir().expect("Could not find home directory");
-        let mut path = home_dir.join(".test").join(&self.metadata.name);
+        let mut path = home_dir.join(".chess").join(&self.metadata.name);
         path.push("cluster.yaml");
         path
     }
@@ -55,7 +55,7 @@ impl Cluster {
     /// Asynchronously load the cluster from a YAML file
     pub async fn load_from_file(name: &str) -> Result<Cluster, Box<dyn std::error::Error>> {
         let home_dir = dirs::home_dir().expect("Could not find home directory");
-        let path = home_dir.join(".test").join(name).join("cluster.yaml");
+        let path = home_dir.join(".chess").join(name).join("cluster.yaml");
 
         let mut file = File::open(&path).await?;
         let mut contents = String::new();
@@ -65,20 +65,28 @@ impl Cluster {
         Ok(cluster)
     }
 
-    /// Asynchronously update the cluster YAML file
-    pub async fn update_file<F>(name: &str, update_fn: F) -> Result<(), Box<dyn std::error::Error>>
-    where
-        F: FnOnce(&mut Cluster),
-    {
+    /// Add a new host to the cluster and save it
+    pub async fn add_host(name: &str, host: Servers) -> Result<(), Box<dyn std::error::Error>> {
         let mut cluster = Cluster::load_from_file(name).await?;
-        update_fn(&mut cluster);
+        cluster.spec.servers.push(host);
+        cluster.save_to_file().await?;
+        Ok(())
+    }
+
+    /// Remove a host from the cluster by IP and save it
+    pub async fn remove_host(name: &str, ip: &str) -> Result<(), Box<dyn std::error::Error>> {
+        let mut cluster = Cluster::load_from_file(name).await?;
+        cluster
+            .spec
+            .servers
+            .retain(|host| !host.ips.contains(&ip.to_string()));
         cluster.save_to_file().await?;
         Ok(())
     }
 }
 
 #[tokio::test]
-async fn test_get_() -> Result<(), Box<dyn std::error::Error>> {
+async fn test_cluster_operations() -> Result<(), Box<dyn std::error::Error>> {
     // Example usage
 
     // Create and save a new cluster
@@ -86,10 +94,10 @@ async fn test_get_() -> Result<(), Box<dyn std::error::Error>> {
         api_version: "v1".to_string(),
         kind: "Cluster".to_string(),
         metadata: Metadata {
-            name: "my-cluster".to_string(),
+            name: "default".to_string(),
         },
         spec: Spec {
-            hosts: vec![Host {
+            servers: vec![Servers {
                 roles: vec!["master".to_string()],
                 ips: vec!["192.168.1.1".to_string()],
             }],
@@ -101,19 +109,25 @@ async fn test_get_() -> Result<(), Box<dyn std::error::Error>> {
     println!("Cluster saved successfully");
 
     // Load the cluster
-    let loaded_cluster = Cluster::load_from_file("my-cluster").await?;
+    let loaded_cluster = Cluster::load_from_file("default").await?;
     println!("Loaded cluster: {loaded_cluster:?}");
 
-    // Update the cluster
-    Cluster::update_file("my-cluster", |cluster| {
-        cluster.spec.hosts.push(Host {
+    // Add a new host
+    Cluster::add_host(
+        "default",
+        Servers {
             roles: vec!["worker".to_string()],
             ips: vec!["192.168.1.2".to_string()],
-        });
-    })
+        },
+    )
     .await?;
 
-    println!("Cluster updated successfully");
+    println!("Host added successfully");
+
+    // Remove a host
+    Cluster::remove_host("default", "192.168.1.1").await?;
+
+    println!("Host removed successfully");
 
     Ok(())
 }

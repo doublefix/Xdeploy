@@ -1,4 +1,5 @@
 pub mod client;
+pub mod cluster_config;
 pub mod cluster_images;
 pub mod cluster_node;
 pub mod command;

@@ -20,7 +20,7 @@ pub struct Metadata {
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Spec {
     pub servers: Vec<Servers>,
-    pub image: Vec<String>,
+    pub images: Vec<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -101,7 +101,7 @@ async fn test_cluster_operations() -> Result<(), Box<dyn std::error::Error>> {
                 roles: vec!["master".to_string()],
                 ips: vec!["192.168.1.1".to_string()],
             }],
-            image: vec!["ubuntu:latest".to_string()],
+            images: vec!["ubuntu:latest".to_string()],
         },
     };
 

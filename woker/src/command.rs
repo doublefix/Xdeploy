@@ -42,195 +42,12 @@ pub async fn handle_command(command: Commands) -> Result<()> {
             master,
             node,
         } => {
-            let masters: Vec<String> = master
-                .iter()
-                .flat_map(|s| s.split(','))
-                .map(|s| s.trim().to_string())
-                .filter(|s| !s.is_empty())
-                .collect();
-
-            let nodes: Vec<String> = node
-                .iter()
-                .flat_map(|s| s.split(','))
-                .map(|s| s.trim().to_string())
-                .filter(|s| !s.is_empty())
-                .collect();
-
-            info!("All master addresses: {masters:?}");
-            info!("All node addresses: {nodes:?}");
-
-            // 合并所有地址并检查重复
-            let all_addresses: Vec<_> = masters.iter().chain(nodes.iter()).collect();
-            if let Some(dup) = find_first_duplicate(&all_addresses) {
-                warn!("Duplicate address found: {dup}");
-                return Ok(());
+            if (!master.is_empty() && !node.is_empty()) || !master.is_empty() {
+                init_cluster(images.clone(), master, node).await?;
             }
+            info!("Initializing common images {images:?}");
 
-            // 执行批量检查可达性
-            let home = env::var("HOME").unwrap();
-            let hosts: Vec<HostConfig> = all_addresses
-                .clone()
-                .into_iter()
-                .map(|addr| HostConfig {
-                    ip: addr.to_string(),
-                    port: 22,
-                    username: "root".to_string(),
-                    privkey_path: Some(format!("{home}/.ssh/id_rsa")),
-                    password: None,
-                })
-                .collect();
-
-            info!("HOSTS: {hosts:?}");
-            let results = bulk_check_hosts(hosts).await;
-            for result in results {
-                if !result.ssh_accessible || !result.has_root_access {
-                    warn!(
-                        "Host check failed for {}: SSH accessible: {}, Root access: {}",
-                        result.ip, result.ssh_accessible, result.has_root_access
-                    );
-                    return Ok(());
-                }
-            }
-
-            // 加载镜像
-            let images_sha256 = load_image(images, None).await?;
-            info!("{images_sha256:?}");
-            // 传输文件
-            let sftp_configs: Vec<SshConfig> = all_addresses
-                .clone()
-                .into_iter()
-                .map(|addr| SshConfig {
-                    host: addr.to_string(),
-                    port: 22,
-                    username: "root".to_string(),
-                    auth: AuthMethod::Key {
-                        pubkey: format!("{home}/.ssh/id_rsa.pub"),
-                        privkey: format!("{home}/.ssh/id_rsa"),
-                        passphrase: None,
-                    },
-                })
-                .collect();
-            let local_base = Path::new("/var/tmp/chess");
-            let remote_base = Path::new("/tmp/.chess");
-            let _ = concurrent_upload_folders(
-                sftp_configs,
-                images_sha256.clone(),
-                local_base,
-                remote_base,
-            )
-            .await;
-
-            // 所有节点
-            let commands = build_std_linux_tarzxvf_filetoroot_commands(&images_sha256);
-            let run_cmd_configs: Vec<ssh_cmd::SshConfig> = all_addresses
-                .into_iter()
-                .map(|host| ssh_cmd::SshConfig {
-                    host: host.to_string(),
-                    port: 22,
-                    username: "root".to_string(),
-                    auth: ssh_cmd::AuthMethod::Key {
-                        pubkey_path: format!("{home}/.ssh/id_rsa.pub"),
-                        privkey_path: format!("{home}/.ssh/id_rsa"),
-                        passphrase: None,
-                    },
-                })
-                .collect();
-            let _ = run_commands_on_multiple_hosts(run_cmd_configs, commands, false).await;
-
-            // 主节点分组
-            let (root, plane) = if !masters.is_empty() {
-                let root = vec![masters[0].clone()];
-                let plane = masters.iter().skip(1).cloned().collect::<Vec<_>>();
-                (root, plane)
-            } else {
-                (Vec::new(), Vec::new())
-            };
-            // root节点
-            let run_root_cmd_configs: Vec<ssh_cmd::SshConfig> = root
-                .clone()
-                .into_iter()
-                .map(|host| ssh_cmd::SshConfig {
-                    host: host.to_string(),
-                    port: 22,
-                    username: "root".to_string(),
-                    auth: ssh_cmd::AuthMethod::Key {
-                        pubkey_path: format!("{home}/.ssh/id_rsa.pub"),
-                        privkey_path: format!("{home}/.ssh/id_rsa"),
-                        passphrase: None,
-                    },
-                })
-                .collect();
-            let mut root_env_vars = HashMap::new();
-            root_env_vars.insert("NODE_ROLE", "root");
-            let commands = build_std_linux_init_node_commands(&root_env_vars, &images_sha256);
-            let _ =
-                run_commands_on_multiple_hosts(run_root_cmd_configs.clone(), commands, true).await;
-
-            // Get join key information
-            let ssh_client = ssh_cmd::SshClient::new(run_root_cmd_configs[0].clone());
-            let join_key = ssh_client.get_kube_join_info().await?;
-
-            match (
-                &join_key.kube_api_server,
-                &join_key.kube_join_token,
-                &join_key.kube_ca_cert_hash,
-            ) {
-                (Some(api), Some(token), Some(hash)) => {
-                    // 主节点
-                    let mut mater_env_vars = HashMap::new();
-                    mater_env_vars.insert("NODE_ROLE", "master");
-                    mater_env_vars.insert("KUBE_API_SERVER", api);
-                    mater_env_vars.insert("KUBE_JOIN_TOKEN", token);
-                    mater_env_vars.insert("KUBE_CA_CERT_HASH", hash);
-                    let run_master_cmd_configs: Vec<ssh_cmd::SshConfig> = plane
-                        .clone()
-                        .into_iter()
-                        .map(|host| ssh_cmd::SshConfig {
-                            host: host.to_string(),
-                            port: 22,
-                            username: "root".to_string(),
-                            auth: ssh_cmd::AuthMethod::Key {
-                                pubkey_path: format!("{home}/.ssh/id_rsa.pub"),
-                                privkey_path: format!("{home}/.ssh/id_rsa"),
-                                passphrase: None,
-                            },
-                        })
-                        .collect();
-                    let commands =
-                        build_std_linux_init_node_commands(&mater_env_vars, &images_sha256);
-                    let _ = run_commands_on_multiple_hosts(run_master_cmd_configs, commands, true)
-                        .await;
-
-                    // 工作节点
-                    for (i, node_addr) in nodes.iter().enumerate() {
-                        info!("Configuring node {}: {}", i + 1, node_addr);
-                    }
-                    let mut node_env_vars = HashMap::new();
-                    node_env_vars.insert("NODE_ROLE", "node");
-                    node_env_vars.insert("KUBE_API_SERVER", api);
-                    node_env_vars.insert("KUBE_JOIN_TOKEN", token);
-                    node_env_vars.insert("KUBE_CA_CERT_HASH", hash);
-                    let run_node_cmd_configs: Vec<ssh_cmd::SshConfig> = nodes
-                        .clone()
-                        .into_iter()
-                        .map(|host| ssh_cmd::SshConfig {
-                            host: host.to_string(),
-                            port: 22,
-                            username: "root".to_string(),
-                            auth: ssh_cmd::AuthMethod::Key {
-                                pubkey_path: format!("{home}/.ssh/id_rsa.pub"),
-                                privkey_path: format!("{home}/.ssh/id_rsa"),
-                                passphrase: None,
-                            },
-                        })
-                        .collect();
-                    let commands =
-                        build_std_linux_init_node_commands(&node_env_vars, &images_sha256);
-                    let _ =
-                        run_commands_on_multiple_hosts(run_node_cmd_configs, commands, true).await;
-                }
-                _ => println!("There is no kube join key information available"),
-            }
+            // Load common images
 
             info!("Initialization completed successfully");
             Ok(())
@@ -242,4 +59,188 @@ pub async fn handle_command(command: Commands) -> Result<()> {
 fn find_first_duplicate<'a, T: Eq + std::hash::Hash>(items: &'a [&'a T]) -> Option<&'a T> {
     let mut seen = std::collections::HashSet::new();
     items.iter().find(|&&item| !seen.insert(item)).copied()
+}
+
+async fn init_cluster(images: Vec<String>, master: Vec<String>, node: Vec<String>) -> Result<()> {
+    info!("Initializing cluster with images: {images:?}, master: {master:?}, node: {node:?}");
+    let masters: Vec<String> = master
+        .iter()
+        .flat_map(|s| s.split(','))
+        .map(|s| s.trim().to_string())
+        .filter(|s| !s.is_empty())
+        .collect();
+
+    let nodes: Vec<String> = node
+        .iter()
+        .flat_map(|s| s.split(','))
+        .map(|s| s.trim().to_string())
+        .filter(|s| !s.is_empty())
+        .collect();
+
+    info!("All master addresses: {masters:?}");
+    info!("All node addresses: {nodes:?}");
+
+    // 合并所有地址并检查重复
+    let all_addresses: Vec<_> = masters.iter().chain(nodes.iter()).collect();
+    if let Some(dup) = find_first_duplicate(&all_addresses) {
+        warn!("Duplicate address found: {dup}");
+        return Ok(());
+    }
+
+    // 执行批量检查可达性
+    let home = env::var("HOME").unwrap();
+    let hosts: Vec<HostConfig> = all_addresses
+        .clone()
+        .into_iter()
+        .map(|addr| HostConfig {
+            ip: addr.to_string(),
+            port: 22,
+            username: "root".to_string(),
+            privkey_path: Some(format!("{home}/.ssh/id_rsa")),
+            password: None,
+        })
+        .collect();
+
+    info!("HOSTS: {hosts:?}");
+    let results = bulk_check_hosts(hosts).await;
+    for result in results {
+        if !result.ssh_accessible || !result.has_root_access {
+            warn!(
+                "Host check failed for {}: SSH accessible: {}, Root access: {}",
+                result.ip, result.ssh_accessible, result.has_root_access
+            );
+            return Ok(());
+        }
+    }
+
+    // 加载镜像
+    let images_sha256 = load_image(images, None).await?;
+    info!("{images_sha256:?}");
+    // 传输文件
+    let sftp_configs: Vec<SshConfig> = all_addresses
+        .clone()
+        .into_iter()
+        .map(|addr| SshConfig {
+            host: addr.to_string(),
+            port: 22,
+            username: "root".to_string(),
+            auth: AuthMethod::Key {
+                pubkey: format!("{home}/.ssh/id_rsa.pub"),
+                privkey: format!("{home}/.ssh/id_rsa"),
+                passphrase: None,
+            },
+        })
+        .collect();
+    let local_base = Path::new("/var/tmp/chess");
+    let remote_base = Path::new("/tmp/.chess");
+    let _ = concurrent_upload_folders(sftp_configs, images_sha256.clone(), local_base, remote_base)
+        .await;
+
+    // 所有节点
+    let commands = build_std_linux_tarzxvf_filetoroot_commands(&images_sha256);
+    let run_cmd_configs: Vec<ssh_cmd::SshConfig> = all_addresses
+        .into_iter()
+        .map(|host| ssh_cmd::SshConfig {
+            host: host.to_string(),
+            port: 22,
+            username: "root".to_string(),
+            auth: ssh_cmd::AuthMethod::Key {
+                pubkey_path: format!("{home}/.ssh/id_rsa.pub"),
+                privkey_path: format!("{home}/.ssh/id_rsa"),
+                passphrase: None,
+            },
+        })
+        .collect();
+    let _ = run_commands_on_multiple_hosts(run_cmd_configs, commands, false).await;
+
+    // 主节点分组
+    let (root, plane) = if !masters.is_empty() {
+        let root = vec![masters[0].clone()];
+        let plane = masters.iter().skip(1).cloned().collect::<Vec<_>>();
+        (root, plane)
+    } else {
+        (Vec::new(), Vec::new())
+    };
+    // root节点
+    let run_root_cmd_configs: Vec<ssh_cmd::SshConfig> = root
+        .clone()
+        .into_iter()
+        .map(|host| ssh_cmd::SshConfig {
+            host: host.to_string(),
+            port: 22,
+            username: "root".to_string(),
+            auth: ssh_cmd::AuthMethod::Key {
+                pubkey_path: format!("{home}/.ssh/id_rsa.pub"),
+                privkey_path: format!("{home}/.ssh/id_rsa"),
+                passphrase: None,
+            },
+        })
+        .collect();
+    let mut root_env_vars = HashMap::new();
+    root_env_vars.insert("NODE_ROLE", "root");
+    let commands = build_std_linux_init_node_commands(&root_env_vars, &images_sha256);
+    let _ = run_commands_on_multiple_hosts(run_root_cmd_configs.clone(), commands, true).await;
+
+    // Get join key information
+    let ssh_client = ssh_cmd::SshClient::new(run_root_cmd_configs[0].clone());
+    let join_key = ssh_client.get_kube_join_info().await?;
+
+    match (
+        &join_key.kube_api_server,
+        &join_key.kube_join_token,
+        &join_key.kube_ca_cert_hash,
+    ) {
+        (Some(api), Some(token), Some(hash)) => {
+            // 主节点
+            let mut mater_env_vars = HashMap::new();
+            mater_env_vars.insert("NODE_ROLE", "master");
+            mater_env_vars.insert("KUBE_API_SERVER", api);
+            mater_env_vars.insert("KUBE_JOIN_TOKEN", token);
+            mater_env_vars.insert("KUBE_CA_CERT_HASH", hash);
+            let run_master_cmd_configs: Vec<ssh_cmd::SshConfig> = plane
+                .clone()
+                .into_iter()
+                .map(|host| ssh_cmd::SshConfig {
+                    host: host.to_string(),
+                    port: 22,
+                    username: "root".to_string(),
+                    auth: ssh_cmd::AuthMethod::Key {
+                        pubkey_path: format!("{home}/.ssh/id_rsa.pub"),
+                        privkey_path: format!("{home}/.ssh/id_rsa"),
+                        passphrase: None,
+                    },
+                })
+                .collect();
+            let commands = build_std_linux_init_node_commands(&mater_env_vars, &images_sha256);
+            let _ = run_commands_on_multiple_hosts(run_master_cmd_configs, commands, true).await;
+
+            // 工作节点
+            for (i, node_addr) in nodes.iter().enumerate() {
+                info!("Configuring node {}: {}", i + 1, node_addr);
+            }
+            let mut node_env_vars = HashMap::new();
+            node_env_vars.insert("NODE_ROLE", "node");
+            node_env_vars.insert("KUBE_API_SERVER", api);
+            node_env_vars.insert("KUBE_JOIN_TOKEN", token);
+            node_env_vars.insert("KUBE_CA_CERT_HASH", hash);
+            let run_node_cmd_configs: Vec<ssh_cmd::SshConfig> = nodes
+                .clone()
+                .into_iter()
+                .map(|host| ssh_cmd::SshConfig {
+                    host: host.to_string(),
+                    port: 22,
+                    username: "root".to_string(),
+                    auth: ssh_cmd::AuthMethod::Key {
+                        pubkey_path: format!("{home}/.ssh/id_rsa.pub"),
+                        privkey_path: format!("{home}/.ssh/id_rsa"),
+                        passphrase: None,
+                    },
+                })
+                .collect();
+            let commands = build_std_linux_init_node_commands(&node_env_vars, &images_sha256);
+            let _ = run_commands_on_multiple_hosts(run_node_cmd_configs, commands, true).await;
+        }
+        _ => println!("There is no kube join key information available"),
+    }
+    Ok(())
 }

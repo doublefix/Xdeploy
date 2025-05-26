@@ -113,28 +113,11 @@ async fn init_cluster(images: Vec<String>, master: Vec<String>, node: Vec<String
         }
     }
 
-    // 加载镜像
-    let images_sha256 = load_image(images, None).await?;
-    info!("{images_sha256:?}");
-    // 传输文件
-    let sftp_configs: Vec<SshConfig> = all_addresses
-        .clone()
-        .into_iter()
-        .map(|addr| SshConfig {
-            host: addr.to_string(),
-            port: 22,
-            username: "root".to_string(),
-            auth: AuthMethod::Key {
-                pubkey: format!("{home}/.ssh/id_rsa.pub"),
-                privkey: format!("{home}/.ssh/id_rsa"),
-                passphrase: None,
-            },
-        })
-        .collect();
-    let local_base = Path::new("/var/tmp/chess");
-    let remote_base = Path::new("/tmp/.chess");
-    let _ = concurrent_upload_folders(sftp_configs, images_sha256.clone(), local_base, remote_base)
-        .await;
+    let images_sha256 = load_image_to_server(
+        images.clone(),
+        all_addresses.iter().cloned().cloned().collect(),
+    )
+    .await?;
 
     // 所有节点
     let commands = build_std_linux_tarzxvf_filetoroot_commands(&images_sha256);
@@ -243,4 +226,32 @@ async fn init_cluster(images: Vec<String>, master: Vec<String>, node: Vec<String
         _ => println!("There is no kube join key information available"),
     }
     Ok(())
+}
+
+async fn load_image_to_server(images: Vec<String>, servers: Vec<String>) -> Result<Vec<String>> {
+    let home = env::var("HOME").unwrap();
+    info!("Loading images to server: {servers:?}");
+    let images_sha256 = load_image(images, None).await?;
+    info!("{images_sha256:?}");
+
+    let sftp_configs: Vec<SshConfig> = servers
+        .clone()
+        .into_iter()
+        .map(|addr| SshConfig {
+            host: addr.to_string(),
+            port: 22,
+            username: "root".to_string(),
+            auth: AuthMethod::Key {
+                pubkey: format!("{home}/.ssh/id_rsa.pub"),
+                privkey: format!("{home}/.ssh/id_rsa"),
+                passphrase: None,
+            },
+        })
+        .collect();
+    let local_base = Path::new("/var/tmp/chess");
+    let remote_base = Path::new("/tmp/.chess");
+    let _ = concurrent_upload_folders(sftp_configs, images_sha256.clone(), local_base, remote_base)
+        .await;
+
+    Ok(images_sha256)
 }

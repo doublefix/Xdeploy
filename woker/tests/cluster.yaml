@@ -1,0 +1,35 @@
+apiVersion: chessbod.io/v1beta1
+kind: Cluster
+metadata:
+  name: default
+spec:
+  hosts:
+    - roles:
+        - master
+        - amd64
+      ips:
+        - 10.21.25.171:22
+        - 10.21.25.168:22
+        - 10.21.25.169:22
+    - roles:
+        - node
+        - amd64
+      ips:
+        - 10.21.25.170:22
+        - 10.21.25.156:22
+        - 10.21.25.157:22
+        - 10.21.25.158:22
+        - 10.21.25.159:22
+        - 10.21.25.160:22
+        - 10.21.25.161:22
+        - 10.21.25.162:22
+        - 10.21.25.163:22
+        - 10.21.25.164:22
+        - 10.21.25.165:22
+        - 10.21.25.166:22
+        - 10.21.25.167:22
+
+  image:
+    - registry.docker.com/test/kubernetes:v1.31.0
+    - registry.docker.com/test/helm:v3.15.4
+    - registry.docker.com/test/cilium:v1.13.4

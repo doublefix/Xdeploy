@@ -1,5 +1,5 @@
 use dirs::home_dir;
-use log::debug;
+use log::{debug, info};
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 use std::{
@@ -91,6 +91,8 @@ impl Cluster {
 }
 
 const DEFAULT_CLUSTER: &str = "default";
+const CONFIG_DIR: &str = ".chess";
+const ACTIVE_FILE: &str = ".active";
 
 pub fn get_active_cluster_config() -> std::io::Result<String> {
     let home_dir = home_dir().ok_or_else(|| {
@@ -126,4 +128,68 @@ pub fn get_active_cluster_config() -> std::io::Result<String> {
 
     debug!("Active cluster file found: {active_file_path:?}, content: {content}");
     Ok(content)
+}
+
+pub fn list_cluster_names() -> std::io::Result<Vec<String>> {
+    let config_dir = get_config_dir()?;
+
+    let entries = fs::read_dir(config_dir)?
+        .filter_map(|entry| {
+            let entry = entry.ok()?;
+            if entry.file_type().ok()?.is_dir() {
+                Some(entry.file_name().to_string_lossy().into_owned())
+            } else {
+                None
+            }
+        })
+        .collect();
+
+    Ok(entries)
+}
+
+pub fn get_active_cluster() -> std::io::Result<String> {
+    let active_file = get_config_dir()?.join(ACTIVE_FILE);
+
+    if !active_file.exists() {
+        fs::write(&active_file, DEFAULT_CLUSTER)?;
+        return Ok(DEFAULT_CLUSTER.to_string());
+    }
+
+    let content = fs::read_to_string(&active_file)?;
+    let content = content.trim();
+
+    if content.is_empty() {
+        fs::write(&active_file, DEFAULT_CLUSTER)?;
+        Ok(DEFAULT_CLUSTER.to_string())
+    } else {
+        Ok(content.to_string())
+    }
+}
+
+fn get_config_dir() -> std::io::Result<PathBuf> {
+    let home_dir = dirs::home_dir().ok_or_else(|| {
+        std::io::Error::new(
+            std::io::ErrorKind::NotFound,
+            "Could not find home directory",
+        )
+    })?;
+
+    let config_dir = home_dir.join(CONFIG_DIR);
+    if !config_dir.exists() {
+        fs::create_dir_all(&config_dir)?;
+    }
+
+    Ok(config_dir)
+}
+
+pub fn switch_cluster(target_cluster: &str) -> std::io::Result<()> {
+    let valid_clusters = list_cluster_names()?;
+    if !valid_clusters.contains(&target_cluster.to_string()) {
+        info!("Cluster {target_cluster} does not exist.");
+    }
+
+    let active_file = get_config_dir()?.join(ACTIVE_FILE);
+    fs::write(active_file, target_cluster)?;
+
+    Ok(())
 }

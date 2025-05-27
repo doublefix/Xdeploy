@@ -5,7 +5,10 @@ use clap::{Parser, Subcommand};
 use log::{info, warn};
 
 use crate::{
-    cluster_config::{Cluster, Metadata, Servers, Spec, get_active_cluster_config},
+    cluster_config::{
+        Cluster, Metadata, Servers, Spec, get_active_cluster, get_active_cluster_config,
+        list_cluster_names,
+    },
     cluster_images::{load_image_to_server, tarzxf_remote_server_package},
     cluster_node::{init_master_node, init_root_node, init_woker_node},
     ssh_connect::{HostConfig, bulk_check_hosts},
@@ -44,6 +47,15 @@ pub async fn handle_command(command: Commands) -> Result<()> {
                 Ok(c) => c,
                 Err(_) => get_active_cluster_config()?,
             };
+
+            // 检查有没有对应文件夹和配置
+            // 集群已经存在，必须重置或者添加
+
+            let all_cluster_name = list_cluster_names()?;
+            let active_cluster_name = get_active_cluster()?;
+
+            info!("All cluster names: {all_cluster_name:?}");
+            info!("Active cluster name: {active_cluster_name}");
 
             let cluster = Cluster {
                 api_version: "chess.io/v1".to_string(),

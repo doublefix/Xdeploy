@@ -7,7 +7,7 @@ use log::{info, warn};
 use crate::{
     cluster_config::{
         Cluster, Metadata, Servers, Spec, get_active_cluster, get_active_cluster_config,
-        list_cluster_names,
+        list_cluster_names, switch_cluster,
     },
     cluster_images::{load_image_to_server, tarzxf_remote_server_package},
     cluster_node::{init_master_node, init_root_node, init_woker_node},
@@ -33,6 +33,11 @@ pub enum Commands {
         master: Vec<String>,
         #[arg(long, action = clap::ArgAction::Append)]
         node: Vec<String>,
+    },
+    Ps {},
+    Use {
+        #[arg(required = true, help = "Name of the cluster to switch to")]
+        clustername: String,
     },
 }
 
@@ -79,6 +84,34 @@ pub async fn handle_command(command: Commands) -> Result<()> {
             let _ = cluster.save_to_file().await;
 
             info!("Initialization completed successfully");
+            Ok(())
+        }
+        Commands::Ps {} => {
+            let clusters: Vec<String> = list_cluster_names()?;
+            let active_cluster: String = get_active_cluster()?;
+
+            if clusters.is_empty() {
+                println!("No clusters found.");
+                return Ok(());
+            }
+
+            let max_name_len = clusters
+                .iter()
+                .map(|s| s.len())
+                .max()
+                .unwrap_or(0)
+                .clamp(16, 50);
+
+            println!("{:<width$} CURRENT", "CLUSTE-RNAME", width = max_name_len);
+            for cluster in &clusters {
+                let current_mark = if cluster == &active_cluster { "*" } else { "" };
+                println!("{cluster:<max_name_len$} {current_mark}");
+            }
+
+            Ok(())
+        }
+        Commands::Use { clustername } => {
+            let _ = switch_cluster(&clustername);
             Ok(())
         }
     }

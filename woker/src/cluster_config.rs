@@ -1,6 +1,11 @@
+use dirs::home_dir;
+use log::debug;
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
-use tokio::fs::{self, File};
+use std::{
+    fs::{self, File},
+    io::Write,
+};
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -42,11 +47,11 @@ impl Cluster {
     pub async fn save_to_file(&self) -> Result<(), Box<dyn std::error::Error>> {
         let path = self.get_file_path();
         if let Some(parent) = path.parent() {
-            fs::create_dir_all(parent).await?;
+            tokio::fs::create_dir_all(parent).await?;
         }
         let yaml = serde_yaml::to_string(self)?;
 
-        let mut file = File::create(&path).await?;
+        let mut file = tokio::fs::File::create(&path).await?;
         file.write_all(yaml.as_bytes()).await?;
 
         Ok(())
@@ -57,7 +62,7 @@ impl Cluster {
         let home_dir = dirs::home_dir().expect("Could not find home directory");
         let path = home_dir.join(".chess").join(name).join("cluster.yaml");
 
-        let mut file = File::open(&path).await?;
+        let mut file = tokio::fs::File::open(&path).await?;
         let mut contents = String::new();
         file.read_to_string(&mut contents).await?;
 
@@ -83,4 +88,42 @@ impl Cluster {
         cluster.save_to_file().await?;
         Ok(())
     }
+}
+
+const DEFAULT_CLUSTER: &str = "default";
+
+pub fn get_active_cluster_config() -> std::io::Result<String> {
+    let home_dir = home_dir().ok_or_else(|| {
+        std::io::Error::new(
+            std::io::ErrorKind::NotFound,
+            "Could not find home directory",
+        )
+    })?;
+
+    let config_dir = home_dir.join(".chess");
+    let active_file_path = config_dir.join(".active");
+
+    debug!("Config directory: {config_dir:?}");
+
+    if !config_dir.exists() {
+        fs::create_dir_all(&config_dir)?;
+    }
+
+    if !active_file_path.exists() {
+        debug!("No active cluster file found, creating default: {active_file_path:?}");
+        let mut file = File::create(&active_file_path)?;
+        file.write_all(DEFAULT_CLUSTER.as_bytes())?;
+        return Ok(DEFAULT_CLUSTER.to_string());
+    }
+
+    let content = fs::read_to_string(&active_file_path)?.trim().to_string();
+
+    if content.is_empty() {
+        let mut file = File::create(&active_file_path)?;
+        file.write_all(DEFAULT_CLUSTER.as_bytes())?;
+        return Ok(DEFAULT_CLUSTER.to_string());
+    }
+
+    debug!("Active cluster file found: {active_file_path:?}, content: {content}");
+    Ok(content)
 }

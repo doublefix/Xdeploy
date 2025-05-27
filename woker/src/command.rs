@@ -1,7 +1,11 @@
+use std::env;
+
 use clap::{Parser, Subcommand};
+
 use log::{info, warn};
 
 use crate::{
+    cluster_config::{Cluster, Metadata, Servers, Spec, get_active_cluster_config},
     cluster_images::{load_image_to_server, tarzxf_remote_server_package},
     cluster_node::{init_master_node, init_root_node, init_woker_node},
     ssh_connect::{HostConfig, bulk_check_hosts},
@@ -36,18 +40,44 @@ pub async fn handle_command(command: Commands) -> Result<()> {
             master,
             node,
         } => {
-            if (!master.is_empty() && !node.is_empty()) || !master.is_empty() {
-                init_cluster(images.clone(), master, node).await?;
-            }
-            info!("Initializing common images {images:?}");
+            let cluster_name = match env::var("CLUSTER_NAME") {
+                Ok(c) => c,
+                Err(_) => get_active_cluster_config()?,
+            };
 
-            // Load common images
+            let cluster = Cluster {
+                api_version: "chess.io/v1".to_string(),
+                kind: "Cluster".to_string(),
+                metadata: Metadata { name: cluster_name },
+                spec: Spec {
+                    servers: vec![
+                        Servers {
+                            roles: vec!["master".to_string()],
+                            ips: master,
+                        },
+                        Servers {
+                            roles: vec!["node".to_string()],
+                            ips: node,
+                        },
+                    ],
+                    images,
+                },
+            };
+
+            let _ = cluster.save_to_file().await;
 
             info!("Initialization completed successfully");
             Ok(())
         }
     }
 }
+
+// if (!master.is_empty() && !node.is_empty()) || !master.is_empty() {
+//     init_cluster(images.clone(), master, node).await?;
+// }
+// info!("Initializing common images {images:?}");
+
+// Load common images
 
 // 找到第一个重复元素
 fn find_first_duplicate<'a, T: Eq + std::hash::Hash>(items: &'a [&'a T]) -> Option<&'a T> {

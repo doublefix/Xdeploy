@@ -100,12 +100,18 @@ pub async fn handle_command(command: Commands) -> Result<()> {
                 .map(|s| s.len())
                 .max()
                 .unwrap_or(0)
-                .clamp(16, 50);
+                .clamp(12, 50);
 
-            println!("{:<width$} CURRENT", "CLUSTE-RNAME", width = max_name_len);
+            println!(
+                "{:<10} {:<width$}",
+                "CURRENT",
+                "CLUSTE RNAME",
+                width = max_name_len
+            );
+
             for cluster in &clusters {
-                let current_mark = if cluster == &active_cluster { "*" } else { "" };
-                println!("{cluster:<max_name_len$} {current_mark}");
+                let current_mark = if cluster == &active_cluster { "*" } else { " " };
+                println!("{current_mark:<10} {cluster:<max_name_len$}");
             }
 
             Ok(())

@@ -1,4 +1,8 @@
-use std::env;
+use std::{
+    env, fs, io,
+    path::{Path, PathBuf},
+    time::{SystemTime, UNIX_EPOCH},
+};
 
 use clap::{Parser, Subcommand};
 
@@ -52,36 +56,38 @@ pub async fn handle_command(command: Commands) -> Result<()> {
                 Ok(c) => c,
                 Err(_) => get_active_cluster_config()?,
             };
-
-            // 检查有没有对应文件夹和配置
-            // 集群已经存在，必须重置或者添加
-
-            let all_cluster_name = list_cluster_names()?;
             let active_cluster_name = get_active_cluster()?;
-
-            info!("All cluster names: {all_cluster_name:?}");
             info!("Active cluster name: {active_cluster_name}");
 
-            let cluster = Cluster {
-                api_version: "chess.io/v1".to_string(),
-                kind: "Cluster".to_string(),
-                metadata: Metadata { name: cluster_name },
-                spec: Spec {
-                    servers: vec![
-                        Servers {
-                            roles: vec!["master".to_string()],
-                            ips: master,
-                        },
-                        Servers {
-                            roles: vec!["node".to_string()],
-                            ips: node,
-                        },
-                    ],
-                    images,
-                },
-            };
+            if (!master.is_empty() && !node.is_empty()) || !master.is_empty() {
+                info!("Initializing common images {images:?}");
+                let home_dir = dirs::home_dir().ok_or("Could not find home directory")?;
+                init_cluster(images.clone(), master.clone(), node.clone()).await?;
 
-            let _ = cluster.save_to_file().await;
+                if let Some(backup_path) = load_cluster_config(&home_dir)? {
+                    info!("Backed up existing cluster.yaml to {backup_path:?}");
+                }
+                let cluster = Cluster {
+                    api_version: "chess.io/v1".to_string(),
+                    kind: "Cluster".to_string(),
+                    metadata: Metadata { name: cluster_name },
+                    spec: Spec {
+                        servers: vec![
+                            Servers {
+                                roles: vec!["master".to_string()],
+                                ips: master,
+                            },
+                            Servers {
+                                roles: vec!["node".to_string()],
+                                ips: node,
+                            },
+                        ],
+                        images,
+                    },
+                };
+
+                let _ = cluster.save_to_file().await;
+            }
 
             info!("Initialization completed successfully");
             Ok(())
@@ -123,12 +129,33 @@ pub async fn handle_command(command: Commands) -> Result<()> {
     }
 }
 
-// if (!master.is_empty() && !node.is_empty()) || !master.is_empty() {
-//     init_cluster(images.clone(), master, node).await?;
-// }
-// info!("Initializing common images {images:?}");
-
 // Load common images
+
+fn load_cluster_config(home_dir: &Path) -> io::Result<Option<PathBuf>> {
+    let chess_dir = home_dir.join(".chess");
+    let config_file = chess_dir.join("cluster.yaml");
+
+    if !config_file.exists() {
+        return Ok(None);
+    }
+
+    let history_dir = chess_dir.join(".history");
+    if !history_dir.exists() {
+        fs::create_dir_all(&history_dir)?;
+    }
+
+    let timestamp = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .map_err(io::Error::other)?
+        .as_secs();
+
+    let backup_filename = format!("cluster.yaml.{timestamp}");
+    let backup_path = history_dir.join(backup_filename);
+
+    fs::copy(&config_file, &backup_path)?;
+
+    Ok(Some(backup_path))
+}
 
 // 找到第一个重复元素
 fn find_first_duplicate<'a, T: Eq + std::hash::Hash>(items: &'a [&'a T]) -> Option<&'a T> {

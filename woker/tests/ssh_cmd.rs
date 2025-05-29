@@ -25,19 +25,7 @@ async fn test_main() -> Result<(), Box<dyn Error>> {
         })
         .collect();
 
-    let results = run_commands_on_multiple_hosts(configs, commands, true).await;
-
-    for (host, result) in results {
-        match result {
-            Ok(outputs) => {
-                println!("✅ [{host}] File operations completed:");
-                for output in outputs {
-                    println!("{output}");
-                }
-            }
-            Err(e) => eprintln!("❌ [{host}] Error: {e}"),
-        }
-    }
+    run_commands_on_multiple_hosts(configs, commands, true).await;
 
     Ok(())
 }
@@ -76,19 +64,7 @@ async fn test_file_operations() -> Result<(), Box<dyn Error>> {
         })
         .collect();
 
-    let results = run_commands_on_multiple_hosts(configs, commands, true).await;
-
-    for (host, result) in results {
-        match result {
-            Ok(outputs) => {
-                println!("✅ [{host}] File operations completed:");
-                for output in outputs {
-                    println!("{output}");
-                }
-            }
-            Err(e) => eprintln!("❌ [{host}] Error: {e}"),
-        }
-    }
+    run_commands_on_multiple_hosts(configs, commands, true).await;
 
     Ok(())
 }
@@ -121,19 +97,7 @@ async fn test_multi_command_execution() -> Result<(), Box<dyn Error>> {
         .collect();
 
     // Execute multiple commands on multiple hosts
-    let results = run_commands_on_multiple_hosts(configs, commands, true).await;
-
-    for (host, result) in results {
-        match result {
-            Ok(outputs) => {
-                println!("✅ [{host}] Success:");
-                for (i, output) in outputs.iter().enumerate() {
-                    println!("Command {} output:\n{}", i + 1, output);
-                }
-            }
-            Err(e) => eprintln!("❌ [{host}] Error: {e}"),
-        }
-    }
+    run_commands_on_multiple_hosts(configs, commands, true).await;
 
     Ok(())
 }

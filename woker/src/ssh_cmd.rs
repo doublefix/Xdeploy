@@ -1,4 +1,3 @@
-use futures::future::join_all;
 use log::info;
 use ssh2::Session;
 use std::collections::HashMap;
@@ -148,7 +147,7 @@ impl SshClient {
         &self,
         commands: Vec<String>,
         verbose: bool,
-    ) -> Result<Vec<String>, Box<dyn Error + Send + Sync>> {
+    ) -> Result<Vec<(String, i32)>, Box<dyn Error + Send + Sync>> {
         let config = self.config.clone();
 
         task::spawn_blocking(move || {
@@ -179,7 +178,7 @@ impl SshClient {
                 return Err("SSH authentication failed".into());
             }
 
-            let mut outputs = Vec::new();
+            let mut results = Vec::new();
             for command in commands {
                 let mut channel = session.channel_session()?;
                 channel.exec(&command)?;
@@ -187,6 +186,7 @@ impl SshClient {
                 let mut output = String::new();
                 let mut buf = [0u8; 1024];
 
+                // 读取 stdout
                 loop {
                     let n = channel.read(&mut buf)?;
                     if n == 0 {
@@ -201,6 +201,7 @@ impl SshClient {
                     output.push_str(&chunk);
                 }
 
+                // 读取 stderr
                 loop {
                     let n = channel.stderr().read(&mut buf)?;
                     if n == 0 {
@@ -216,10 +217,12 @@ impl SshClient {
                 }
 
                 channel.wait_close()?;
-                outputs.push(output);
+                let exit_status = channel.exit_status()?;
+
+                results.push((output, exit_status));
             }
 
-            Ok(outputs)
+            Ok(results)
         })
         .await?
     }
@@ -229,34 +232,48 @@ pub async fn run_commands_on_multiple_hosts(
     configs: Vec<SshConfig>,
     commands: Vec<String>,
     verbose: bool,
-) -> Vec<(String, Result<Vec<String>, Box<dyn Error + Send + Sync>>)> {
-    let mut tasks = Vec::new();
+) {
+    use futures::stream::StreamExt;
 
-    for config in configs {
+    let mut tasks = futures::stream::iter(configs.into_iter().map(|config| {
         let host = config.host.clone();
-        info!("Running commands on host: {host}");
-        let client = SshClient::new(config);
         let cmds = commands.clone();
 
-        let task = tokio::spawn(async move {
-            let result = client.exec_commands_stream(cmds, verbose).await;
-            (host, result)
-        });
+        tokio::spawn(async move {
+            info!("🚀 Starting commands on host: {host}");
 
-        tasks.push(task);
-    }
+            let client = SshClient::new(config);
+            for (i, cmd) in cmds.into_iter().enumerate() {
+                info!("🔧 [{}] Executing command {}: {}", host, i + 1, cmd);
 
-    join_all(tasks)
-        .await
-        .into_iter()
-        .map(|res| match res {
-            Ok(pair) => pair,
-            Err(e) => (
-                "unknown".to_string(),
-                Err(format!("Join error: {e}").into()),
-            ),
+                match client.exec_commands_stream(vec![cmd], verbose).await {
+                    Ok(results) => {
+                        for (_, status) in results {
+                            let status_msg = if status == 0 {
+                                "✅ Success"
+                            } else {
+                                &format!("❌ Failed (status: {status})")
+                            };
+
+                            info!("[{host}] Command output:\n{status_msg}\n");
+                        }
+                    }
+                    Err(e) => {
+                        info!("[{host}] ❗ Error executing command: {e}");
+                    }
+                }
+            }
+
+            info!("🏁 Finished commands on host: {host}");
         })
-        .collect()
+    }))
+    .buffer_unordered(10);
+
+    while let Some(task_result) = tasks.next().await {
+        if let Err(e) = task_result {
+            info!("⚠️ Task failed: {e}");
+        }
+    }
 }
 
 pub fn build_std_linux_tarzxvf_filetoroot_commands(image_ids: &[String]) -> Vec<String> {

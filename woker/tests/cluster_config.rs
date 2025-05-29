@@ -1,7 +1,7 @@
 use woker::cluster_config::{Cluster, Metadata, Servers, Spec};
 
 #[tokio::test]
-async fn test_cluster_operations() -> Result<(), Box<dyn std::error::Error>> {
+async fn test_cluster_operations() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     // Example usage
 
     // Create and save a new cluster
@@ -24,12 +24,12 @@ async fn test_cluster_operations() -> Result<(), Box<dyn std::error::Error>> {
     println!("Cluster saved successfully");
 
     // Load the cluster
-    let loaded_cluster = Cluster::load_from_file("default").await?;
+    let loaded_cluster = Cluster::load_from_file(&"default".to_owned()).await?;
     println!("Loaded cluster: {loaded_cluster:?}");
 
     // Add a new host
     Cluster::add_host(
-        "default",
+        &"default".to_owned(),
         Servers {
             roles: vec!["worker".to_string()],
             ips: vec!["192.168.1.2".to_string()],
@@ -40,7 +40,7 @@ async fn test_cluster_operations() -> Result<(), Box<dyn std::error::Error>> {
     println!("Host added successfully");
 
     // Remove a host
-    Cluster::remove_host("default", "192.168.1.1").await?;
+    Cluster::remove_host(&"default".to_owned(), "192.168.1.1").await?;
 
     println!("Host removed successfully");
 

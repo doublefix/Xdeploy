@@ -34,6 +34,33 @@ pub struct Servers {
     pub ips: Vec<String>,
 }
 
+impl PartialEq for Cluster {
+    fn eq(&self, other: &Self) -> bool {
+        self.api_version == other.api_version
+            && self.kind == other.kind
+            && self.metadata == other.metadata
+            && self.spec == other.spec
+    }
+}
+
+impl PartialEq for Metadata {
+    fn eq(&self, other: &Self) -> bool {
+        self.name == other.name
+    }
+}
+
+impl PartialEq for Spec {
+    fn eq(&self, other: &Self) -> bool {
+        self.servers == other.servers && self.images == other.images
+    }
+}
+
+impl PartialEq for Servers {
+    fn eq(&self, other: &Self) -> bool {
+        self.roles == other.roles && self.ips == other.ips
+    }
+}
+
 impl Cluster {
     /// Get the file path for this cluster's YAML file
     fn get_file_path(&self) -> PathBuf {
@@ -43,8 +70,12 @@ impl Cluster {
         path
     }
 
+    pub fn is_same_configuration(&self, other: &Cluster) -> bool {
+        self == other
+    }
+
     /// Asynchronously save the cluster to a YAML file
-    pub async fn save_to_file(&self) -> Result<(), Box<dyn std::error::Error>> {
+    pub async fn save_to_file(&self) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         let path = self.get_file_path();
         if let Some(parent) = path.parent() {
             tokio::fs::create_dir_all(parent).await?;
@@ -58,7 +89,9 @@ impl Cluster {
     }
 
     /// Asynchronously load the cluster from a YAML file
-    pub async fn load_from_file(name: &str) -> Result<Cluster, Box<dyn std::error::Error>> {
+    pub async fn load_from_file(
+        name: &String,
+    ) -> Result<Cluster, Box<dyn std::error::Error + Send + Sync>> {
         let home_dir = dirs::home_dir().expect("Could not find home directory");
         let path = home_dir.join(".chess").join(name).join("cluster.yaml");
 
@@ -71,7 +104,10 @@ impl Cluster {
     }
 
     /// Add a new host to the cluster and save it
-    pub async fn add_host(name: &str, host: Servers) -> Result<(), Box<dyn std::error::Error>> {
+    pub async fn add_host(
+        name: &String,
+        host: Servers,
+    ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         let mut cluster = Cluster::load_from_file(name).await?;
         cluster.spec.servers.push(host);
         cluster.save_to_file().await?;
@@ -79,7 +115,10 @@ impl Cluster {
     }
 
     /// Remove a host from the cluster by IP and save it
-    pub async fn remove_host(name: &str, ip: &str) -> Result<(), Box<dyn std::error::Error>> {
+    pub async fn remove_host(
+        name: &String,
+        ip: &str,
+    ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         let mut cluster = Cluster::load_from_file(name).await?;
         cluster
             .spec

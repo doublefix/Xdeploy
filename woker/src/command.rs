@@ -64,13 +64,18 @@ pub async fn handle_command(command: Commands) -> Result<()> {
                 let home_dir = dirs::home_dir().ok_or("Could not find home directory")?;
                 init_cluster(images.clone(), master.clone(), node.clone()).await?;
 
+                //
+
+                // 对比是否一致，不一致才生成覆盖
                 if let Some(backup_path) = load_cluster_config(&home_dir)? {
                     info!("Backed up existing cluster.yaml to {backup_path:?}");
                 }
                 let cluster = Cluster {
                     api_version: "chess.io/v1".to_string(),
                     kind: "Cluster".to_string(),
-                    metadata: Metadata { name: cluster_name },
+                    metadata: Metadata {
+                        name: cluster_name.clone(),
+                    },
                     spec: Spec {
                         servers: vec![
                             Servers {
@@ -86,7 +91,10 @@ pub async fn handle_command(command: Commands) -> Result<()> {
                     },
                 };
 
-                let _ = cluster.save_to_file().await;
+                let current_cluster_config = Cluster::load_from_file(&cluster_name).await?;
+                if !current_cluster_config.is_same_configuration(&cluster) {
+                    let _ = cluster.save_to_file().await;
+                }
             }
 
             info!("Initialization completed successfully");

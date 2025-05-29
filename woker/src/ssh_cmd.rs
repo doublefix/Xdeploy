@@ -3,6 +3,7 @@ use log::info;
 use ssh2::Session;
 use std::collections::HashMap;
 use std::fmt;
+use std::io::Write;
 use std::time::Duration;
 use std::{error::Error, io::Read, net::TcpStream, path::Path, sync::Arc};
 use tokio::task;
@@ -142,6 +143,86 @@ impl SshClient {
         })
         .await?
     }
+
+    pub async fn exec_commands_stream(
+        &self,
+        commands: Vec<String>,
+        verbose: bool,
+    ) -> Result<Vec<String>, Box<dyn Error + Send + Sync>> {
+        let config = self.config.clone();
+
+        task::spawn_blocking(move || {
+            let tcp = TcpStream::connect(format!("{}:{}", config.host, config.port))?;
+            tcp.set_read_timeout(Some(Duration::from_secs(30)))?;
+            tcp.set_write_timeout(Some(Duration::from_secs(30)))?;
+
+            let mut session = Session::new()?;
+            session.set_tcp_stream(tcp);
+            session.handshake()?;
+
+            match &config.auth {
+                AuthMethod::Key {
+                    pubkey_path,
+                    privkey_path,
+                    passphrase,
+                } => {
+                    session.userauth_pubkey_file(
+                        &config.username,
+                        Some(Path::new(pubkey_path)),
+                        Path::new(privkey_path),
+                        passphrase.as_deref(),
+                    )?;
+                }
+            }
+
+            if !session.authenticated() {
+                return Err("SSH authentication failed".into());
+            }
+
+            let mut outputs = Vec::new();
+            for command in commands {
+                let mut channel = session.channel_session()?;
+                channel.exec(&command)?;
+
+                let mut output = String::new();
+                let mut buf = [0u8; 1024];
+
+                loop {
+                    let n = channel.read(&mut buf)?;
+                    if n == 0 {
+                        break;
+                    }
+                    let chunk = String::from_utf8_lossy(&buf[..n]);
+
+                    if verbose {
+                        print!("{chunk}");
+                        std::io::stdout().flush()?;
+                    }
+                    output.push_str(&chunk);
+                }
+
+                loop {
+                    let n = channel.stderr().read(&mut buf)?;
+                    if n == 0 {
+                        break;
+                    }
+                    let chunk = String::from_utf8_lossy(&buf[..n]);
+
+                    if verbose {
+                        eprint!("{chunk}");
+                        std::io::stderr().flush()?;
+                    }
+                    output.push_str(&chunk);
+                }
+
+                channel.wait_close()?;
+                outputs.push(output);
+            }
+
+            Ok(outputs)
+        })
+        .await?
+    }
 }
 
 pub async fn run_commands_on_multiple_hosts(
@@ -158,21 +239,7 @@ pub async fn run_commands_on_multiple_hosts(
         let cmds = commands.clone();
 
         let task = tokio::spawn(async move {
-            let result = client.exec_commands(cmds).await;
-
-            // 根据 verbose 决定是否打印
-            if verbose {
-                match &result {
-                    Ok(outputs) => {
-                        info!("[{host}] Command outputs:");
-                        for (i, output) in outputs.iter().enumerate() {
-                            println!("  Command {}: {}", i + 1, output);
-                        }
-                    }
-                    Err(e) => info!("[{host}] Error: {e}"),
-                }
-            }
-
+            let result = client.exec_commands_stream(cmds, verbose).await;
             (host, result)
         });
 

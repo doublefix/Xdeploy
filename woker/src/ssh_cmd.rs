@@ -120,10 +120,21 @@ impl SshClient {
             for command in commands {
                 let mut channel = session.channel_session()?;
                 channel.exec(&command)?;
+                let mut stdout = String::new();
+                channel.read_to_string(&mut stdout)?;
 
-                let mut output = String::new();
-                channel.read_to_string(&mut output)?;
+                let mut stderr = String::new();
+                channel.stderr().read_to_string(&mut stderr)?;
                 channel.wait_close()?;
+
+                let mut output = stdout;
+                if !stderr.is_empty() {
+                    if !output.is_empty() {
+                        output.push('\n');
+                    }
+                    output.push_str(&stderr);
+                }
+
                 outputs.push(output);
             }
 

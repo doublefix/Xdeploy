@@ -142,6 +142,7 @@ pub async fn run_commands_on_multiple_hosts(
 
     for config in configs {
         let host = config.host.clone();
+        info!("Running commands on host: {host}");
         let client = SshClient::new(config);
         let cmds = commands.clone();
 

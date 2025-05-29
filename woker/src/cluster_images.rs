@@ -45,6 +45,7 @@ pub async fn load_image_to_server(
 pub async fn tarzxf_remote_server_package(images_sha256: Vec<String>, all_addresses: Vec<String>) {
     let home = env::var("HOME").unwrap();
     let commands = build_std_linux_tarzxvf_filetoroot_commands(&images_sha256);
+    info!("Commands to run on remote servers: {commands:?}");
     let run_cmd_configs: Vec<ssh_cmd::SshConfig> = all_addresses
         .into_iter()
         .map(|host| ssh_cmd::SshConfig {

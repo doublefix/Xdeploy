@@ -226,6 +226,7 @@ async fn init_cluster(images: Vec<String>, master: Vec<String>, node: Vec<String
     let servers: Vec<String> = all_addresses.iter().cloned().cloned().collect();
     let images_sha256 = load_image_to_server(images.clone(), servers.clone()).await?;
     tarzxf_remote_server_package(images_sha256.clone(), servers).await;
+    info!("Images loaded and prepared: {images_sha256:?}");
 
     // 主节点分组
     let (root, plane) = if !masters.is_empty() {
@@ -244,12 +245,11 @@ async fn init_cluster(images: Vec<String>, master: Vec<String>, node: Vec<String
         &join_root_key.kube_ca_cert_hash,
     ) {
         (Some(api), Some(token), Some(hash)) => {
-            // 主节点
+            info!("Kube join key information found: API: {api}, Token: {token}, Hash: {hash}");
             init_master_node(plane.clone(), images_sha256.clone(), api, token, hash).await;
-            // 工作节点
             init_woker_node(nodes, images_sha256.clone(), api, token, hash).await;
         }
-        _ => println!("There is no kube join key information available"),
+        _ => info!("There is no kube join key information available"),
     }
     Ok(())
 }

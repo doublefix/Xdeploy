@@ -1,5 +1,7 @@
 use std::{collections::HashMap, env};
 
+use log::info;
+
 use crate::ssh_cmd::{
     self, KubeJoinInfo, build_std_linux_init_node_commands, run_commands_on_multiple_hosts,
 };
@@ -8,6 +10,7 @@ type Error = Box<dyn std::error::Error + Send + Sync>;
 type Result<T> = std::result::Result<T, Error>;
 
 pub async fn init_root_node(root: Vec<String>, images_sha256: Vec<String>) -> Result<KubeJoinInfo> {
+    info!("Initializing root node with hosts: {root:?} and images: {images_sha256:?}");
     let home = env::var("HOME").unwrap();
     let run_root_cmd_configs: Vec<ssh_cmd::SshConfig> = root
         .clone()
@@ -26,6 +29,7 @@ pub async fn init_root_node(root: Vec<String>, images_sha256: Vec<String>) -> Re
     let mut root_env_vars = HashMap::new();
     root_env_vars.insert("NODE_ROLE", "root");
     let commands = build_std_linux_init_node_commands(&root_env_vars, &images_sha256);
+    info!("Commands to run on root node: {commands:?}");
     let _ = run_commands_on_multiple_hosts(run_root_cmd_configs.clone(), commands, true).await;
 
     // Get join key information
@@ -42,6 +46,10 @@ pub async fn init_master_node(
     token: &str,
     hash: &str,
 ) {
+    if plane.is_empty() {
+        info!("No master nodes provided, skipping master node initialization.");
+        return;
+    }
     let home = env::var("HOME").unwrap();
     let mut mater_env_vars = HashMap::new();
     mater_env_vars.insert("NODE_ROLE", "master");
@@ -73,6 +81,10 @@ pub async fn init_woker_node(
     token: &str,
     hash: &str,
 ) {
+    if nodes.is_empty() {
+        info!("No worker nodes provided, skipping worker node initialization.");
+        return;
+    }
     let home = env::var("HOME").unwrap();
     let mut node_env_vars = HashMap::new();
     node_env_vars.insert("NODE_ROLE", "node");

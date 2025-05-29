@@ -30,7 +30,12 @@ pub async fn init_root_node(root: Vec<String>, images_sha256: Vec<String>) -> Re
     root_env_vars.insert("NODE_ROLE", "root");
     let commands = build_std_linux_init_node_commands(&root_env_vars, &images_sha256);
     info!("Commands to run on root node: {commands:?}");
-    let _ = run_commands_on_multiple_hosts(run_root_cmd_configs.clone(), commands, true).await;
+
+    if !run_commands_on_multiple_hosts(run_root_cmd_configs.clone(), commands, true).await {
+        return Err(
+            anyhow::anyhow!("Failed to initialize root node: commands execution failed").into(),
+        );
+    }
 
     // Get join key information
     let ssh_client = ssh_cmd::SshClient::new(run_root_cmd_configs[0].clone());

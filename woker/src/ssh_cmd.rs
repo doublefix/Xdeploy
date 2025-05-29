@@ -232,15 +232,17 @@ pub async fn run_commands_on_multiple_hosts(
     configs: Vec<SshConfig>,
     commands: Vec<String>,
     verbose: bool,
-) {
+) -> bool {
     use futures::stream::StreamExt;
 
+    let mut all_success = true;
     let mut tasks = futures::stream::iter(configs.into_iter().map(|config| {
         let host = config.host.clone();
         let cmds = commands.clone();
 
         tokio::spawn(async move {
             info!("🚀 Starting commands on host: {host}");
+            let mut host_success = true;
 
             let client = SshClient::new(config);
             for (i, cmd) in cmds.into_iter().enumerate() {
@@ -249,31 +251,43 @@ pub async fn run_commands_on_multiple_hosts(
                 match client.exec_commands_stream(vec![cmd], verbose).await {
                     Ok(results) => {
                         for (_, status) in results {
-                            let status_msg = if status == 0 {
-                                "✅ Success"
+                            if status != 0 {
+                                host_success = false;
+                                let status_msg = format!("❌ Failed (status: {status})");
+                                info!("[{host}] Command output: {status_msg}");
                             } else {
-                                &format!("❌ Failed (status: {status})")
-                            };
-
-                            info!("[{host}] Command output:\n{status_msg}\n");
+                                info!("[{host}] Command output: ✅ Success");
+                            }
                         }
                     }
                     Err(e) => {
+                        host_success = false;
                         info!("[{host}] ❗ Error executing command: {e}");
                     }
                 }
             }
 
             info!("🏁 Finished commands on host: {host}");
+            host_success
         })
     }))
     .buffer_unordered(10);
 
     while let Some(task_result) = tasks.next().await {
-        if let Err(e) = task_result {
-            info!("⚠️ Task failed: {e}");
+        match task_result {
+            Ok(host_success) => {
+                if !host_success {
+                    all_success = false;
+                }
+            }
+            Err(e) => {
+                all_success = false;
+                info!("⚠️ Task failed: {e}");
+            }
         }
     }
+
+    all_success
 }
 
 pub fn build_std_linux_tarzxvf_filetoroot_commands(image_ids: &[String]) -> Vec<String> {

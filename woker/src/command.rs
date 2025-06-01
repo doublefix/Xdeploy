@@ -80,7 +80,13 @@ pub async fn handle_command(command: Commands) -> Result<()> {
                 },
             };
 
-            if (!master.is_empty() && !node.is_empty()) || !master.is_empty() {
+            let has_master = cluster
+                .spec
+                .servers
+                .iter()
+                .any(|server| server.roles.iter().any(|role| role == "master"));
+
+            if has_master {
                 info!("Initializing common images {images:?}");
                 let home_dir = dirs::home_dir().ok_or("Could not find home directory")?;
                 init_cluster(images.clone(), master.clone(), node.clone()).await?;

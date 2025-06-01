@@ -1,5 +1,5 @@
 use std::{
-    env, fs, io,
+    fs, io,
     path::{Path, PathBuf},
     time::{SystemTime, UNIX_EPOCH},
 };
@@ -37,6 +37,8 @@ pub enum Commands {
         master: Vec<String>,
         #[arg(long, action = clap::ArgAction::Append)]
         node: Vec<String>,
+        #[arg(long)]
+        cluster: Option<String>,
     },
     Ps {},
     Use {
@@ -51,13 +53,16 @@ pub async fn handle_command(command: Commands) -> Result<()> {
             images,
             master,
             node,
+            cluster,
         } => {
-            let cluster_name = match env::var("CLUSTER_NAME") {
-                Ok(c) => c,
-                Err(_) => get_active_cluster_config()?,
+            let cluster_name = if let Some(c) = cluster {
+                info!("Current cluster name: {c}");
+                c
+            } else {
+                let current_cluster_name = get_active_cluster()?;
+                info!("Current cluster name: {current_cluster_name}");
+                get_active_cluster_config()?
             };
-            let active_cluster_name = get_active_cluster()?;
-            info!("Active cluster name: {active_cluster_name}");
 
             let masters: Vec<String> = master
                 .iter()
@@ -102,20 +107,8 @@ pub async fn handle_command(command: Commands) -> Result<()> {
 
             if has_master {
                 info!("Initializing common images {images:?}");
-                let home_dir = dirs::home_dir().ok_or("Could not find home directory")?;
                 init_cluster(&cluster).await?;
-
-                //
-
-                // 对比是否一致，不一致才生成覆盖
-                if let Some(backup_path) = load_cluster_config(&home_dir)? {
-                    info!("Backed up existing cluster.yaml to {backup_path:?}");
-                }
-
-                let current_cluster_config = Cluster::load_from_file(&cluster_name).await?;
-                if !current_cluster_config.is_same_configuration(&cluster) {
-                    let _ = cluster.save_to_file().await;
-                }
+                load_cluster_config(&cluster).await?;
             }
 
             info!("Initialization completed successfully");
@@ -158,10 +151,33 @@ pub async fn handle_command(command: Commands) -> Result<()> {
     }
 }
 
+async fn load_cluster_config(cluster: &Cluster) -> Result<()> {
+    let cluster_name = cluster.metadata.name.clone();
+    let home_dir = dirs::home_dir().expect("Could not find home directory");
+    let config_path = home_dir
+        .join(".chess")
+        .join(&cluster_name)
+        .join("cluster.yaml");
+
+    if config_path.exists() {
+        let current_cluster_config = Cluster::load_from_file(&cluster_name).await?;
+        if !current_cluster_config.is_same_configuration(cluster) {
+            if let Some(backup_path) = backup_cluster_config(&home_dir, &cluster_name)? {
+                info!("Backed up existing cluster.yaml to {backup_path:?}");
+            }
+            let _ = cluster.save_to_file().await;
+        }
+    } else {
+        let _ = cluster.save_to_file().await;
+    }
+
+    Ok(())
+}
+
 // Load common images
 
-fn load_cluster_config(home_dir: &Path) -> io::Result<Option<PathBuf>> {
-    let chess_dir = home_dir.join(".chess");
+fn backup_cluster_config(home_dir: &Path, cluster_name: &String) -> io::Result<Option<PathBuf>> {
+    let chess_dir = home_dir.join(".chess").join(cluster_name);
     let config_file = chess_dir.join("cluster.yaml");
 
     if !config_file.exists() {

@@ -2,28 +2,35 @@ use std::{collections::HashMap, env};
 
 use log::info;
 
-use crate::ssh_cmd::{
-    self, KubeJoinInfo, build_std_linux_init_node_commands, run_commands_on_multiple_hosts,
+use crate::{
+    cluster_config::Servers,
+    ssh_cmd::{
+        self, KubeJoinInfo, build_std_linux_init_node_commands, run_commands_on_multiple_hosts,
+    },
 };
 
 type Error = Box<dyn std::error::Error + Send + Sync>;
 type Result<T> = std::result::Result<T, Error>;
 
-pub async fn init_root_node(root: Vec<String>, images_sha256: Vec<String>) -> Result<KubeJoinInfo> {
+pub async fn init_root_node(
+    root: Vec<&Servers>,
+    images_sha256: Vec<String>,
+) -> Result<KubeJoinInfo> {
     info!("Initializing root node with hosts: {root:?} and images: {images_sha256:?}");
     let home = env::var("HOME").unwrap();
     let run_root_cmd_configs: Vec<ssh_cmd::SshConfig> = root
-        .clone()
-        .into_iter()
-        .map(|host| ssh_cmd::SshConfig {
-            host: host.to_string(),
-            port: 22,
-            username: "root".to_string(),
-            auth: ssh_cmd::AuthMethod::Key {
-                pubkey_path: format!("{home}/.ssh/id_rsa.pub"),
-                privkey_path: format!("{home}/.ssh/id_rsa"),
-                passphrase: None,
-            },
+        .iter()
+        .flat_map(|server| {
+            server.ips.iter().map(|ip| ssh_cmd::SshConfig {
+                host: ip.clone(),
+                port: 22,
+                username: "root".to_string(),
+                auth: ssh_cmd::AuthMethod::Key {
+                    pubkey_path: format!("{home}/.ssh/id_rsa.pub"),
+                    privkey_path: format!("{home}/.ssh/id_rsa"),
+                    passphrase: None,
+                },
+            })
         })
         .collect();
     let mut root_env_vars = HashMap::new();
@@ -45,7 +52,7 @@ pub async fn init_root_node(root: Vec<String>, images_sha256: Vec<String>) -> Re
 }
 
 pub async fn init_master_node(
-    plane: Vec<String>,
+    plane: Vec<&Servers>,
     images_sha256: Vec<String>,
     api: &str,
     token: &str,
@@ -62,17 +69,18 @@ pub async fn init_master_node(
     mater_env_vars.insert("KUBE_JOIN_TOKEN", token);
     mater_env_vars.insert("KUBE_CA_CERT_HASH", hash);
     let run_master_cmd_configs: Vec<ssh_cmd::SshConfig> = plane
-        .clone()
-        .into_iter()
-        .map(|host| ssh_cmd::SshConfig {
-            host: host.to_string(),
-            port: 22,
-            username: "root".to_string(),
-            auth: ssh_cmd::AuthMethod::Key {
-                pubkey_path: format!("{home}/.ssh/id_rsa.pub"),
-                privkey_path: format!("{home}/.ssh/id_rsa"),
-                passphrase: None,
-            },
+        .iter()
+        .flat_map(|server| {
+            server.ips.iter().map(|ip| ssh_cmd::SshConfig {
+                host: ip.clone(),
+                port: 22,
+                username: "root".to_string(),
+                auth: ssh_cmd::AuthMethod::Key {
+                    pubkey_path: format!("{home}/.ssh/id_rsa.pub"),
+                    privkey_path: format!("{home}/.ssh/id_rsa"),
+                    passphrase: None,
+                },
+            })
         })
         .collect();
     let commands = build_std_linux_init_node_commands(&mater_env_vars, &images_sha256);
@@ -80,7 +88,7 @@ pub async fn init_master_node(
 }
 
 pub async fn init_woker_node(
-    nodes: Vec<String>,
+    nodes: Vec<&Servers>,
     images_sha256: Vec<String>,
     api: &str,
     token: &str,
@@ -97,17 +105,18 @@ pub async fn init_woker_node(
     node_env_vars.insert("KUBE_JOIN_TOKEN", token);
     node_env_vars.insert("KUBE_CA_CERT_HASH", hash);
     let run_node_cmd_configs: Vec<ssh_cmd::SshConfig> = nodes
-        .clone()
-        .into_iter()
-        .map(|host| ssh_cmd::SshConfig {
-            host: host.to_string(),
-            port: 22,
-            username: "root".to_string(),
-            auth: ssh_cmd::AuthMethod::Key {
-                pubkey_path: format!("{home}/.ssh/id_rsa.pub"),
-                privkey_path: format!("{home}/.ssh/id_rsa"),
-                passphrase: None,
-            },
+        .iter()
+        .flat_map(|server| {
+            server.ips.iter().map(|ip| ssh_cmd::SshConfig {
+                host: ip.clone(),
+                port: 22,
+                username: "root".to_string(),
+                auth: ssh_cmd::AuthMethod::Key {
+                    pubkey_path: format!("{home}/.ssh/id_rsa.pub"),
+                    privkey_path: format!("{home}/.ssh/id_rsa"),
+                    passphrase: None,
+                },
+            })
         })
         .collect();
     let commands = build_std_linux_init_node_commands(&node_env_vars, &images_sha256);

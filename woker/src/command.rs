@@ -59,6 +59,20 @@ pub async fn handle_command(command: Commands) -> Result<()> {
             let active_cluster_name = get_active_cluster()?;
             info!("Active cluster name: {active_cluster_name}");
 
+            let masters: Vec<String> = master
+                .iter()
+                .flat_map(|s| s.split(','))
+                .map(|s| s.trim().to_string())
+                .filter(|s| !s.is_empty())
+                .collect();
+
+            let nodes: Vec<String> = node
+                .iter()
+                .flat_map(|s| s.split(','))
+                .map(|s| s.trim().to_string())
+                .filter(|s| !s.is_empty())
+                .collect();
+
             let cluster = Cluster {
                 api_version: "chess.io/v1".to_string(),
                 kind: "Cluster".to_string(),
@@ -69,11 +83,11 @@ pub async fn handle_command(command: Commands) -> Result<()> {
                     servers: vec![
                         Servers {
                             roles: vec!["master".to_string()],
-                            ips: master.clone(),
+                            ips: masters,
                         },
                         Servers {
                             roles: vec!["node".to_string()],
-                            ips: node.clone(),
+                            ips: nodes,
                         },
                     ],
                     images: images.clone(),
@@ -89,7 +103,7 @@ pub async fn handle_command(command: Commands) -> Result<()> {
             if has_master {
                 info!("Initializing common images {images:?}");
                 let home_dir = dirs::home_dir().ok_or("Could not find home directory")?;
-                init_cluster(images.clone(), master.clone(), node.clone()).await?;
+                init_cluster(&cluster).await?;
 
                 //
 
@@ -178,35 +192,39 @@ fn find_first_duplicate<'a, T: Eq + std::hash::Hash>(items: &'a [&'a T]) -> Opti
     items.iter().find(|&&item| !seen.insert(item)).copied()
 }
 
-async fn init_cluster(images: Vec<String>, master: Vec<String>, node: Vec<String>) -> Result<()> {
-    info!("Initializing cluster with images: {images:?}, master: {master:?}, node: {node:?}");
-    let masters: Vec<String> = master
+async fn init_cluster(cluster: &Cluster) -> Result<()> {
+    let masters: Vec<&Servers> = cluster
+        .spec
+        .servers
         .iter()
-        .flat_map(|s| s.split(','))
-        .map(|s| s.trim().to_string())
-        .filter(|s| !s.is_empty())
+        .filter(|s| s.roles.contains(&"master".to_string()))
         .collect();
 
-    let nodes: Vec<String> = node
+    let nodes: Vec<&Servers> = cluster
+        .spec
+        .servers
         .iter()
-        .flat_map(|s| s.split(','))
-        .map(|s| s.trim().to_string())
-        .filter(|s| !s.is_empty())
+        .filter(|s| s.roles.contains(&"node".to_string()))
         .collect();
 
     info!("All master addresses: {masters:?}");
     info!("All node addresses: {nodes:?}");
 
     // 合并所有地址并检查重复
-    let all_addresses: Vec<_> = masters.iter().chain(nodes.iter()).collect();
-    if let Some(dup) = find_first_duplicate(&all_addresses) {
-        warn!("Duplicate address found: {dup}");
+    let all_ips: Vec<&String> = masters
+        .iter()
+        .flat_map(|server| &server.ips)
+        .chain(nodes.iter().flat_map(|server| &server.ips))
+        .collect();
+
+    if let Some(dup) = find_first_duplicate(&all_ips) {
+        warn!("Duplicate IP address found: {dup}");
         return Ok(());
     }
 
     // 执行批量检查可达性
     let home = std::env::var("HOME").unwrap();
-    let hosts: Vec<HostConfig> = all_addresses
+    let hosts: Vec<HostConfig> = all_ips
         .clone()
         .into_iter()
         .map(|addr| HostConfig {
@@ -230,14 +248,14 @@ async fn init_cluster(images: Vec<String>, master: Vec<String>, node: Vec<String
         }
     }
 
-    let servers: Vec<String> = all_addresses.iter().cloned().cloned().collect();
-    let images_sha256 = load_image_to_server(images.clone(), servers.clone()).await?;
+    let servers: Vec<String> = all_ips.iter().cloned().cloned().collect();
+    let images_sha256 = load_image_to_server(cluster.spec.images.clone(), servers.clone()).await?;
     tarzxf_remote_server_package(images_sha256.clone(), servers).await;
     info!("Images loaded and prepared: {images_sha256:?}");
 
     // 主节点分组
     let (root, plane) = if !masters.is_empty() {
-        let root = vec![masters[0].clone()];
+        let root = vec![masters[0]];
         let plane = masters.iter().skip(1).cloned().collect::<Vec<_>>();
         (root, plane)
     } else {

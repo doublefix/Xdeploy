@@ -59,6 +59,27 @@ pub async fn handle_command(command: Commands) -> Result<()> {
             let active_cluster_name = get_active_cluster()?;
             info!("Active cluster name: {active_cluster_name}");
 
+            let cluster = Cluster {
+                api_version: "chess.io/v1".to_string(),
+                kind: "Cluster".to_string(),
+                metadata: Metadata {
+                    name: cluster_name.clone(),
+                },
+                spec: Spec {
+                    servers: vec![
+                        Servers {
+                            roles: vec!["master".to_string()],
+                            ips: master.clone(),
+                        },
+                        Servers {
+                            roles: vec!["node".to_string()],
+                            ips: node.clone(),
+                        },
+                    ],
+                    images: images.clone(),
+                },
+            };
+
             if (!master.is_empty() && !node.is_empty()) || !master.is_empty() {
                 info!("Initializing common images {images:?}");
                 let home_dir = dirs::home_dir().ok_or("Could not find home directory")?;
@@ -70,26 +91,6 @@ pub async fn handle_command(command: Commands) -> Result<()> {
                 if let Some(backup_path) = load_cluster_config(&home_dir)? {
                     info!("Backed up existing cluster.yaml to {backup_path:?}");
                 }
-                let cluster = Cluster {
-                    api_version: "chess.io/v1".to_string(),
-                    kind: "Cluster".to_string(),
-                    metadata: Metadata {
-                        name: cluster_name.clone(),
-                    },
-                    spec: Spec {
-                        servers: vec![
-                            Servers {
-                                roles: vec!["master".to_string()],
-                                ips: master,
-                            },
-                            Servers {
-                                roles: vec!["node".to_string()],
-                                ips: node,
-                            },
-                        ],
-                        images,
-                    },
-                };
 
                 let current_cluster_config = Cluster::load_from_file(&cluster_name).await?;
                 if !current_cluster_config.is_same_configuration(&cluster) {

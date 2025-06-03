@@ -105,10 +105,29 @@ pub async fn handle_command(command: Commands) -> Result<()> {
                 .iter()
                 .any(|server| server.roles.iter().any(|role| role == "master"));
 
+            let has_woker = cluster
+                .spec
+                .servers
+                .iter()
+                .any(|server| server.roles.iter().any(|role| role == "node"));
+
+            // 指定集群
             if has_master {
                 info!("Initializing common images {images:?}");
                 init_cluster(&cluster).await?;
                 load_cluster_config(&cluster).await?;
+            }
+
+            // 指定节点
+            if !has_master && has_woker {
+                info!(
+                    "No master or worker nodes specified. Please provide at least one master or worker node."
+                );
+            }
+
+            // 使用默认集群
+            if !has_master && !has_woker {
+                info!("No master or worker nodes specified. Using default cluster configuration.");
             }
 
             info!("Initialization completed successfully");

@@ -12,7 +12,37 @@ use crate::{
 type Error = Box<dyn std::error::Error + Send + Sync>;
 type Result<T> = std::result::Result<T, Error>;
 
-pub async fn init_root_node(
+pub async fn init_common_node(nodes: Vec<&Servers>, images_sha256: Vec<String>) -> Result<()> {
+    info!("Initializing common node with hosts: {nodes:?} and images: {images_sha256:?}");
+    let home = env::var("HOME").unwrap();
+    let run_root_cmd_configs: Vec<ssh_cmd::SshConfig> = nodes
+        .iter()
+        .flat_map(|server| {
+            server.ips.iter().map(|ip| ssh_cmd::SshConfig {
+                host: ip.clone(),
+                port: 22,
+                username: "root".to_string(),
+                auth: ssh_cmd::AuthMethod::Key {
+                    pubkey_path: format!("{home}/.ssh/id_rsa.pub"),
+                    privkey_path: format!("{home}/.ssh/id_rsa"),
+                    passphrase: None,
+                },
+            })
+        })
+        .collect();
+    let commands = build_std_linux_init_node_commands(&HashMap::new(), &images_sha256);
+    info!("Commands to run on root node: {commands:?}");
+
+    if !run_commands_on_multiple_hosts(run_root_cmd_configs.clone(), commands, true).await {
+        return Err(
+            anyhow::anyhow!("Failed to initialize root node: commands execution failed").into(),
+        );
+    }
+
+    Ok(())
+}
+
+pub async fn init_cluster_root_node(
     root: Vec<&Servers>,
     images_sha256: Vec<String>,
 ) -> Result<KubeJoinInfo> {
@@ -51,7 +81,7 @@ pub async fn init_root_node(
     Ok(join_key)
 }
 
-pub async fn init_master_node(
+pub async fn init_cluster_master_node(
     plane: Vec<&Servers>,
     images_sha256: Vec<String>,
     api: &str,
@@ -87,7 +117,7 @@ pub async fn init_master_node(
     let _ = run_commands_on_multiple_hosts(run_master_cmd_configs, commands, true).await;
 }
 
-pub async fn init_woker_node(
+pub async fn init_cluster_woker_node(
     nodes: Vec<&Servers>,
     images_sha256: Vec<String>,
     api: &str,

@@ -294,14 +294,14 @@ pub fn build_std_linux_tarzxvf_filetoroot_commands(image_ids: &[String]) -> Vec<
     image_ids
         .iter()
         .flat_map(|image_id| {
-            let package = "chess*.gz";
+            let package = "*.gz";
             let source_path = format!("/tmp/.chess/{image_id}/{package}");
             let target_path = "/".to_string();
 
-            vec![
-                // format!("mkdir -p /tmp/.chess/{}", image_id),
-                format!("tar -zxvf {} -C {}", source_path, target_path),
-            ]
+            vec![format!(
+                r#"if ls {} 1>/dev/null 2>&1; then tar -zxvf {} -C {}; fi"#,
+                source_path, source_path, target_path
+            )]
         })
         .collect()
 }

@@ -14,7 +14,9 @@ use crate::{
         list_cluster_names, switch_cluster,
     },
     cluster_images::{load_image_to_server, tarzxf_remote_server_package},
-    cluster_node::{init_master_node, init_root_node, init_woker_node},
+    cluster_node::{
+        init_cluster_master_node, init_cluster_root_node, init_cluster_woker_node, init_common_node,
+    },
     ssh_connect::{HostConfig, bulk_check_hosts},
 };
 
@@ -111,23 +113,18 @@ pub async fn handle_command(command: Commands) -> Result<()> {
                 .iter()
                 .any(|server| server.roles.iter().any(|role| role == "node"));
 
-            // 指定集群
-            if has_master {
+            // 指定集群, 指定节点
+            if has_master || has_woker {
                 info!("Initializing common images {images:?}");
                 init_cluster(&cluster).await?;
-                load_cluster_config(&cluster).await?;
+
+                if has_master {
+                    load_cluster_config(&cluster).await?;
+                }
             }
 
-            // 指定节点
-            if !has_master && has_woker {
-                info!(
-                    "No master or worker nodes specified. Please provide at least one master or worker node."
-                );
-            }
-
-            // 使用默认集群
             if !has_master && !has_woker {
-                info!("No master or worker nodes specified. Using default cluster configuration.");
+                info!("No master or worker nodes specified.");
             }
 
             info!("Initialization completed successfully");
@@ -288,7 +285,23 @@ async fn init_cluster(cluster: &Cluster) -> Result<()> {
     tarzxf_remote_server_package(images_sha256.clone(), servers).await;
     info!("Images loaded and prepared: {images_sha256:?}");
 
-    // 主节点分组
+    let has_master = masters.iter().any(|s| !s.ips.is_empty());
+    let has_node = nodes.iter().any(|s| !s.ips.is_empty());
+    if has_master {
+        init_distributed_cluster(masters.clone(), nodes.clone(), images_sha256.clone()).await?;
+    }
+    if !has_master && has_node {
+        init_common_node(nodes, images_sha256.clone()).await?;
+    }
+
+    Ok(())
+}
+
+async fn init_distributed_cluster(
+    masters: Vec<&Servers>,
+    nodes: Vec<&Servers>,
+    images_sha256: Vec<String>,
+) -> Result<()> {
     let (root, plane) = if !masters.is_empty() {
         let root = vec![masters[0]];
         let plane = masters.iter().skip(1).cloned().collect::<Vec<_>>();
@@ -297,7 +310,7 @@ async fn init_cluster(cluster: &Cluster) -> Result<()> {
         (Vec::new(), Vec::new())
     };
     // root节点
-    let join_root_key = init_root_node(root.clone(), images_sha256.clone()).await?;
+    let join_root_key = init_cluster_root_node(root.clone(), images_sha256.clone()).await?;
 
     match (
         &join_root_key.kube_api_server,
@@ -306,8 +319,8 @@ async fn init_cluster(cluster: &Cluster) -> Result<()> {
     ) {
         (Some(api), Some(token), Some(hash)) => {
             info!("Kube join key information found: API: {api}, Token: {token}, Hash: {hash}");
-            init_master_node(plane.clone(), images_sha256.clone(), api, token, hash).await;
-            init_woker_node(nodes, images_sha256.clone(), api, token, hash).await;
+            init_cluster_master_node(plane.clone(), images_sha256.clone(), api, token, hash).await;
+            init_cluster_woker_node(nodes, images_sha256.clone(), api, token, hash).await;
         }
         _ => info!("There is no kube join key information available"),
     }

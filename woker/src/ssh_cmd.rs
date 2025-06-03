@@ -293,15 +293,13 @@ pub async fn run_commands_on_multiple_hosts(
 pub fn build_std_linux_tarzxvf_filetoroot_commands(image_ids: &[String]) -> Vec<String> {
     image_ids
         .iter()
-        .flat_map(|image_id| {
-            let package = "*.gz";
-            let source_path = format!("/tmp/.chess/{image_id}/{package}");
-            let target_path = "/".to_string();
-
-            vec![format!(
-                r#"if ls {} 1>/dev/null 2>&1; then tar -zxvf {} -C {}; fi"#,
-                source_path, source_path, target_path
-            )]
+        .map(|image_id| {
+            let dir = format!("/tmp/.chess/{image_id}");
+            let target_path = "/";
+            format!(
+                r#"sh -c 'for f in {}/{}.gz; do [ -f "$f" ] && tar -zxvfk "$f" -C "{}"; done'"#,
+                dir, "*", target_path
+            )
         })
         .collect()
 }

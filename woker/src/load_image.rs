@@ -46,8 +46,9 @@ pub async fn run(
 
     // Process images concurrently and collect SHA256 values
     let mut handles = vec![];
-    for image in images {
+    for image in images.iter() {
         let base_output_dir = base_output_dir.clone();
+        let image = image.clone();
         let handle = tokio::spawn(async move {
             match process_image(&image, base_output_dir.as_path()).await {
                 Ok(sha256) => Ok(sha256),
@@ -62,17 +63,18 @@ pub async fn run(
 
     // Wait for all tasks to complete and collect results
     let mut sha256_values = Vec::new();
+    let mut seen_hashes = std::collections::HashSet::new();
     for handle in handles {
         match handle.await {
-            Ok(Ok(sha256)) => sha256_values.push(sha256),
+            Ok(Ok(sha256)) => {
+                if seen_hashes.insert(sha256.clone()) {
+                    sha256_values.push(sha256);
+                }
+            }
             Ok(Err(e)) => return Err(e),
             Err(e) => return Err(e.into()),
         }
     }
-
-    // Deduplicate SHA256 values while preserving order
-    sha256_values.sort();
-    sha256_values.dedup();
 
     Ok(sha256_values)
 }

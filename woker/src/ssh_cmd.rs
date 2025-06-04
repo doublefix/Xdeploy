@@ -294,11 +294,20 @@ pub fn build_std_linux_tarzxvf_filetoroot_commands(image_ids: &[String]) -> Vec<
     image_ids
         .iter()
         .map(|image_id| {
-            let dir = format!("/tmp/.chess/{image_id}");
-            let target_path = "/";
+            let package = "*.gz";
+            let source_path = format!("/tmp/.chess/{image_id}/{package}");
+            let tmp_extract_path = format!("/tmp/.chess/{image_id}/tmp");
+            let installed_file = format!("$HOME/.chess/{image_id}/installed");
+
             format!(
-                r#"sh -c 'for f in {}/{}.gz; do [ -f "$f" ] && tar -zxvfk "$f" -C "{}"; done'"#,
-                dir, "*", target_path
+                r#"if ls {source_path} 1>/dev/null 2>&1; then
+                    mkdir -p $(dirname {installed_file}) &&
+                    mkdir -p {tmp_extract_path} &&
+                    tar -zxvf {source_path} -C {tmp_extract_path} &&
+                    rsync -a {tmp_extract_path}/ / &&
+                    tar -tf {source_path} | awk '{{gsub(/^\.\//, ""); if ($0 !~ /\/$/ && $0 !~ /^\./ && $0 != "") print "/" $0}}' > {installed_file} &&
+                    rm -rf {tmp_extract_path};
+                   fi"#
             )
         })
         .collect()

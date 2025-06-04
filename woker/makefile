@@ -45,18 +45,14 @@ build-deb:
 	echo "systemctl daemon-reexec || true" >> $(DEB_ROOT)/DEBIAN/postinst
 	echo "systemctl daemon-reload || true" >> $(DEB_ROOT)/DEBIAN/postinst
 	echo "systemctl enable containerd.service || true" >> $(DEB_ROOT)/DEBIAN/postinst
-	echo "systemctl enable stargz-snapshotter.service || true" >> $(DEB_ROOT)/DEBIAN/postinst
 	echo "systemctl start containerd.service || true" >> $(DEB_ROOT)/DEBIAN/postinst
-	echo "systemctl start stargz-snapshotter.service || true" >> $(DEB_ROOT)/DEBIAN/postinst
 	chmod 755 $(DEB_ROOT)/DEBIAN/postinst
 
 	@echo "==> Creating postrm script..."
 	echo "#!/bin/bash" > $(DEB_ROOT)/DEBIAN/postrm
 	echo "set -e" >> $(DEB_ROOT)/DEBIAN/postrm
 	echo "systemctl stop containerd.service || true" >> $(DEB_ROOT)/DEBIAN/postrm
-	echo "systemctl stop stargz-snapshotter.service || true" >> $(DEB_ROOT)/DEBIAN/postrm
 	echo "systemctl disable containerd.service || true" >> $(DEB_ROOT)/DEBIAN/postrm
-	echo "systemctl disable stargz-snapshotter.service || true" >> $(DEB_ROOT)/DEBIAN/postrm
 	chmod 755 $(DEB_ROOT)/DEBIAN/postrm
 
 	@echo "==> Creating control file..."

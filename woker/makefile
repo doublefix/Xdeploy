@@ -37,6 +37,8 @@ build-deb:
 	rm -rf $(DEB_ROOT)/usr/local/bin/stargz-store-helper
 	rm -rf $(DEB_ROOT)/usr/local/bin/tini
 	rm -rf $(DEB_ROOT)/usr/local/share
+	rm -rf $(DEB_ROOT)/usr/local/lib/systemd/system/buildkit.service
+	rm -rf $(DEB_ROOT)/usr/local/lib/systemd/system/stargz-snapshotter.service
 
 	@echo "==> Creating postinst script..."
 	echo "#!/bin/bash" > $(DEB_ROOT)/DEBIAN/postinst

@@ -13,3 +13,5 @@ artifacts
 env
 hosts.json
 s-content
+build
+nerdctl-*

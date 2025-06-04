@@ -175,8 +175,11 @@ pub fn list_cluster_names() -> std::io::Result<Vec<String>> {
     let entries = fs::read_dir(config_dir)?
         .filter_map(|entry| {
             let entry = entry.ok()?;
-            if entry.file_type().ok()?.is_dir() {
-                Some(entry.file_name().to_string_lossy().into_owned())
+            let file_name = entry.file_name();
+            let file_name_str = file_name.to_string_lossy();
+
+            if entry.file_type().ok()?.is_dir() && !file_name_str.starts_with('.') {
+                Some(file_name_str.into_owned())
             } else {
                 None
             }

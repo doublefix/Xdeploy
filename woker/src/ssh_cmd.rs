@@ -297,7 +297,7 @@ pub fn build_std_linux_tarzxvf_filetoroot_commands(image_ids: &[String]) -> Vec<
             let package = "*.gz";
             let source_path = format!("/tmp/.chess/{image_id}/{package}");
             let tmp_extract_path = format!("/tmp/.chess/{image_id}/tmp");
-            let installed_file = format!("$HOME/.chess/{image_id}/installed");
+            let installed_file = format!("$HOME/.chess/.meta/{image_id}/installed");
 
             format!(
                 r#"if ls {source_path} 1>/dev/null 2>&1; then

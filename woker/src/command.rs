@@ -239,6 +239,15 @@ async fn init_cluster(cluster: &Cluster) -> Result<()> {
         .filter(|s| s.roles.contains(&"node".to_string()))
         .collect();
 
+    let all_servers: Vec<&Servers> = cluster
+        .spec
+        .servers
+        .iter()
+        .filter(|s| {
+            s.roles.contains(&"master".to_string()) || s.roles.contains(&"node".to_string())
+        })
+        .collect();
+
     info!("All master addresses: {masters:?}");
     info!("All node addresses: {nodes:?}");
 
@@ -280,18 +289,19 @@ async fn init_cluster(cluster: &Cluster) -> Result<()> {
         }
     }
 
+    // 传输镜像、解压二进制制品
     let servers: Vec<String> = all_ips.iter().cloned().cloned().collect();
     let images_sha256 = load_image_to_server(cluster.spec.images.clone(), servers.clone()).await?;
     tarzxf_remote_server_package(images_sha256.clone(), servers).await;
     info!("Images loaded and prepared: {images_sha256:?}");
 
+    // 所有节点执行公共部分
+    init_common_node(all_servers, images_sha256.clone()).await?;
+
+    // 主从架构需要分组执行
     let has_master = masters.iter().any(|s| !s.ips.is_empty());
-    let has_node = nodes.iter().any(|s| !s.ips.is_empty());
     if has_master {
         init_distributed_cluster(masters.clone(), nodes.clone(), images_sha256.clone()).await?;
-    }
-    if !has_master && has_node {
-        init_common_node(nodes, images_sha256.clone()).await?;
     }
 
     Ok(())
